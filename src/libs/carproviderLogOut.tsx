@@ -1,4 +1,4 @@
-import { AUTH_ENDPOINTS } from '@/config/apiConfig';
+import { PROVIDER_ENDPOINTS } from '@/config/apiConfig';
 import { signOut } from 'next-auth/react';
 
 /**
@@ -10,7 +10,7 @@ import { signOut } from 'next-auth/react';
 export default async function carProviderLogOut(token: string) {
   try {
     // First, invalidate the token on the server
-    const response = await fetch(AUTH_ENDPOINTS.LOGOUT, {
+    const response = await fetch(PROVIDER_ENDPOINTS.LOGOUT, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -2,9 +2,10 @@
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import userLogin from "@/libs/userLogIn";
+import carproviderLogin from "@/libs/carproviderLogIn";
 import getUserProfile from "@/libs/getUserProfile";
 
-// Define a custom User type that extends the NextAuth User type
+// Define a comprehensive user/provider type
 interface CustomUser {
   id: string;
   _id: string;
@@ -13,6 +14,7 @@ interface CustomUser {
   role: string;
   token: string;
   telephone_number?: string;
+  userType: 'customer' | 'provider';
 }
 
 export const authOptions: AuthOptions = {
@@ -21,31 +23,54 @@ export const authOptions: AuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email", placeholder: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        userType: { label: "User Type", type: "text" }
       },
       
       async authorize(credentials) {
         if (!credentials) return null;
 
         try {
-          // Login user and get token
-          const loginResult = await userLogin(credentials.email, credentials.password);
+          let loginResult;
+          let userProfile;
           
-          if (!loginResult?.success || !loginResult?.token) {
-            // Return specific error message from API if available
-            if (loginResult?.message) {
-              throw new Error(loginResult.message);
-            } else if (loginResult?.msg) {
-              throw new Error(loginResult.msg);
-            } else {
-              throw new Error("Invalid credentials");
+          // Determine login method based on user type
+          if (credentials.userType === 'provider') {
+            loginResult = await carproviderLogin(credentials.email, credentials.password);
+            
+            // Fetch provider profile after successful login
+            if (loginResult.success && loginResult.token) {
+              // TODO: Implement get provider profile function
+              // For now, we'll use a basic object
+              userProfile = {
+                success: true,
+                data: {
+                  _id: 'provider_id', // Replace with actual ID retrieval
+                  name: credentials.email.split('@')[0], // Temporary name
+                  email: credentials.email,
+                  role: 'provider',
+                  telephone_number: ''
+                }
+              };
+            }
+          } else {
+            // Regular user login
+            loginResult = await userLogin(credentials.email, credentials.password);
+            
+            if (loginResult?.success && loginResult?.token) {
+              userProfile = await getUserProfile(loginResult.token);
             }
           }
           
-          // Fetch user profile with token
-          const userProfile = await getUserProfile(loginResult.token);
+          if (!loginResult?.success || !loginResult?.token) {
+            throw new Error(loginResult?.message || "Invalid credentials");
+          }
           
-          // Return user data with token
+          if (!userProfile || !userProfile.success) {
+            throw new Error("Could not retrieve user profile");
+          }
+          
+          // Return standardized user object
           return {
             id: userProfile.data._id,
             _id: userProfile.data._id,
@@ -53,12 +78,12 @@ export const authOptions: AuthOptions = {
             email: userProfile.data.email,
             role: userProfile.data.role,
             token: loginResult.token,
-            telephone_number: userProfile.data.telephone_number
-          } as CustomUser; 
+            telephone_number: userProfile.data.telephone_number,
+            userType: credentials.userType as 'customer' | 'provider'
+          } as CustomUser;
         } catch (error) {
           console.error("Authentication error:", error);
-          // Throw the error so NextAuth can handle it properly
-          throw new Error(error instanceof Error ? error.message : "Authentication failed");
+          throw error;
         }
       }
     })
@@ -73,13 +98,14 @@ export const authOptions: AuthOptions = {
       // Add user data to JWT when signing in
       if (user) {
         const customUser = user as CustomUser;
+        token.id = customUser.id;
         token._id = customUser._id;
         token.name = customUser.name;
         token.email = customUser.email;
         token.role = customUser.role;
         token.token = customUser.token;
+        token.userType = customUser.userType;
         
-        // Only add telephone_number if it exists
         if (customUser.telephone_number) {
           token.telephone_number = customUser.telephone_number;
         }
@@ -89,13 +115,14 @@ export const authOptions: AuthOptions = {
     session({ session, token }) {
       // Add token data to the session
       if (token && session.user) {
-        session.user._id = token._id as string;
-        session.user.name = token.name as string;
-        session.user.email = token.email as string;
-        session.user.role = token.role as string;
-        session.user.token = token.token as string;
+        (session.user as any).id = token.id;
+        (session.user as any)._id = token._id;
+        (session.user as any).name = token.name;
+        (session.user as any).email = token.email;
+        (session.user as any).role = token.role;
+        (session.user as any).token = token.token;
+        (session.user as any).userType = token.userType;
         
-        // Safely add telephone_number
         if (token.telephone_number) {
           (session.user as any).telephone_number = token.telephone_number;
         }
@@ -103,6 +130,5 @@ export const authOptions: AuthOptions = {
       return session;
     },
   },
-  // Add debug mode in development to help troubleshoot authentication issues
   debug: process.env.NODE_ENV === 'development',
 };

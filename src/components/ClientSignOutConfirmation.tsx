@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import userLogOut from '@/libs/userLogOut';
+import carProviderLogOut from '@/libs/carproviderLogOut';
 import Link from 'next/link';
 
 interface ClientSignOutConfirmationProps {
@@ -22,13 +23,21 @@ export default function ClientSignOutConfirmation({ callbackUrl }: ClientSignOut
     
     try {
       if (session?.user?.token) {
-        // Use our custom logout function that handles server-side token invalidation
-        const result = await userLogOut(session.user.token);
+        // Choose logout method based on user type
+        let result;
+        if (session.user.userType === 'provider') {
+          result = await carProviderLogOut(session.user.token);
+        } else {
+          result = await userLogOut(session.user.token);
+        }
         
         if (!result.success) {
           throw new Error('Failed to sign out properly');
         }
       }
+      
+      // Force sign out through NextAuth
+      await signOut({ redirect: false });
       
       // Redirect to the callback URL after successful logout
       router.push(callbackUrl);

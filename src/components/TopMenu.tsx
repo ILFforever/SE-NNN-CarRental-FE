@@ -4,6 +4,9 @@ import TopMenuItem from './TopMenuItem';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions'
 import NextLink from 'next/link';
+import { signOut } from 'next-auth/react';
+import userLogOut from '@/libs/userLogOut';
+import carProviderLogOut from '@/libs/carproviderLogOut';
 
 export default async function TopMenu(){
     const session = await getServerSession(authOptions)
@@ -15,16 +18,29 @@ export default async function TopMenu(){
                 {session 
                     ? (
                         <>
-                            <span className={styles.username}>{session.user?.name}</span>
-                            <NextLink href="/signout?callbackUrl=/" className={styles.menuItem}>
+                            <span className={styles.username}>
+                                {session.user.userType === 'provider' 
+                                    ? `Provider: ${session.user.name}` 
+                                    : session.user.name
+                                }
+                            </span>
+                            <NextLink 
+                                href="/signout?callbackUrl=/" 
+                                className={styles.menuItem}
+                            >
                                 Sign-Out
                             </NextLink>
-                            <TopMenuItem title='My Profile' pageRef='/account/profile'/>
-                            <TopMenuItem title='My Reservations' pageRef='/account/reservations'/>
-                            {session.user?.role === 'admin' && (
-                                <NextLink href="/admin/tools" className={`${styles.menuItem} text-red-600 font-bold`}>
-                                    Admin Tools
-                                </NextLink>
+                            
+                            {session.user.userType === 'customer' && (
+                                <>
+                                    <TopMenuItem title='My Profile' pageRef='/account/profile'/>
+                                    <TopMenuItem title='My Reservations' pageRef='/account/reservations'/>
+                                    {session.user.role === 'admin' && (
+                                        <NextLink href="/admin/tools" className={`${styles.menuItem} text-red-600 font-bold`}>
+                                            Admin Tools
+                                        </NextLink>
+                                    )}
+                                </>
                             )}
                         </>
                     ) 
@@ -44,9 +60,12 @@ export default async function TopMenu(){
             {/* Right side with navigation items and logo */}
             <div className={styles.rightSide}>
                 <TopMenuItem title='About' pageRef='/about'/>
-                {/* <TopMenuItem title='Fleet' pageRef='/venue'/> */}
-                <TopMenuItem title='Services' pageRef='/service'/>
-                <TopMenuItem title='Catalog' pageRef='/catalog'/>
+                {session?.user.userType !== 'provider' && (
+                    <>
+                        <TopMenuItem title='Services' pageRef='/service'/>
+                        <TopMenuItem title='Catalog' pageRef='/catalog'/>
+                    </>
+                )}
                 <NextLink href="/">
                     <div className={styles.logowrapper}>
                         <Image 

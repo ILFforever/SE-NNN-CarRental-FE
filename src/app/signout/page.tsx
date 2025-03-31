@@ -35,7 +35,7 @@ export default async function SignOutPage({ searchParams }: PageProps) {
         <h1 className="text-2xl font-medium mb-4 font-serif">Sign Out</h1>
         
         <p className="text-gray-600 mb-8">
-          Are you sure you want to sign out of your CEDT Rentals account?
+          Are you sure you want to sign out of your {session.user.userType === 'provider' ? 'Car Provider' : 'CEDT Rentals'} account?
         </p>
         
         <ClientSignOutConfirmation callbackUrl={callbackUrl} />

@@ -44,11 +44,22 @@ export default function LoginForm({ callbackUrl = '/' }: { callbackUrl?: string 
     try {
       if (isCarProvider) {
         try {
-          const result = await carproviderLogin(email, password);
-          if (!result.success || !result.token) {
-            throw new Error(result.message || 'Invalid credentials');
+          const result = await signIn('credentials', {
+            redirect: false,
+            email,
+            password,
+            userType: 'provider',
+            callbackUrl,
+          });
+
+          if (result?.error) {
+            throw new Error(result.error);
           }
-          router.push('/'); //send us to home
+
+          if (result?.url) {
+            router.push(result.url);
+            router.refresh();
+          }
         } catch (error) {
           console.error('Car provider login error:', error);
           setError(error instanceof Error ? error.message : 'Invalid credentials. Please try again.');
@@ -60,6 +71,7 @@ export default function LoginForm({ callbackUrl = '/' }: { callbackUrl?: string 
           redirect: false,
           email,
           password,
+          userType: 'customer',
           callbackUrl,
         });
 
