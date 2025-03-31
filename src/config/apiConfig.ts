@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://cedt-rentals-be.vercel.app/api/v1';
+export const API_BASE_URL = 'https://se-nnn-carrental-be.fly.dev/api/v1';
 
 
 // Auth endpoints
