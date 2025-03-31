@@ -29,3 +29,11 @@ export const VENUE_ENDPOINTS = {
 export const createAuthHeader = (token: string) => ({
   Authorization: `Bearer ${token}`
 });
+
+export const PROVIDER_ENDPOINTS = {
+  REGISTER: `${API_BASE_URL}/Car_Provider/register`,
+  LOGIN: `${API_BASE_URL}/Car_Provider/login`,
+  GET_PROFILE: `${API_BASE_URL}/Car_Provider/curuser`,
+  LOGOUT: `${API_BASE_URL}/Car_Provider/logout`,
+  CHANGE_PASSWORD: `${API_BASE_URL}/Car_Provider/update-password`, // Changed to match common backend naming
+};

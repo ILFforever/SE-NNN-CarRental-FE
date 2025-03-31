@@ -1,20 +1,19 @@
-import { AUTH_ENDPOINTS, createAuthHeader } from '@/config/apiConfig';
+import { AUTH_ENDPOINTS } from '@/config/apiConfig';
 import { signOut } from 'next-auth/react';
 
 /**
- * Logs out a user by making a request to the server to invalidate the token
- * and then clearing the NextAuth session
+ * Logs out a car provider by making a request to the server to invalidate the token
  * 
- * @param token User authentication token
+ * @param token Provider authentication token
  * @returns Promise with logout result
  */
-export default async function userLogOut(token: string) {
+export default async function carProviderLogOut(token: string) {
   try {
     // First, invalidate the token on the server
     const response = await fetch(AUTH_ENDPOINTS.LOGOUT, {
       method: 'POST',
       headers: {
-        ...createAuthHeader(token),
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       // Don't follow redirects
@@ -24,18 +23,12 @@ export default async function userLogOut(token: string) {
     // Check if response was successful or a redirect (both are acceptable)
     const success = response.ok || response.status === 302;
     
-    // If server logout was successful, also clear the client-side session
-    if (success) {
-      // Log out from NextAuth session
-      await signOut({ redirect: false });
-    }
-
     // Try to parse the response body if it exists
     let data = {};
     try {
       if (response.status !== 302) {
         data = await response.json();
-        console.log(data)
+        console.log(data);
       }
     } catch (e) {
       // Ignore parsing errors
@@ -48,9 +41,6 @@ export default async function userLogOut(token: string) {
     };
   } catch (error) {
     console.error('Logout error:', error);
-    
-    // Even if the server request fails, try to logout from client side
-    await signOut({ redirect: false });
     
     return {
       success: false,

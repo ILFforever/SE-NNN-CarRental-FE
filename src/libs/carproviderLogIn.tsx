@@ -1,10 +1,8 @@
-import { AUTH_ENDPOINTS } from '@/config/apiConfig';
+import { PROVIDER_ENDPOINTS } from '@/config/apiConfig';
 
 export default async function carproviderLogin(carproviderEmail: string, carproviderPassword: string) {
   try {
-    console.log('Attempting to login with API endpoint:', AUTH_ENDPOINTS.LOGIN);
-    
-    const response = await fetch(AUTH_ENDPOINTS.LOGIN, {
+    const response = await fetch(PROVIDER_ENDPOINTS.LOGIN, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,21 +18,37 @@ export default async function carproviderLogin(carproviderEmail: string, carprov
     console.log('Login response data:', data);
 
     if (!response.ok) {
-      throw new Error(data.message || data.msg || "Authentication failed");
-    }
-    
-    // Make sure data has the expected structure
-    if (!data.token && data.success && data.data && data.data.token) {
-      // Handle case where token is nested in a data property
+      // Return detailed error from server
       return {
-        success: data.success,
-        token: data.data.token
+        success: false,
+        message: data.message || data.msg || "Authentication failed",
+        status: response.status
       };
     }
     
-    return data;
+    // Normalize token extraction
+    const token = data.token || (data.data && data.data.token);
+    
+    if (!token) {
+      return {
+        success: false,
+        message: 'No authentication token received',
+        status: response.status
+      };
+    }
+    
+    return {
+      success: true,
+      token: token
+    };
   } catch (error) {
     console.error('Login error:', error);
-    throw error;
+    
+    // Return a properly formatted error response
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Network error occurred",
+      isNetworkError: true
+    };
   }
 }
