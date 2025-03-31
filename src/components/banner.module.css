@@ -1,0 +1,91 @@
+.banner {
+  display: block;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 70vh;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+.imageContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fadeIn {
+  opacity: 0;
+  animation: fadeInAnimation 1.2s forwards;
+}
+
+.fadeOut {
+  opacity: 1;
+  animation: fadeOutAnimation 1.2s forwards;
+}
+
+@keyframes fadeInAnimation {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeOutAnimation {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.bannerText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  text-align: center;
+  max-width: 80%;
+  width: auto;
+  padding: 2rem 3rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Pagination indicators styling */
+.paginationContainer {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+}
+
+.paginationDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.paginationDot:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.activeDot {
+  background-color: white;
+  transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+  .banner {
+    height: 50vh;
+  }
+  
+  .bannerText {
+    width: 90%;
+    padding: 1.5rem !important;
+  }
+}
