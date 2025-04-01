@@ -16,6 +16,7 @@ interface Car {
   type: string;
   color: string;
   dailyRate: number;
+  available: boolean;
 }
 
 interface User {
@@ -251,7 +252,7 @@ export default function ProviderRentalManagement({
   }, [searchQuery, statusFilter, dateRangeFilter, rentals, cars, users, itemsPerPage]);
 
   // Handle rental update (Accept/Complete)
-  const updateRentalStatus = async (rentalId: string, newStatus: 'active' | 'completed') => {
+  const updateRentalStatus = async (rentalId: string, action: 'confirm' | 'complete' | 'cancel') => {
     if (!session?.user?.token) {
       setError('Authentication required. Please sign in.');
       return;
@@ -262,9 +263,26 @@ export default function ProviderRentalManagement({
     setSuccess('');
     
     try {
-      const endpoint = newStatus === 'active' 
-        ? `${API_BASE_URL}/rents/${rentalId}/confirm` 
-        : `${API_BASE_URL}/rents/${rentalId}/complete`;
+      // Determine the endpoint based on the action
+      let endpoint;
+      let newStatus: 'pending' | 'active' | 'completed' | 'cancelled';
+      
+      switch (action) {
+        case 'confirm':
+          endpoint = `${API_BASE_URL}/rents/${rentalId}/confirm`;
+          newStatus = 'active';
+          break;
+        case 'complete':
+          endpoint = `${API_BASE_URL}/rents/${rentalId}/complete`;
+          newStatus = 'completed';
+          break;
+        case 'cancel':
+          endpoint = `${API_BASE_URL}/rents/${rentalId}/cancel`;
+          newStatus = 'cancelled';
+          break;
+        default:
+          throw new Error(`Unknown action: ${action}`);
+      }
       
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -272,17 +290,17 @@ export default function ProviderRentalManagement({
           'Authorization': `Bearer ${session.user.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          status: newStatus
+        body: JSON.stringify({ 
+          notes: `${action.charAt(0).toUpperCase() + action.slice(1)}ed by provider on ${new Date().toLocaleString()}` 
         })
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to update rental status to ${newStatus}`);
+        throw new Error(errorData.message || `Failed to ${action} rental`);
       }
       
-      // Update rentals list
+      // Update rentals list with proper typing
       setRentals(prev => 
         prev.map(rental => 
           rental._id === rentalId 
@@ -299,10 +317,32 @@ export default function ProviderRentalManagement({
         )
       );
       
-      setSuccess(`Rental ${newStatus === 'active' ? 'confirmed' : 'completed'} successfully`);
+      setSuccess(`Rental ${action}ed successfully`);
+  
+      // If completed or cancelled, update car availability
+      if (action === 'complete' || action === 'cancel') {
+        // Find the rental and its car
+        const rental = rentals.find(r => r._id === rentalId);
+        if (rental) {
+          const carId = typeof rental.car === 'string' ? rental.car : rental.car._id;
+          
+          // Update the car in our local state
+          setCars(prev => {
+            const updatedCars = { ...prev };
+            if (updatedCars[carId]) {
+              updatedCars[carId] = { 
+                ...updatedCars[carId], 
+                available: true 
+              };
+            }
+            return updatedCars;
+          });
+        }
+      }
+      
     } catch (error) {
-      console.error(`Error updating rental status to ${newStatus}:`, error);
-      setError(error instanceof Error ? error.message : 'An error occurred while updating the rental');
+      console.error(`Error updating rental status:`, error);
+      setError(error instanceof Error ? error.message : `An error occurred while updating the rental`);
     } finally {
       setIsLoading(false);
     }
@@ -376,15 +416,18 @@ export default function ProviderRentalManagement({
   // Execute actions on rentals
   const executeAction = (action: 'confirm' | 'complete' | 'cancel' | 'view' | 'edit', rental: Rent) => {
     if (!rental) return;
-
+  
     const rentalId = rental._id;
-
+  
     switch (action) {
       case 'confirm':
-        updateRentalStatus(rentalId, 'active');
+        updateRentalStatus(rentalId, 'confirm');
         break;
       case 'complete':
-        updateRentalStatus(rentalId, 'completed');
+        updateRentalStatus(rentalId, 'complete');
+        break;
+      case 'cancel':
+        updateRentalStatus(rentalId, 'cancel');
         break;
       case 'view':
         router.push(`/provider/rentals/${rentalId}`);
