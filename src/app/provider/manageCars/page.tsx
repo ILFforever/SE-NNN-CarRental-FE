@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
 
 // Type definitions
 interface Car {
@@ -38,23 +38,23 @@ interface Pagination {
   prev?: { page: number; limit: number };
 }
 
-export default function ProviderCarManagement() {
-  const { data: session } = useSession();
-  
+export default function CarManagement({ token }: { token: string }) {
   // State management
+  const { data: session } = useSession();
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
+  const [carProviders, setCarProviders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Pagination
+  const [providerMap, setProviderMap] = useState<{[key: string]: string}>({});
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<Pagination>({});
   const [totalItems, setTotalItems] = useState(0);
-  
+
   // Initial form data
   const initialFormData: CarFormData = {
     license_plate: '',
@@ -319,13 +319,18 @@ export default function ProviderCarManagement() {
     return new Date(dateString).toLocaleDateString();
   };
 
+   // Handle edit car function (placeholder)
+   const handleEditCar = (carId: string) => {
+    window.location.href = `/provider/manageCars/edit?carId=${carId}`;
+  };
+
   // Get tier name based on number
   const getTierName = (tier: number) => {
     const tierNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
     return tierNames[tier] || `Tier ${tier}`;
   };
 
-  return (
+ return (
     <div className="bg-white rounded-lg shadow-md p-6">
       {/* Success and Error Messages */}
       {error && (
@@ -354,37 +359,20 @@ export default function ProviderCarManagement() {
             type="text"
             placeholder="Search cars by license plate, brand, or model"
             value={searchQuery}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-[#8A7D55] transition-all duration-300 ease-in-out"
           />
         </div>
 
-        {/* Create Car Button with Icon */}
+        {/* Add New Car Button with Icon */}
         <button
-          onClick={() => {
-            if (showCreateForm) {
-              handleCancelCreate();
-            } else {
-              setShowCreateForm(true);
-            }
-          }}
+          onClick={() => setShowCreateForm(!showCreateForm)}
           className="flex items-center justify-center px-4 py-2 bg-[#8A7D55] text-white rounded-lg hover:bg-[#766b48] transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
         >
-          {showCreateForm ? (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Cancel
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add New Car
-            </>
-          )}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add New Car
         </button>
       </div>
 
@@ -563,21 +551,21 @@ export default function ProviderCarManagement() {
           <h2 className="text-xl font-medium">
             My Cars {filteredCars.length !== cars.length && `(${filteredCars.length} of ${totalItems})`}
           </h2>
-        
+          
           {/* Pagination Controls */}
           <div className="flex items-center space-x-2">
             <button 
-              onClick={handlePrevPage} 
+              onClick={() => {}}
               disabled={!pagination.prev}
               className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
             <span className="text-sm text-gray-600">
-              Page {currentPage} of {pagination.next ? Math.ceil(totalItems / 25) : currentPage}
+              Page {currentPage} of {Math.ceil(totalItems / 25) || 1}
             </span>
             <button 
-              onClick={handleNextPage} 
+              onClick={() => {}}
               disabled={!pagination.next}
               className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -586,42 +574,36 @@ export default function ProviderCarManagement() {
           </div>
         </div>
         
-        {isLoading && !filteredCars.length ? (
+        {isLoading ? (
           <p className="text-center py-4">Loading cars...</p>
         ) : filteredCars.length === 0 ? (
-          searchQuery ? (
-            <p className="text-center py-4 text-gray-600">No cars match your search.</p>
-          ) : (
-            <p className="text-center py-4 text-gray-600">
-              No cars found. Click the "Add New Car" button to add your first car.
-            </p>
-          )
+          <p className="text-center py-4 text-gray-600">No cars found.</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                   License Plate
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                   Brand/Model
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                   Type/Color
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                   Manufacture Date
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                   Daily Rate
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                   Tier
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                   Actions
                 </th>
               </tr>
@@ -658,13 +640,26 @@ export default function ProviderCarManagement() {
                       {car.available ? 'Available' : 'Rented'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleDeleteCar(car._id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-4 py-3 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center space-x-3">
+                      {/* Edit button */}
+                      <button
+                        onClick={() => handleEditCar(car._id)}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                        title="Edit car"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      
+                      {/* Delete button */}
+                      <button
+                        onClick={() => handleDeleteCar(car._id)}
+                        className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50 transition-colors"
+                        title="Delete car"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
