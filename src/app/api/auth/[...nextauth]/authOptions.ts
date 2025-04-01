@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import userLogin from "@/libs/userLogIn";
 import carproviderLogin from "@/libs/carproviderLogIn";
 import getUserProfile from "@/libs/getUserProfile";
+import { API_BASE_URL } from "@/config/apiConfig";
 
 // Define a comprehensive user/provider type
 interface CustomUser {
@@ -40,18 +41,39 @@ export const authOptions: AuthOptions = {
             
             // Fetch provider profile after successful login
             if (loginResult.success && loginResult.token) {
-              // TODO: Implement get provider profile function
-              // For now, we'll use a basic object
-              userProfile = {
-                success: true,
-                data: {
-                  _id: 'provider_id', // Replace with actual ID retrieval
-                  name: credentials.email.split('@')[0], // Temporary name
-                  email: credentials.email,
-                  role: 'provider',
-                  telephone_number: ''
+              try {
+                const response = await fetch(`${API_BASE_URL}/Car_Provider/me`, {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${loginResult.token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                if (!response.ok) {
+                  throw new Error('Could not retrieve provider profile');
                 }
-              };
+
+                const providerData = await response.json();
+
+                if (!providerData.success || !providerData.data) {
+                  throw new Error('Invalid provider profile data');
+                }
+
+                userProfile = {
+                  success: true,
+                  data: {
+                    _id: providerData.data._id,
+                    name: providerData.data.name,
+                    email: providerData.data.email,
+                    role: 'provider',
+                    telephone_number: providerData.data.telephone_number || ''
+                  }
+                };
+              } catch (profileError) {
+                console.error('Provider profile fetch error:', profileError);
+                throw profileError;
+              }
             }
           } else {
             // Regular user login

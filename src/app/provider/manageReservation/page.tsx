@@ -38,6 +38,7 @@ interface Rent {
   createdAt: string;
 }
 
+// Define the props type for the component
 interface ProviderRentalManagementProps {
   initialStatusFilter?: string;
   initialSearchQuery?: string;
@@ -47,6 +48,7 @@ export default function ProviderRentalManagement({
   initialStatusFilter = '',
   initialSearchQuery = ''
 }: ProviderRentalManagementProps) {
+  // Rest of the component remains the same as in the original file
   const { data: session } = useSession();
   
   // State variables
