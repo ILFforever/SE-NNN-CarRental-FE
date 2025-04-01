@@ -18,11 +18,10 @@ export default async function TopMenu(){
                 {session 
                     ? (
                         <>
-                            <span className={styles.username}>
-                                {session.user.userType === 'provider' 
-                                    ? `Provider: ${session.user.name}` 
-                                    : session.user.name
-                                }
+                            <span 
+                                className={`${styles.username} ${session.user.userType === 'provider' ? styles.provider : ''}`}
+                            >
+                                {session.user.name}
                             </span>
                             <NextLink 
                                 href="/signout?callbackUrl=/" 
@@ -36,10 +35,19 @@ export default async function TopMenu(){
                                     <TopMenuItem title='My Profile' pageRef='/account/profile'/>
                                     <TopMenuItem title='My Reservations' pageRef='/account/reservations'/>
                                     {session.user.role === 'admin' && (
-                                        <NextLink href="/admin/tools" className={`${styles.menuItem} text-red-600 font-bold`}>
+                                        <NextLink href="/admin/tools" className={`${styles.menuItem} ${styles.adminTools}`}>
                                             Admin Tools
                                         </NextLink>
                                     )}
+                                </>
+                            )}
+
+                            {session.user.userType === 'provider' && (
+                                <>
+                                    <TopMenuItem title='My Profile' pageRef='/provider/profile'/>
+                                    <NextLink href="/provider/tools" className={`${styles.menuItem} text-blue-600 font-bold`}>
+                                        Provider Tools
+                                    </NextLink>
                                 </>
                             )}
                         </>

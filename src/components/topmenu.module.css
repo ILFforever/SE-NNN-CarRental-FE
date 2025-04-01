@@ -105,3 +105,22 @@
 .menuItem.adminTools:after {
   background-color: #ff0000;
 }
+
+/* Provider tools link */
+.menuItem.providerTools {
+  color: #0000ff;
+  font-weight: 600;
+  position: relative;
+}
+
+.menuItem.providerTools:after {
+  background-color: #0000ff;
+}
+
+.username {
+  color: #000; /* Default color */
+}
+
+.provider {
+  color: #1e90ff; /* Different color for providers */
+}
