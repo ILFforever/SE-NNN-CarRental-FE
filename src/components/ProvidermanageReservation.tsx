@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
-import { ChevronDown, Search, CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, Search, CalendarIcon, ChevronLeft, ChevronRight, Check, Trash2, Eye, Edit } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Type definitions
 interface Car {
@@ -48,7 +49,7 @@ export default function ProviderRentalManagement({
   initialStatusFilter = '',
   initialSearchQuery = ''
 }: ProviderRentalManagementProps) {
-  // Rest of the component remains the same as in the original file
+  const router = useRouter();
   const { data: session } = useSession();
   
   // State variables
@@ -87,85 +88,69 @@ export default function ProviderRentalManagement({
       try {
         setIsLoading(true);
         setError('');
-        // Get provider ID safely from session
-        const providerId = session.user.id || session.user._id || 'provider_id';
         
-        console.log('Fetching rentals for provider ID:', providerId);
+        // Build query parameters
+        let queryParams = new URLSearchParams();
         
-        // First, get all cars belonging to this provider
-        const carsResponse = await fetch(`${API_BASE_URL}/cars?providerId=${providerId}&limit=100`, {
+        if (initialStatusFilter) {
+          queryParams.append('status', initialStatusFilter);
+        }
+        
+        if (dateRangeFilter.start) {
+          queryParams.append('startDate', dateRangeFilter.start);
+        }
+        
+        if (dateRangeFilter.end) {
+          queryParams.append('endDate', dateRangeFilter.end);
+        }
+        
+        // Set page and limit
+        queryParams.append('page', '1');
+        queryParams.append('limit', '100'); // Adjust as needed
+        
+        // Make a single API call to get all rentals for this provider's cars
+        const response = await fetch(`${API_BASE_URL}/rents/provider?${queryParams.toString()}`, {
           headers: {
             'Authorization': `Bearer ${session.user.token}`,
             'Content-Type': 'application/json'
           }
         });
 
-        if (!carsResponse.ok) {
-          throw new Error(`Failed to fetch provider cars: ${carsResponse.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch rentals: ${response.status}`);
         }
 
-        const carsData = await carsResponse.json();
+        const data = await response.json();
         
-        if (!carsData.success || !Array.isArray(carsData.data) || carsData.data.length === 0) {
-          setRentals([]);
-          setFilteredRentals([]);
-          setIsLoading(false);
-          return; // No error if no cars, just empty state
+        if (!data.success) {
+          throw new Error('Failed to fetch rental data');
         }
         
-        // Create a map of car IDs and store car details
-        const providerCars = carsData.data;
+        // Process the rental data
+        const rentals = data.data;
+        
+        // Create maps for cars and users to avoid refetching
         const carMap: {[key: string]: Car} = {};
-        const carIds = providerCars.map((car: any) => {
-          carMap[car._id] = car;
-          return car._id;
-        });
+        const userMap: {[key: string]: User} = {};
         
-        setCars(carMap);
-        
-        // If no cars, don't try to fetch rentals
-        if (carIds.length === 0) {
-          setRentals([]);
-          setFilteredRentals([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Fetch rentals for all provider's cars
-        const rentalsPromises = carIds.map((carId: string) => 
-          fetch(`${API_BASE_URL}/rents/all?carId=${carId}`, {
-            headers: {
-              'Authorization': `Bearer ${session.user.token}`,
-              'Content-Type': 'application/json'
-            }
-          })
-        );
-        
-        const rentalsResponses = await Promise.all(rentalsPromises);
-        
-        // Process all rental responses
-        const allRentalsData = await Promise.all(
-          rentalsResponses.map(async (response) => {
-            if (!response.ok) return { success: false, data: [] };
-            return response.json();
-          })
-        );
-        
-        // Combine all rentals into a single array
-        let allRentals: any[] = [];
-        allRentalsData.forEach(data => {
-          if (data.success && Array.isArray(data.data)) {
-            allRentals = [...allRentals, ...data.data];
+        // Extract car and user details from populated data
+        rentals.forEach((rental: any) => {
+          if (rental.car && typeof rental.car === 'object') {
+            carMap[rental.car._id] = rental.car;
+          }
+          
+          if (rental.user && typeof rental.user === 'object') {
+            userMap[rental.user._id] = rental.user;
           }
         });
         
-        // Sort rentals by start date (most recent first)
-        allRentals.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-        
-        setRentals(allRentals);
+        // Set state with the fetched data
+        setCars(carMap);
+        setUsers(userMap);
+        setRentals(rentals);
         
         // Apply initial filters if provided
-        let filtered = [...allRentals];
+        let filtered = [...rentals];
         
         if (initialStatusFilter) {
           filtered = filtered.filter(rental => rental.status === initialStatusFilter);
@@ -195,20 +180,6 @@ export default function ProviderRentalManagement({
         setFilteredRentals(filtered);
         setTotalPages(Math.ceil(filtered.length / itemsPerPage));
         
-        // Collect user IDs for fetching user details
-        const userIds = new Set<string>();
-        allRentals.forEach(rental => {
-          if (typeof rental.user === 'string') {
-            userIds.add(rental.user);
-          } else if (rental.user && typeof rental.user === 'object' && rental.user._id) {
-            userIds.add(rental.user._id);
-          }
-        });
-        
-        // Fetch user details
-        if (userIds.size > 0) {
-          await fetchUserDetails(Array.from(userIds));
-        }
       } catch (err) {
         console.error('Error fetching rentals:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch rental data');
@@ -218,41 +189,7 @@ export default function ProviderRentalManagement({
     };
 
     fetchRentals();
-  }, [session, itemsPerPage, initialStatusFilter, initialSearchQuery]);
-
-  // Fetch user details by IDs
-  const fetchUserDetails = async (userIds: string[]) => {
-    if (!session?.user?.token) return;
-    
-    try {
-      const userDetailsMap: {[key: string]: User} = {};
-      
-      // Fetch details for each user
-      for (const userId of userIds) {
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
-            headers: {
-              'Authorization': `Bearer ${session.user.token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.data) {
-              userDetailsMap[userId] = data.data;
-            }
-          }
-        } catch (e) {
-          console.warn(`Could not fetch details for user ${userId}:`, e);
-        }
-      }
-      
-      setUsers(userDetailsMap);
-    } catch (error) {
-      console.error('Error fetching user details:', error);
-    }
-  };
+  }, [session, itemsPerPage, initialStatusFilter, initialSearchQuery, dateRangeFilter]);
 
   // Apply filters
   useEffect(() => {
@@ -392,7 +329,8 @@ export default function ProviderRentalManagement({
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -402,6 +340,14 @@ export default function ProviderRentalManagement({
       year: 'numeric',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  // Format time
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -427,6 +373,30 @@ export default function ProviderRentalManagement({
     currentPage * itemsPerPage
   );
 
+  // Execute actions on rentals
+  const executeAction = (action: 'confirm' | 'complete' | 'cancel' | 'view' | 'edit', rental: Rent) => {
+    if (!rental) return;
+
+    const rentalId = rental._id;
+
+    switch (action) {
+      case 'confirm':
+        updateRentalStatus(rentalId, 'active');
+        break;
+      case 'complete':
+        updateRentalStatus(rentalId, 'completed');
+        break;
+      case 'view':
+        router.push(`/provider/rentals/${rentalId}`);
+        break;
+      case 'edit':
+        router.push(`/provider/rentals/${rentalId}/edit`);
+        break;
+      default:
+        console.error('Unknown action:', action);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       {/* Success and Error Messages */}
@@ -451,7 +421,7 @@ export default function ProviderRentalManagement({
           </div>
           <input
             type="text"
-            placeholder="Search by user, car, or ID..."
+            placeholder="Search by ID, car, or customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
@@ -479,29 +449,23 @@ export default function ProviderRentalManagement({
         {/* Date Range Filters */}
         <div className="flex items-center gap-2">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <CalendarIcon className="h-4 w-4 text-gray-400" />
-            </div>
             <input
               type="date"
               placeholder="From Date"
               value={dateRangeFilter.start}
               onChange={(e) => setDateRangeFilter(prev => ({ ...prev, start: e.target.value }))}
-              className="pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+              className="pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             />
           </div>
           <span className="text-gray-500">to</span>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <CalendarIcon className="h-4 w-4 text-gray-400" />
-            </div>
             <input
               type="date"
               placeholder="To Date"
               value={dateRangeFilter.end}
               min={dateRangeFilter.start}
               onChange={(e) => setDateRangeFilter(prev => ({ ...prev, end: e.target.value }))}
-              className="pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+              className="pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             />
           </div>
         </div>
@@ -513,7 +477,7 @@ export default function ProviderRentalManagement({
             setStatusFilter('');
             setDateRangeFilter({ start: '', end: '' });
           }}
-          className="px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
         >
           Clear Filters
         </button>
@@ -526,10 +490,10 @@ export default function ProviderRentalManagement({
         </div>
       ) : filteredRentals.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500 text-lg">No rentals found</p>
+          <p className="text-gray-500 text-lg">No reservations found</p>
           <p className="text-gray-400 mt-2">
             {rentals.length === 0 
-              ? "There are no rentals for your cars yet" 
+              ? "There are no reservations for your cars yet" 
               : "Try adjusting your filters to see more results"
             }
           </p>
@@ -541,16 +505,16 @@ export default function ProviderRentalManagement({
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID/Date
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Car
+                    Date
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period
+                    Vehicle
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Dates
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Price
@@ -567,32 +531,26 @@ export default function ProviderRentalManagement({
                 {paginatedData.map((rental) => {
                   const car = getCarDetails(rental.car);
                   const user = getUserDetails(rental.user);
+                  const creationDate = new Date(rental.createdAt);
                   
                   return (
                     <tr key={rental._id} className="hover:bg-gray-50">
-                      {/* ID/Date */}
+                      {/* Date Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{rental._id.substring(0, 8)}...</div>
-                        <div className="text-xs text-gray-400">{formatDate(rental.createdAt)}</div>
+                        <div className="text-sm font-medium">
+                          {formatDate(rental.createdAt)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatTime(rental.createdAt)}
+                        </div>
                       </td>
                       
-                      {/* Car */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {car ? (
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{car.brand} {car.model}</div>
-                            <div className="text-xs text-gray-500">{car.license_plate}</div>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-500">Unknown car</div>
-                        )}
-                      </td>
-                      
-                      {/* Customer */}
+                      {/* Customer Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         {user ? (
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm font-medium">{user.name}</div>
+                            <div className="text-xs text-gray-500">{user.email}</div>
                             <div className="text-xs text-gray-500">{user.telephone_number}</div>
                           </div>
                         ) : (
@@ -600,31 +558,56 @@ export default function ProviderRentalManagement({
                         )}
                       </td>
                       
-                      {/* Period */}
+                      {/* Vehicle Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(rental.startDate)} - {formatDate(rental.returnDate)}
-                        </div>
-                        {rental.actualReturnDate && (
-                          <div className="text-xs text-gray-500">
-                            Returned: {formatDate(rental.actualReturnDate)}
+                        {car ? (
+                          <div>
+                            <div className="text-sm font-medium">{car.brand} {car.model}</div>
+                            <div className="text-xs text-gray-500">
+                              {car.license_plate}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {car.type.charAt(0).toUpperCase() + car.type.slice(1)} • {car.color}
+                            </div>
                           </div>
+                        ) : (
+                          <div className="text-sm text-gray-500">Unknown vehicle</div>
                         )}
                       </td>
                       
-                      {/* Price */}
+                      {/* Dates Column */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-xs flex">
+                            <span className="text-xs font-medium text-gray-900 w-12">From:</span>
+                            <span>{formatDate(rental.startDate)}</span>
+                          </div>
+                          <div className="text-xs flex">
+                            <span className="text-xs font-medium text-gray-900 w-12">Until:</span>
+                            <span>{formatDate(rental.returnDate)}</span>
+                          </div>
+                          {rental.actualReturnDate && (
+                            <div className="text-xs flex">
+                              <span className="text-xs font-medium text-gray-900 w-12">Actual:</span>
+                              <span>{formatDate(rental.actualReturnDate)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      
+                      {/* Price Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {formatCurrency(rental.price)}
                         </div>
-                        {rental.additionalCharges && rental.additionalCharges > 0 && (
-                          <div className="text-xs text-red-500">
-                            +{formatCurrency(rental.additionalCharges)}
-                          </div>
-                        )}
+                        {rental.additionalCharges != null && rental.additionalCharges > 0 ? (
+                      <div className="text-xs text-red-500">
+                        {formatCurrency(rental.additionalCharges)} (extra)
+                      </div>
+                    ) : null}
                       </td>
                       
-                      {/* Status */}
+                      {/* Status Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span 
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClasses(rental.status)}`}
@@ -633,38 +616,59 @@ export default function ProviderRentalManagement({
                         </span>
                       </td>
                       
-                      {/* Actions */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                        <div className="flex items-center justify-center space-x-3">
-                          {/* View Details */}
-                          <Link 
-                            href={`/provider/rentals/${rental._id}`}
-                            className="text-[#8A7D55] hover:text-[#645c40]"
+                      {/* Actions Column */}
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex justify-center space-x-2">
+                          {/* View Button */}
+                          <button
+                            onClick={() => executeAction('view', rental)}
+                            className="p-1 text-gray-500 hover:text-gray-700"
+                            title="View details"
                           >
-                            Details
-                          </Link>
+                            <Eye className="h-5 w-5" />
+                          </button>
                           
-                          {/* Confirm Button (only for pending rentals) */}
-                          {rental.status === 'pending' && (
-                            <button
-                              onClick={() => updateRentalStatus(rental._id, 'active')}
-                              className="text-blue-600 hover:text-blue-800"
-                              disabled={isLoading}
-                            >
-                              Confirm
-                            </button>
-                          )}
+                          {/* Check/Confirm Button */}
+                          <button
+                            onClick={() => {
+                              if (rental.status === 'pending') {
+                                executeAction('confirm', rental);
+                              } else if (rental.status === 'active') {
+                                executeAction('complete', rental);
+                              }
+                            }}
+                            disabled={!['pending', 'active'].includes(rental.status)}
+                            className={`p-1 ${
+                              ['pending', 'active'].includes(rental.status) 
+                                ? 'text-green-500 hover:text-green-700' 
+                                : 'text-gray-300 cursor-not-allowed'
+                            }`}
+                            title={rental.status === 'pending' ? 'Confirm reservation' : 'Complete reservation'}
+                          >
+                            <Check className="h-5 w-5" />
+                          </button>
                           
-                          {/* Complete Button (only for active rentals) */}
-                          {rental.status === 'active' && (
-                            <button
-                              onClick={() => updateRentalStatus(rental._id, 'completed')}
-                              className="text-green-600 hover:text-green-800"
-                              disabled={isLoading}
-                            >
-                              Complete
-                            </button>
-                          )}
+                          {/* Edit Button */}
+                          <button
+                            onClick={() => executeAction('edit', rental)}
+                            className="p-1 text-blue-500 hover:text-blue-700"
+                            title="Edit reservation"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          
+                          {/* Delete/Cancel Button */}
+                          <button
+                            disabled={rental.status === 'completed' || rental.status === 'cancelled'}
+                            className={`p-1 ${
+                              rental.status === 'completed' || rental.status === 'cancelled'
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-red-500 hover:text-red-700'
+                            }`}
+                            title="Cancel reservation"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
