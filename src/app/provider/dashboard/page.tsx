@@ -84,10 +84,10 @@ export default function ProviderDashboardPage() {
       
       try {
         // Get provider ID safely from session
-        const providerId = session.user.id || session.user._id || 'provider_id';
+        const providerId = session.user.id || session.user._id || '';
         
-        // Fetch cars first
-        const carsResponse = await fetch(`${API_BASE_URL}/cars?providerId=${providerId}&limit=100`, {
+        // Fetch cars using provider_id query parameter
+        const carsResponse = await fetch(`${API_BASE_URL}/cars?provider_id=${providerId}&limit=100`, {
           headers: {
             'Authorization': `Bearer ${session.user.token}`,
             'Content-Type': 'application/json'
@@ -146,6 +146,7 @@ export default function ProviderDashboardPage() {
             monthlyRevenue: 0
           });
           setRecentRentals([]);
+          setIsLoading(false);
           return;
         }
         
@@ -479,3 +480,90 @@ export default function ProviderDashboardPage() {
                           </div>
                           <div className="text-xs text-gray-500">
                             {typeof rental.car === 'object' ? rental.car.license_plate : ''}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {typeof rental.user === 'object' ? rental.user.name : 'Unknown User'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">
+                            {formatDate(rental.startDate)} - {formatDate(rental.returnDate)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(rental.status)}`}>
+                            {rental.status.charAt(0).toUpperCase() + rental.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatCurrency(rental.price)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          
+          {/* Quick Actions */}
+          <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 className="text-xl font-medium mb-4">Quick Actions</h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link 
+                href="/provider/manageCars"
+                className="border border-[#8A7D55] rounded-lg p-4 flex items-center hover:bg-[#f8f5f0] transition-colors"
+              >
+                <div className="bg-[#f8f5f0] p-3 rounded-full mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8A7D55]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium">Add New Car</h3>
+                  <p className="text-sm text-gray-500">Expand your car fleet</p>
+                </div>
+              </Link>
+              
+              <Link 
+                href="/provider/manageRentals?status=pending"
+                className="border border-[#8A7D55] rounded-lg p-4 flex items-center hover:bg-[#f8f5f0] transition-colors"
+              >
+                <div className="bg-[#f8f5f0] p-3 rounded-full mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8A7D55]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium">Pending Rentals</h3>
+                  <p className="text-sm text-gray-500">Review {rentalStats.pending} rentals</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Need Help Section */}
+      <div className="mt-8 bg-[#f8f5f0] p-6 rounded-lg shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between">
+          <div>
+            <h2 className="text-xl font-medium mb-2">Need Help Managing Your Fleet?</h2>
+            <p className="text-gray-600">Contact our provider support team for assistance.</p>
+          </div>
+          <button 
+            onClick={() => window.location.href = 'mailto:support@cedtrentals.com'}
+            className="mt-4 sm:mt-0 px-6 py-3 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
+          >
+            Contact Support
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
