@@ -38,7 +38,7 @@ interface Pagination {
   prev?: { page: number; limit: number };
 }
 
-export default function CarManagement({ token }: { token: string }) {
+export default function CarManagement() {
   // State management
   const { data: session } = useSession();
   const [cars, setCars] = useState<Car[]>([]);
