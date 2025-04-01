@@ -86,63 +86,73 @@ export default function Banner() {
             onMouseEnter={handleBannerHover}
             onMouseLeave={handleBannerLeave}
         >
-            {/* Current image (fading out) */}
-            <div className={styles.imageContainer}>
-                <Image 
-                    src={currentImage}
-                    alt="luxury car"
-                    fill={true}
-                    style={{ objectFit: 'cover', objectPosition: 'center' }}
-                    priority
-                    quality={100}
-                    sizes="100vw"
-                    className={isTransitioning ? styles.fadeOut : ''}
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      console.log('Image failed to load, using fallback');
-                      const target = e.target as HTMLImageElement;
-                      if (target) target.src = '/img/cover.jpg';
-                    }}
-                />
-            </div>
-            
-            {/* Next image (fading in) */}
-            {isTransitioning && (
+            {/* Layer 1: Background Images with z-index management */}
+            <div className="relative w-full h-full">
+                {/* Current image (fading out) */}
                 <div className={styles.imageContainer}>
                     <Image 
-                        src={nextImage}
+                        src={currentImage}
                         alt="luxury car"
                         fill={true}
-                        style={{ objectFit: 'cover', objectPosition: 'center' }}
-                        quality={100}
+                        priority
+                        quality={90}
                         sizes="100vw"
-                        className={styles.fadeIn}
+                        style={{ 
+                            objectFit: 'cover', 
+                            objectPosition: 'center',
+                            zIndex: 1
+                        }}
+                        className={isTransitioning ? styles.fadeOut : ''}
                         onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          if (target) target.src = '/img/cover.jpg';
+                            // Fallback if image fails to load
+                            console.log('Image failed to load, using fallback');
+                            const target = e.target as HTMLImageElement;
+                            if (target) target.src = '/img/cover.jpg';
                         }}
                     />
                 </div>
-            )}
-            
-            {/* Banner Search Bar */}
+                
+                {/* Next image (fading in) */}
+                {isTransitioning && (
+                    <div className={styles.imageContainer}>
+                        <Image 
+                            src={nextImage}
+                            alt="luxury car"
+                            fill={true}
+                            quality={90}
+                            sizes="100vw"
+                            style={{ 
+                                objectFit: 'cover', 
+                                objectPosition: 'center',
+                                zIndex: 2
+                            }}
+                            className={styles.fadeIn}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target) target.src = '/img/cover.jpg';
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+            {/* Direct render of BannerSearch component without wrapping div */}
             <BannerSearch />
-            
-            <div className={`${styles.bannerText} bg-black bg-opacity-40 p-6 rounded-lg z-30`}>
+            {/* Layer 2: Banner text with higher z-index */}
+            <div className={`${styles.bannerText} bg-black bg-opacity-40 p-6 rounded-lg`} style={{ zIndex: 20 }}>
                 <h1 className='text-4xl font-medium text-white'>Timeless Elegance on Wheels</h1>
                 <h3 className='text-xl font-serif text-white mt-2'>Distinguished Automobiles for Discerning Clients</h3>
             </div>
             
-            {/* Pagination Indicators */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
+
+            
+            {/* Pagination Indicators with higher z-index than images */}
+            <div className={styles.paginationContainer}>
                 {covers.map((_, i) => (
                     <button
                         key={i}
                         onClick={() => goToSlide(i)}
                         aria-label={`Go to slide ${i+1}`}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                            i === index ? 'bg-white scale-110' : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-                        }`}
+                        className={`${styles.paginationDot} ${i === index ? styles.activeDot : ''}`}
                     />
                 ))}
             </div>

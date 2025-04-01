@@ -42,12 +42,13 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 20;
   text-align: center;
   max-width: 80%;
   width: auto;
   padding: 2rem 3rem !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 20;
+  margin-top: -4rem; /* Move up to avoid overlap with search */
 }
 
 /* Pagination indicators styling */
@@ -68,6 +69,9 @@
   background-color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.3s ease;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
 .paginationDot:hover {
@@ -79,13 +83,44 @@
   transform: scale(1.2);
 }
 
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .banner {
-    height: 50vh;
+    height: 60vh; /* Slightly taller on mobile */
   }
   
   .bannerText {
     width: 90%;
     padding: 1.5rem !important;
+    font-size: 0.9rem;
+    margin-top: -6rem; /* Move up more on mobile to avoid search bar overlap */
+  }
+  
+  .bannerText h1 {
+    font-size: 1.8rem !important;
+  }
+  
+  .bannerText h3 {
+    font-size: 1.2rem !important;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .banner {
+    height: 70vh; /* Even taller on very small screens */
+  }
+  
+  .bannerText {
+    margin-top: -10rem; /* Move up even more on smaller screens */
+    padding: 1rem !important;
+  }
+  
+  .bannerText h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .bannerText h3 {
+    font-size: 1rem !important;
   }
 }
