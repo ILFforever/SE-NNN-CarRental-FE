@@ -2,9 +2,10 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: min(960px, 92%); /* Responsive width with max and min constraints */
+  width: 960px;
+  max-width: 92%;
   z-index: 40;
-  bottom: 10%; /* Position from bottom rather than top for more consistent layout */
+  top: 100px; /* Move it even higher up on the banner */
 }
 
 .searchBar {
