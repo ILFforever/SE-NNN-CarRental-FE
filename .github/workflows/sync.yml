@@ -1,0 +1,22 @@
+name: Sync to Secondary Repository
+
+on:
+  push:
+    branches: [ main ]  # Adjust this to match your branch names
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Get all history for proper syncing
+          
+      - name: Push to second repository
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.SYNC_PAT }}
+          repository: 2110503-2564/se-project-21_nnn-community
+          branch: main
+          force: true
