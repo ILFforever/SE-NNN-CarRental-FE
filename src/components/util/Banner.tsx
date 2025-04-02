@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-import BannerSearch from './BannerSearch';
+import BannerSearch from '@/components/util/BannerSearch'
 
 export default function Banner() {
     const router = useRouter();
