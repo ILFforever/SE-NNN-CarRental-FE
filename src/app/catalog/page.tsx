@@ -7,6 +7,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import {API_BASE_URL} from "@/config/apiConfig"
 import Image from 'next/image';
 import Link from 'next/link';
+import FavoriteHeartButton from '@/components/FavoriteHeartButton';
+
 
 // Type definitions
 interface Provider {
@@ -986,6 +988,11 @@ useEffect(() => {
           {availableCars.map((car) => (
             <div key={car.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
               <div className="relative h-48">
+              <FavoriteHeartButton 
+                carId={car.id} 
+                className="top-2 right-2" 
+              />
+
                 <Image 
                   src={car.image || '/img/banner.jpg'} 
                   alt={`${car.brand} ${car.model}`} 
