@@ -25,10 +25,10 @@ export default async function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ReduxProvider>
-        <NextAuthProvider session={nextAuthSession}>
-          <TopMenu/>
-          {children}
-        </NextAuthProvider>
+          <NextAuthProvider session={nextAuthSession}>
+            <TopMenu />
+            {children}
+          </NextAuthProvider>
         </ReduxProvider>
       </body>
     </html>

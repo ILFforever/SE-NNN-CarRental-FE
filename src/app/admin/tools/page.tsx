@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 export default async function AdminToolsPage() {
   const session = await getServerSession(authOptions);
+  console.log(session?.user.userType)
 
   // Redirect if not logged in or not an admin
   if (!session || session.user.role !== "admin") {
