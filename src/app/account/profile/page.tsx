@@ -4,7 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import getUserProfile from '@/libs/getUserProfile';
-import TierBadge from '@/components/TierBadge';
+import TierBadge from '@/components/util/TierBadge';
 
 export const metadata: Metadata = {
   title: 'My Profile | CEDT Rentals',

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import ClientSignOutConfirmation from '@/components/ClientSignOutConfirmation';
+import ClientSignOutConfirmation from '@/components/user/ClientSignOutConfirmation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';

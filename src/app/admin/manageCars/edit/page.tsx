@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import CarEditForm from '@/components/CarEditForm';
+import CarEditForm from '@/components/util/CarEditForm';
 
 export default function AdminEditCarPage() {
   const searchParams = useSearchParams();

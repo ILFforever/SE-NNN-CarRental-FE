@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import {API_BASE_URL} from "@/config/apiConfig"
 import Image from 'next/image';
 import Link from 'next/link';
-import FavoriteHeartButton from '@/components/FavoriteHeartButton';
+import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
 
 
 // Type definitions

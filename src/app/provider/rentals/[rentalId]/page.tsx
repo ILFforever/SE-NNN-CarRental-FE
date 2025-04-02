@@ -1,7 +1,7 @@
 // src/app/provider/rentals/[rentalId]/page.tsx
 
 import { Metadata } from 'next';
-import ProviderRentalDetailsPage from '@/components/ProviderRentalDetailsPage';
+import ProviderRentalDetailsPage from '@/components/provider/ProviderRentalDetailsPage';
 
 export const metadata: Metadata = {
   title: 'Rental Details | Provider Dashboard',

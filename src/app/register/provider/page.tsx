@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import RegisterProviderForm from '@/components/RegisterProviderForm';
+import RegisterProviderForm from '@/components/provider/RegisterProviderForm';
 
 export const metadata: Metadata = {
   title: 'Register as Car Provider | CEDT Rentals',

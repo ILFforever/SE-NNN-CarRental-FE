@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import LoginForm from '@/components/LoginForm';
+import LoginForm from '@/components/user/LoginForm';
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';

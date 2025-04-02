@@ -5,7 +5,7 @@ import { API_BASE_URL } from '@/config/apiConfig';
 import { User, ApiResponse } from '@/types/dataTypes';
 import { useSession } from 'next-auth/react';
 import { getTierName, getTierColorClass } from '@/utils/tierUtils';
-import TierBadge from '@/components/TierBadge';
+import TierBadge from '@/components/util/TierBadge';
 
 interface UserManagementProps {
   token: string;
