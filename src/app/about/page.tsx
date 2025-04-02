@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-
+//test psuh repo
 export const metadata: Metadata = {
   title: 'About | CEDT Rentals',
   description: 'Experience timeless elegance and exceptional service with CEDT Rentals',
