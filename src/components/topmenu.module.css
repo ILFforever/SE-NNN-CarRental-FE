@@ -1,126 +1,94 @@
 .menucontainer {
-  height: 60px;
-  background-color: white;
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  right: 0px;
-  z-index: 30;
-  border-top: 1px solid #e6e1d8;
-  border-bottom: 1px solid #e6e1d8;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  @apply h-[60px] bg-white fixed top-0 left-0 right-0 z-[1000] border-t border-b border-[#e6e1d8] flex flex-row justify-between items-center px-5;
 }
 
 .leftSide {
-  display: flex;
-  align-items: center;
+  @apply hidden md:flex items-center;
+
 }
 
 .rightSide {
-  display: flex;
-  align-items: center;
-  gap: 30px;
+  @apply flex items-center gap-7;
 }
 
 .logoimg {
-  height: auto;
-  width: auto;
-  transition: opacity 0.3s ease;
+  @apply h-auto w-auto transition-opacity duration-300 ease-linear;
 }
 
 .logoimg:hover {
-  opacity: 0.85;
+  @apply opacity-85;
 }
 
 .logowrapper {
-  border: 2px solid #8A7D55; /* Elegant border color that matches your theme */
-  border-radius: 6px; /* Smaller rounded corners */
-  padding: 2px; /* Reduced space between logo and border */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: white; /* Optional background */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  transition: all 0.3s ease; /* Smooth transition */
-}
-
-.logowrapper:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  border-color: #a59572; /* Slightly lighter on hover */
+  @apply border-2 border-[#8A7D55] rounded-lg p-2 flex items-center justify-center bg-white shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-[#a59572];
 }
 
 .menuItem {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 11pt;
-  color: #5a5a5a;
-  text-decoration: none;
-  padding: 5px 0;
-  margin: 0 12px;
-  position: relative;
-  transition: color 0.3s ease;
+  @apply font-sans font-medium text-[#5a5a5a] text-[11pt] no-underline text-lg py-1 mx-3 relative transition-colors duration-300 ease-in-out hover:text-[#8A7D55];
 }
 
-.menuItem:hover {
-  color: #8A7D55;
-}
 
 .menuItem:after {
   content: '';
-  position: absolute;
-  width: 0;
-  height: 1px;
-  bottom: 0;
-  left: 0;
-  background-color: #8A7D55;
-  transition: width 0.3s ease;
+  @apply absolute w-0 h-[1px] bottom-0 left-0 bg-[#8A7D55] transition-all duration-300 ease-in-out;
 }
 
 .menuItem:hover:after {
-  width: 100%;
+  @apply w-full;
 }
 
 /* Username style */
 .username {
-  font-size: 11pt;
-  color: #8A7D55;
-  font-weight: 500;
-  margin: 0 12px;
-  padding: 5px 0;
-  font-style: italic;
+  @apply text-lg font-sans font-medium mx-3 py-1 italic;
 }
 
 /* Admin tools link */
 .menuItem.adminTools {
-  color: #ff0000;
-  font-weight: 600;
-  position: relative;
+  @apply font-semibold text-[#ff0000] relative;
 }
 
 .menuItem.adminTools:after {
-  background-color: #ff0000;
+  @apply bg-[#ff0000];
 }
 
 /* Provider tools link */
 .menuItem.providerTools {
-  color: #0000ff;
-  font-weight: 600;
-  position: relative;
+  @apply font-medium text-[#0000ff] relative;
 }
 
 .menuItem.providerTools:after {
-  background-color: #0000ff;
+  @apply bg-[#0000ff];
 }
 
 .username {
-  color: #000; /* Default color */
+  @apply text-[#000];
 }
 
 .provider {
-  color: #1e90ff; /* Different color for providers */
+  @apply text-[#1e90ff];
+}
+
+.mobileMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  z-index: 999;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.mobileMenu.open {
+  transform: translateY(0);
+}
+
+.mobileMenuContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
 }
