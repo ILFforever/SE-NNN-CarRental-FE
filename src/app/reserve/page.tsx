@@ -15,6 +15,7 @@ import Image from "next/image";
 import getUserProfile from "@/libs/getUserProfile";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
+import FavoriteHeartButton from '@/components/FavoriteHeartButton';
 
 // Define the Car interface based on your API response
 interface Car {
@@ -379,6 +380,10 @@ export default function Booking() {
                 <h2 className="text-2xl font-serif font-medium mb-6">Vehicle Details</h2>
                 <div className="bg-white shadow-md rounded-lg overflow-hidden">
                   <div className="relative h-64">
+                  <FavoriteHeartButton 
+                    carId={car._id || car._id} 
+                    className="top-4 right-4 scale-125" 
+                  />
                     <Image 
                       src="/img/banner.jpg" 
                       alt={`${car.brand} ${car.model}`} 
