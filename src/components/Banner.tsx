@@ -94,14 +94,14 @@ export default function Banner() {
                     fill={true}
                     style={{ objectFit: 'cover', objectPosition: 'center' }}
                     priority
-                    quality={100}
+                    quality={90}
                     sizes="100vw"
                     className={isTransitioning ? styles.fadeOut : ''}
                     onError={(e) => {
-                      // Fallback if image fails to load
-                      console.log('Image failed to load, using fallback');
-                      const target = e.target as HTMLImageElement;
-                      if (target) target.src = '/img/cover.jpg';
+                        // Fallback if image fails to load
+                        console.log('Image failed to load, using fallback');
+                        const target = e.target as HTMLImageElement;
+                        if (target) target.src = '/img/cover.jpg';
                     }}
                 />
             </div>
@@ -114,35 +114,34 @@ export default function Banner() {
                         alt="luxury car"
                         fill={true}
                         style={{ objectFit: 'cover', objectPosition: 'center' }}
-                        quality={100}
+                        quality={90}
                         sizes="100vw"
                         className={styles.fadeIn}
                         onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          if (target) target.src = '/img/cover.jpg';
+                            const target = e.target as HTMLImageElement;
+                            if (target) target.src = '/img/cover.jpg';
                         }}
                     />
                 </div>
             )}
             
-            {/* Banner Search Bar */}
+            {/* Search bar - positioned higher up */}
             <BannerSearch />
             
-            <div className={`${styles.bannerText} bg-black bg-opacity-40 p-6 rounded-lg z-30`}>
+            {/* Banner text - positioned lower */}
+            <div className={`${styles.bannerText} bg-black bg-opacity-40 p-6 rounded-lg z-20`}>
                 <h1 className='text-4xl font-medium text-white'>Timeless Elegance on Wheels</h1>
                 <h3 className='text-xl font-serif text-white mt-2'>Distinguished Automobiles for Discerning Clients</h3>
             </div>
             
             {/* Pagination Indicators */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
+            <div className={styles.paginationContainer}>
                 {covers.map((_, i) => (
                     <button
                         key={i}
                         onClick={() => goToSlide(i)}
                         aria-label={`Go to slide ${i+1}`}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                            i === index ? 'bg-white scale-110' : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-                        }`}
+                        className={`${styles.paginationDot} ${i === index ? styles.activeDot : ''}`}
                     />
                 ))}
             </div>

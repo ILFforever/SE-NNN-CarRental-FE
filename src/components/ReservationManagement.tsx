@@ -774,15 +774,15 @@ export default function ReservationManagement({ token }: ReservationManagementPr
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       <div className="flex items-center">
-                        <span className="text-xs font-medium text-gray-500 w-12">From:</span>
+                        <span className="text-xs flex">From:</span>
                         <span>{formatDate(reservation.startDate).split(',')[0]+formatDate(reservation.startDate).split(',')[1]}</span>
                       </div>
                       <div className="flex items-center">
-                        <span className="text-xs font-medium text-gray-500 w-12">Until:</span>
+                        <span className="text-xs flex">Until:</span>
                         <span>{formatDate(reservation.returnDate).split(',')[0]+formatDate(reservation.returnDate).split(',')[1]}</span>
                       </div>
                       {reservation.actualReturnDate && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="text-xs flex">
                           <span className="text-xs font-medium text-gray-500 w-12">Actual:</span>
                           <span>{formatDate(reservation.actualReturnDate).split(',')[0]+formatDate(reservation.actualReturnDate).split(',')[1]}</span>
                         </div>
