@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/config/apiConfig';
-
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 interface Car {
   _id: string;
   brand: string;
@@ -23,6 +23,7 @@ interface Rent {
 }
 
 export default function MyReservationsPage() {
+  useScrollToTop();
   const { data: session } = useSession();
   const [reservations, setReservations] = useState<Rent[]>([]);
   const [loading, setLoading] = useState(true);

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/config/apiConfig';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 interface ProviderProfile {
   _id: string;
@@ -16,6 +17,7 @@ interface ProviderProfile {
 }
 
 export default function ProviderProfilePage() {
+  useScrollToTop();
   const router = useRouter();
   const { data: session, status } = useSession();
   

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
 import { ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 // Type definitions
 interface Car {
@@ -39,6 +40,7 @@ interface Pagination {
 }
 
 export default function CarManagement() {
+  useScrollToTop();
   // State management
   const { data: session } = useSession();
   const [cars, setCars] = useState<Car[]>([]);

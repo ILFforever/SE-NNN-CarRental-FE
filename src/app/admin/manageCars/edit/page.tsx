@@ -7,8 +7,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import CarEditForm from '@/components/util/CarEditForm';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
+
 
 export default function AdminEditCarPage() {
+  useScrollToTop();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const router = useRouter();

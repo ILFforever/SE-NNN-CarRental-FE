@@ -16,6 +16,7 @@ import getUserProfile from "@/libs/getUserProfile";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
 import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 // Define the Car interface based on your API response
 interface Car {
@@ -41,6 +42,7 @@ interface Rent {
 }
 
 export default function Booking() {
+  useScrollToTop();
     const router = useRouter();
     const { data: session } = useSession();
     const searchParams = useSearchParams();

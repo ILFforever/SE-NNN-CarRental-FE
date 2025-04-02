@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 interface Car {
   id: string;
@@ -25,6 +26,7 @@ interface Car {
 }
 
 export default function FavoriteCars() {
+  useScrollToTop();
   const [favoriteCars, setFavoriteCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

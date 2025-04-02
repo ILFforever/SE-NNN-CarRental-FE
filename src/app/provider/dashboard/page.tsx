@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/config/apiConfig';
 import Link from 'next/link';
+import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 interface CarStats {
   total: number;
@@ -43,6 +44,7 @@ interface RecentRental {
 }
 
 export default function ProviderDashboardPage() {
+  useScrollToTop();
   const router = useRouter();
   const { data: session, status } = useSession();
   
