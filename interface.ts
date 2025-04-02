@@ -60,3 +60,10 @@ interface VenueItem {
     pickupTime: string;
     returnTime: string;
   }
+
+  interface Service {
+    _id: string;
+    name: string;
+    description: string;
+    rate: number;
+  }

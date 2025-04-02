@@ -19,10 +19,9 @@ export const RESERVATION_ENDPOINTS = {
   DELETE: (id: string) => `${API_BASE_URL}/bookings/${id}`,
 };
 
-// Venue/vehicle endpoints
-export const VENUE_ENDPOINTS = {
-  GET_ALL: `${API_BASE_URL}/venues`,
-  GET_BY_ID: (id: string) => `${API_BASE_URL}/venues/${id}`,
+// services/vehicle endpoints
+export const SERVICES_ENDPOINTS = {
+  GET_ALL: `${API_BASE_URL}/services`,
 };
 
 // Helper function to create authentication header
