@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
-import CarProvider from '@/components/CarProviderManagement';
+import CarProvider from '@/components/admin/CarProviderManagement';
 
 export const metadata: Metadata = {
   title: 'Manage Car Providers | CEDT Rentals',

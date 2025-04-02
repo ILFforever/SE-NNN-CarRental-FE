@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
-import ReservationManagement  from '@/components/ReservationManagement';
+import ReservationManagement  from '@/components/admin/ReservationManagement';
 
 export const metadata: Metadata = {
   title: 'Manage Reservasions | CEDT Rentals',

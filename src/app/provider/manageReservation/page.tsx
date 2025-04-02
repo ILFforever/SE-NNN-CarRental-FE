@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import ProviderRentalManagement from '@/components/ProvidermanageReservation';
+import ProviderRentalManagement from '@/components/provider/ProvidermanageReservation';
 
 export const metadata: Metadata = {
   title: 'Manage Rentals | CEDT Rentals',

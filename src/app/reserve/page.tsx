@@ -15,7 +15,7 @@ import Image from "next/image";
 import getUserProfile from "@/libs/getUserProfile";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
-import FavoriteHeartButton from '@/components/FavoriteHeartButton';
+import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
 
 // Define the Car interface based on your API response
 interface Car {
