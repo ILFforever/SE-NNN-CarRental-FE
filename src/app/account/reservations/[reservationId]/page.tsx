@@ -507,6 +507,7 @@ export default function ReservationDetailsPage({
         </div>
 
         {/* Action Buttons for Pending Reservation or Admin */}
+        
         {(reservation.status === 'pending' || session?.user?.role === 'admin') && (
           <div className="mt-8 flex justify-center space-x-4">
             <button 

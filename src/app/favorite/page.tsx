@@ -115,7 +115,8 @@ export default function FavoriteCars() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.user?.token}`
         },
-        body: JSON.stringify({ carId })
+        body: JSON.stringify({ carId },)
+
       });
 
       if (!response.ok) {
