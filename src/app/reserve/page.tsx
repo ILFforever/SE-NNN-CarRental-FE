@@ -67,6 +67,7 @@ export default function Booking() {
 
     const [nameLastname, setNameLastname] = useState<string>('');
     const [tel, setTel] = useState<string>('');
+    const [userTier, setUserTier] = useState<number>(0);
     const [pickupDate, setPickupDate] = useState<Dayjs | null>(null);
     const [returnDate, setReturnDate] = useState<Dayjs | null>(null);
     const [pickupTime, setPickupTime] = useState<string>('10:00 AM');
@@ -282,6 +283,7 @@ export default function Booking() {
                     // Prefill form with user data
                     setNameLastname(userProfileResponse.data.name);
                     setTel(userProfileResponse.data.telephone_number || '');
+                    setUserTier(userProfileResponse.data.tier);
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -316,10 +318,18 @@ export default function Booking() {
         return Math.max(1, days); // Ensure minimum 1 day
     };
 
+    // Tier discount
+    const getTierDiscount = (tier: number) => {
+      const tierDiscount = [0, 5, 10, 15, 20];
+      return tierDiscount[tier];
+    };
+
     const getTotalCost = () => {
         const days = getRentalPeriod();
         const dailyRate = car?.dailyRate || 0;
-        return days * dailyRate;
+        const total=days * dailyRate;
+        const tierDiscount=total*(getTierDiscount(userTier)/100);
+        return total-tierDiscount;
     };
 
     // Tier name mapping
@@ -609,6 +619,14 @@ export default function Booking() {
                     <span className="text-gray-600">Number of Days:</span>
                     <span>{getRentalPeriod()}</span>
                   </div>
+                  {
+                    userTier>0? (
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-gray-600">Discount:</span>
+                        <span>{getTierDiscount(userTier)}%</span>
+                      </div>
+                    ):null
+                  }
                   <div className="flex justify-between items-center mt-4 text-lg font-medium">
                     <span>Total Cost:</span>
                     <span className="text-[#8A7D55]">{formatCurrency(getTotalCost())}</span>
