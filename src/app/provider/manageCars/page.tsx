@@ -722,7 +722,7 @@ export default function CarManagement() {
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]"
                 >
                   Status
                 </th>
