@@ -324,7 +324,6 @@ export default function CarProvider({ token }: CarProviderProps) {
 
       setCarProviders(updatedProviders);
       setFilteredProviders(updatedProviders);
-
     } catch (error) {
       console.error("Error toggling verified status:", error);
       alert("Failed to update provider status");
