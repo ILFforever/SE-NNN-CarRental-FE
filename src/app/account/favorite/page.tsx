@@ -7,6 +7,7 @@ import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
+import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
 
 interface Car {
   id: string;
@@ -172,6 +173,7 @@ export default function FavoriteCars() {
           {favoriteCars.map(car => (
             <div key={car.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
               <div className="relative h-48">
+                <FavoriteHeartButton carId={car.id} className="top-2 right-2" />
                 <Image 
                   src={car.image || '/img/banner.jpg'} 
                   alt={`${car.brand} ${car.model}`} 
@@ -225,13 +227,13 @@ export default function FavoriteCars() {
                     </button>
                   </Link>
                   
-                  <button 
+                  {/* <button 
                     onClick={() => removeFavorite(car.id)}
                     className="py-2.5 px-3 border border-red-300 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors duration-200"
                     title="Remove from favorites"
                   >
                     ✕
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
