@@ -375,7 +375,7 @@ export default function Booking() {
     // Tier discount
     const getTierDiscount = (tier: number) => {
       const tierDiscount = [0, 5, 10, 15, 20];
-      return tierDiscount[tier];
+      return tierDiscount[tier]||0;
     };
 
     const getTotalCost = () => {
@@ -385,10 +385,6 @@ export default function Booking() {
         const tierDiscount=total*(getTierDiscount(userTier)/100);
         return total-tierDiscount;
     };
-    
-    useEffect(() => {
-        setPrice(getTotalCost());
-    }, [pickupDate, returnDate, car?.dailyRate, userTier]);
 
   // Tier name mapping
   const getTierName = (tier: number) => {
