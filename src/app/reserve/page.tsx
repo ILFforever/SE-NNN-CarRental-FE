@@ -68,6 +68,7 @@ export default function Booking() {
     const [nameLastname, setNameLastname] = useState<string>('');
     const [tel, setTel] = useState<string>('');
     const [userTier, setUserTier] = useState<number>(0);
+    const [price, setPrice] = useState<number>(0);
     const [pickupDate, setPickupDate] = useState<Dayjs | null>(null);
     const [returnDate, setReturnDate] = useState<Dayjs | null>(null);
     const [pickupTime, setPickupTime] = useState<string>('10:00 AM');
@@ -197,6 +198,7 @@ export default function Booking() {
                         startDate: formattedStartDate,
                         returnDate: formattedReturnDate,
                         car: car._id,
+                        price:price
                     })
                 });
 
@@ -329,6 +331,7 @@ export default function Booking() {
         const dailyRate = car?.dailyRate || 0;
         const total=days * dailyRate;
         const tierDiscount=total*(getTierDiscount(userTier)/100);
+        setPrice(total-tierDiscount);
         return total-tierDiscount;
     };
 
