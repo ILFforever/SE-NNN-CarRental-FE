@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { API_BASE_URL } from '@/config/apiConfig';
@@ -8,6 +8,38 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
+import { CheckCircle } from 'lucide-react';
+
+// Define types for API responses
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
+interface UserData {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  favorite_cars: string[];
+  telephone_number?: string;
+  tier?: number;
+  total_spend?: number;
+}
+
+interface Provider {
+  _id: string;
+  name: string;
+  address?: string;
+  email: string;
+  telephone_number?: string;
+  verified?: boolean;
+}
+
+interface ProvidersMap {
+  [key: string]: Provider;
+}
 
 interface Car {
   id: string;
@@ -21,15 +53,23 @@ interface Car {
   color?: string;
   seats?: number;
   provider: string;
+  provider_id?: string;
   image?: string;
   tier?: number;
   available?: boolean;
+  verified?: boolean;
+  license_plate?: string;
 }
 
-export default function FavoriteCars() {
+interface FavoriteAction {
+  carID: string;
+  userId?: string;
+}
+
+export default function FavoriteCars(): React.ReactNode {
   useScrollToTop();
   const [favoriteCars, setFavoriteCars] = useState<Car[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -44,15 +84,15 @@ export default function FavoriteCars() {
     if (status === 'authenticated' && session?.user?.token) {
       fetchFavorites();
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
-  async function fetchFavorites() {
+  async function fetchFavorites(): Promise<void> {
     setLoading(true);
     setError(null);
 
     try {
       // Set up headers with auth token
-      const headers = {
+      const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session?.user?.token}`
       };
@@ -63,7 +103,7 @@ export default function FavoriteCars() {
         throw new Error('Failed to fetch user data');
       }
       
-      const userData = await userRes.json();
+      const userData: ApiResponse<UserData> = await userRes.json();
       
       if (!userData.success || !userData.data.favorite_cars) {
         setFavoriteCars([]);
@@ -71,7 +111,7 @@ export default function FavoriteCars() {
         return;
       }
 
-      const favoriteCarIds = userData.data.favorite_cars;
+      const favoriteCarIds: string[] = userData.data.favorite_cars;
       
       if (favoriteCarIds.length === 0) {
         setFavoriteCars([]);
@@ -85,41 +125,67 @@ export default function FavoriteCars() {
         throw new Error('Failed to fetch cars data');
       }
       
-      const carsData = await carsRes.json();
+      const carsData: ApiResponse<Car[]> = await carsRes.json();
       
       if (!carsData.success) {
         throw new Error('Invalid car data format received');
       }
 
+      // Also fetch providers to check for verified status
+      const providersRes = await fetch(`${API_BASE_URL}/Car_Provider`, { headers });
+      let providersMap: ProvidersMap = {};
+      
+      if (providersRes.ok) {
+        const providersData: ApiResponse<Provider[]> = await providersRes.json();
+        if (providersData.success && Array.isArray(providersData.data)) {
+          providersMap = providersData.data.reduce<ProvidersMap>((map, provider) => {
+            map[provider._id] = provider;
+            return map;
+          }, {});
+        }
+      }
+
       // Filter cars based on favorite IDs
-      const favorites = carsData.data.filter((car: Car) => 
-        favoriteCarIds.includes(car._id || car.id)
-      ).map((car: Car) => ({
-        ...car,
-        id: car._id || car.id,
-        price: car.dailyRate || car.price || 0
-      }));
+      const favorites: Car[] = carsData.data
+        .filter((car: Car) => favoriteCarIds.includes(car._id || car.id))
+        .map((car: Car) => {
+          // Get provider verified status if available
+          const provider = car.provider_id && providersMap[car.provider_id] 
+            ? providersMap[car.provider_id] 
+            : null;
+            
+          return {
+            ...car,
+            id: car._id || car.id,
+            price: car.dailyRate || car.price || 0,
+            verified: provider ? provider.verified : false
+          };
+        });
 
       setFavoriteCars(favorites);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching favorites:', err);
-      setError(err.message || 'Failed to load favorite cars');
+      setError(err instanceof Error ? err.message : 'Failed to load favorite cars');
     } finally {
       setLoading(false);
     }
   }
 
   // Function to remove a car from favorites
-  async function removeFavorite(carId: string) {
+  async function removeFavorite(carId: string): Promise<void> {
     try {
+      const payload: FavoriteAction = {
+        carID: carId,
+        userId: session?.user?.id
+      };
+
       const response = await fetch(`${API_BASE_URL}/auth/favorite`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.user?.token}`
         },
-        body: JSON.stringify({ carId },)
-
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -128,9 +194,9 @@ export default function FavoriteCars() {
 
       // Update the UI by removing the car from the state
       setFavoriteCars(prev => prev.filter(car => car.id !== carId));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error removing favorite:', err);
-      setError(err.message || 'Failed to remove from favorites');
+      setError(err instanceof Error ? err.message : 'Failed to remove from favorites');
     }
   }
 
@@ -188,6 +254,14 @@ export default function FavoriteCars() {
                     <h2 className="text-lg font-bold">{car.brand} {car.model}</h2>
                     <p className="text-sm text-gray-600 -mt-1">
                       {car.year} • <span className="font-medium text-[#8A7D55]">{car.provider}</span>
+                      {car.verified && (
+                        <div className="mb-[-3px] ml-2 relative group inline-block">
+                          <CheckCircle className="text-green-500 w-4 h-4" />
+                          <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
+                            Verified
+                          </span>
+                        </div>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
@@ -234,7 +308,6 @@ export default function FavoriteCars() {
                   >
                     ✕
                   </button> */}
-                  {/* not use leaw */}
                 </div>
               </div>
             </div>
