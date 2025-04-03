@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -10,60 +10,83 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useSession } from "next-auth/react";
-import styles from '@/components/banner-search.module.css';
+import styles from "@/components/banner-search.module.css";
 import Image from "next/image";
 import getUserProfile from "@/libs/getUserProfile";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
-import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
-import { useScrollToTop } from '@/hooks/useScrollToTop';
+import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { CheckCircle } from "lucide-react";
 
 // Define the Car interface based on your API response
 interface Car {
-    _id: string;
-    brand: string;
-    model: string;
-    type: string;
-    color?: string;
-    license_plate?: string;
-    dailyRate?: number;
-    tier?: number;
-    provider_id?: string;
-    manufactureDate?: string;
-    available?: boolean;
-    rents?: Rent[];
+  _id: string;
+  brand: string;
+  model: string;
+  type: string;
+  color?: string;
+  license_plate?: string;
+  dailyRate?: number;
+  tier?: number;
+  provider_id?: string;
+  manufactureDate?: string;
+  available?: boolean;
+  rents?: Rent[];
 }
 
 interface Rent {
-    _id: string;
-    startDate: string;
-    returnDate: string;
-    status: 'pending' | 'active' | 'completed' | 'cancelled';
+  _id: string;
+  startDate: string;
+  returnDate: string;
+  status: "pending" | "active" | "completed" | "cancelled";
 }
 
 export default function Booking() {
   useScrollToTop();
-    const router = useRouter();
-    const { data: session } = useSession();
-    const searchParams = useSearchParams();
-    const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const dispatch = useDispatch<AppDispatch>();
 
-    const timeOptions = [
-        '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', 
-        '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-        '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
-        '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM',
-        '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
-        '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM'
-    ];
+  const timeOptions = [
+    "8:00 AM",
+    "8:30 AM",
+    "9:00 AM",
+    "9:30 AM",
+    "10:00 AM",
+    "10:30 AM",
+    "11:00 AM",
+    "11:30 AM",
+    "12:00 PM",
+    "12:30 PM",
+    "1:00 PM",
+    "1:30 PM",
+    "2:00 PM",
+    "2:30 PM",
+    "3:00 PM",
+    "3:30 PM",
+    "4:00 PM",
+    "4:30 PM",
+    "5:00 PM",
+    "5:30 PM",
+    "6:00 PM",
+    "6:30 PM",
+    "7:00 PM",
+    "7:30 PM",
+  ];
 
-    const [car, setCar] = useState<Car | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [userData, setUserData] = useState<{
-        name: string;
-        telephone_number: string | undefined;
-    } | null>(null);
+  const [car, setCar] = useState<Car | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<{
+    name: string;
+    telephone_number: string | undefined;
+  } | null>(null);
+  const [provider, setProvider] = useState<{
+    name: string;
+    verified: boolean;
+  } | null>(null);
 
     const [nameLastname, setNameLastname] = useState<string>('');
     const [tel, setTel] = useState<string>('');
@@ -81,104 +104,109 @@ export default function Booking() {
     const [formValid, setFormValid] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    // Check form validity whenever relevant fields change
-    useEffect(() => {
-        const isValid = nameLastname.trim() !== '' && 
-                        tel.trim() !== '' && 
-                        pickupDate !== null && 
-                        returnDate !== null &&
-                        isAvailable;
-        setFormValid(isValid);
-    }, [nameLastname, tel, pickupDate, returnDate, isAvailable]);
+  // Check form validity whenever relevant fields change
+  useEffect(() => {
+    const isValid =
+      nameLastname.trim() !== "" &&
+      tel.trim() !== "" &&
+      pickupDate !== null &&
+      returnDate !== null &&
+      isAvailable;
+    setFormValid(isValid);
+  }, [nameLastname, tel, pickupDate, returnDate, isAvailable]);
 
-    // Function to check availability - memoized with useCallback
-    const checkCarAvailability = useCallback(async () => {
-        if (!car?._id || !pickupDate || !returnDate || !session?.user?.token) {
-            return; // Don't check if we don't have all the required data
+  // Function to check availability - memoized with useCallback
+  const checkCarAvailability = useCallback(async () => {
+    if (!car?._id || !pickupDate || !returnDate || !session?.user?.token) {
+      return; // Don't check if we don't have all the required data
+    }
+
+    // Prevent checking if pickup date is after return date
+    if (pickupDate.isAfter(returnDate)) {
+      setIsAvailable(false);
+      setAvailabilityMessage("Pickup date cannot be after return date");
+      return;
+    }
+
+    setIsCheckingAvailability(true);
+    setAvailabilityMessage("Checking availability...");
+
+    try {
+      // Fetch car details (including rents)
+      const response = await fetch(`${API_BASE_URL}/cars/${car._id}`, {
+        headers: { Authorization: `Bearer ${session.user.token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch car details");
+
+      const carData = await response.json();
+
+      // Check for availability based on the rents array
+      if (!carData.success || !carData.data) {
+        throw new Error("Invalid car data received");
+      }
+
+      const rents = carData.data.rents || [];
+
+      // Check for overlaps in the booking dates
+      const conflicts = rents.filter(
+        (rent: { startDate: string; returnDate: string; status: string }) => {
+          // Only check active and pending bookings
+          if (rent.status !== "active" && rent.status !== "pending") {
+            return false;
+          }
+
+          const rentStartDate = dayjs(rent.startDate);
+          const rentEndDate = dayjs(rent.returnDate);
+
+          // If the rental period overlaps with the requested booking, return true
+          return (
+            pickupDate.isBefore(rentEndDate) &&
+            returnDate.isAfter(rentStartDate)
+          );
         }
+      );
 
-        // Prevent checking if pickup date is after return date
-        if (pickupDate.isAfter(returnDate)) {
-            setIsAvailable(false);
-            setAvailabilityMessage('Pickup date cannot be after return date');
-            return;
-        }
+      const available = conflicts.length === 0;
+      setIsAvailable(available);
 
-        setIsCheckingAvailability(true);
-        setAvailabilityMessage('Checking availability...');
+      if (available) {
+        setAvailabilityMessage("Car is available for selected dates!");
+      } else {
+        setAvailabilityMessage(
+          "Car is not available for the selected dates. Please choose different dates."
+        );
+      }
+    } catch (error) {
+      console.error("Error checking car availability:", error);
+      setIsAvailable(false);
+      setAvailabilityMessage("Error checking availability. Please try again.");
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  }, [car?._id, pickupDate, returnDate, session?.user?.token]);
 
-        try {
-            // Fetch car details (including rents)
-            const response = await fetch(`${API_BASE_URL}/cars/${car._id}`, {
-                headers: { Authorization: `Bearer ${session.user.token}` },
-            });
+  // Check availability whenever dates change
+  useEffect(() => {
+    if (pickupDate && returnDate && car) {
+      checkCarAvailability();
+    }
+  }, [pickupDate, returnDate, car, checkCarAvailability]);
 
-            if (!response.ok) throw new Error('Failed to fetch car details');
+  const makeBooking = async () => {
+    if (!formValid || isSubmitting) {
+      return;
+    }
 
-            const carData = await response.json();
+    // Double-check availability one more time
+    await checkCarAvailability();
 
-            // Check for availability based on the rents array
-            if (!carData.success || !carData.data) {
-                throw new Error('Invalid car data received');
-            }
-
-            const rents = carData.data.rents || [];
-
-            // Check for overlaps in the booking dates
-            const conflicts = rents.filter((rent: { 
-                startDate: string; 
-                returnDate: string; 
-                status: string; 
-            }) => {
-                // Only check active and pending bookings
-                if (rent.status !== 'active' && rent.status !== 'pending') {
-                    return false;
-                }
-                
-                const rentStartDate = dayjs(rent.startDate);
-                const rentEndDate = dayjs(rent.returnDate);
-                
-                // If the rental period overlaps with the requested booking, return true
-                return (pickupDate.isBefore(rentEndDate) && returnDate.isAfter(rentStartDate));
-            });
-
-            const available = conflicts.length === 0;
-            setIsAvailable(available);
-            
-            if (available) {
-                setAvailabilityMessage('Car is available for selected dates!');
-            } else {
-                setAvailabilityMessage('Car is not available for the selected dates. Please choose different dates.');
-            }
-
-        } catch (error) {
-            console.error('Error checking car availability:', error);
-            setIsAvailable(false);
-            setAvailabilityMessage('Error checking availability. Please try again.');
-        } finally {
-            setIsCheckingAvailability(false);
-        }
-    }, [car?._id, pickupDate, returnDate, session?.user?.token]);
-
-    // Check availability whenever dates change
-    useEffect(() => {
-        if (pickupDate && returnDate && car) {
-            checkCarAvailability();
-        }
-    }, [pickupDate, returnDate, car, checkCarAvailability]);
-
-    const makeBooking = async () => {
-        if (!formValid || isSubmitting) {
-            return;
-        }
-
-        // Double-check availability one more time
-        await checkCarAvailability();
-
-        if (!isAvailable) {
-            alert('Car is not available for the selected dates. Please choose different dates.');
-            return;
-        }
+    if (!isAvailable) {
+      alert(
+        "Car is not available for the selected dates. Please choose different dates."
+      );
+      return;
+    }
 
         if (car && nameLastname && tel && pickupDate && returnDate) {
             try {
@@ -202,85 +230,109 @@ export default function Booking() {
                     })
                 });
 
-                if (response.ok) {
-                    // Booking successful, dispatch to Redux store
-                    const item = {
-                        nameLastname: nameLastname,
-                        tel: tel,
-                        car: car._id,
-                        bookDate: pickupDate.format("YYYY/MM/DD"),
-                        returnDate: returnDate.format("YYYY/MM/DD"),
-                        pickupTime: pickupTime,
-                        returnTime: returnTime
-                    };
-                    
-                    dispatch(addBooking(item));
-                    alert('Booking successful!');
-                    
-                    // Redirect to reservations page
-                    router.push('/account/reservations');
-                } else {
-                    const errorData = await response.json();
-                    console.error('Booking failed:', errorData);
-                    alert(`Booking failed: ${errorData.message || 'Please try again.'}`);
-                }
-            } catch (error) {
-                console.error('Error booking:', error);
-                alert('An error occurred. Please try again.');
-            } finally {
-                setIsSubmitting(false);
-            }
+        if (response.ok) {
+          // Booking successful, dispatch to Redux store
+          const item = {
+            nameLastname: nameLastname,
+            tel: tel,
+            car: car._id,
+            bookDate: pickupDate.format("YYYY/MM/DD"),
+            returnDate: returnDate.format("YYYY/MM/DD"),
+            pickupTime: pickupTime,
+            returnTime: returnTime,
+          };
+
+          dispatch(addBooking(item));
+          alert("Booking successful!");
+
+          // Redirect to reservations page
+          router.push("/account/reservations");
+        } else {
+          const errorData = await response.json();
+          console.error("Booking failed:", errorData);
+          alert(`Booking failed: ${errorData.message || "Please try again."}`);
         }
-    };
+      } catch (error) {
+        console.error("Error booking:", error);
+        alert("An error occurred. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
 
-    // Fetch car details and user profile
-    useEffect(() => {
-        const carId = searchParams.get('carId') || '';
-        const startDate = searchParams.get('startDate') || '';
-        const endDate = searchParams.get('endDate') || '';
-        const providedPickupTime = searchParams.get('pickupTime') || '10:00 AM';
-        const providedReturnTime = searchParams.get('returnTime') || '10:00 AM';
+  // Fetch car details and user profile
+  useEffect(() => {
+    const carId = searchParams.get("carId") || "";
+    const startDate = searchParams.get("startDate") || "";
+    const endDate = searchParams.get("endDate") || "";
+    const providedPickupTime = searchParams.get("pickupTime") || "10:00 AM";
+    const providedReturnTime = searchParams.get("returnTime") || "10:00 AM";
 
-        const fetchData = async () => {
-            // Fetch car details
-            if (!carId) {
-                setError('No car ID provided');
-                setLoading(false);
-                return;
-            }
+    const fetchData = async () => {
+      // Fetch car details
+      if (!carId) {
+        setError("No car ID provided");
+        setLoading(false);
+        return;
+      }
 
-            if (!session?.user?.token) {
-                setError('Please sign in to make a reservation');
-                setLoading(false);
-                return;
-            }
+      if (!session?.user?.token) {
+        setError("Please sign in to make a reservation");
+        setLoading(false);
+        return;
+      }
 
-            try {
-                // Fetch car details
-                const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
-                    headers: { Authorization: `Bearer ${session.user.token}` },
-                });
+      try {
+        // Fetch car details
+        const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
+          headers: { Authorization: `Bearer ${session.user.token}` },
+        });
 
-                if (!carResponse.ok) {
-                    throw new Error('Failed to fetch car details');
-                }
+        if (!carResponse.ok) {
+          throw new Error("Failed to fetch car details");
+        }
 
-                const carData = await carResponse.json();
+        const carData = await carResponse.json();
 
-                if (carData.success && carData.data) {
-                    setCar(carData.data);
-                } else {
-                    throw new Error('Invalid car data received');
-                }
+        //check car for fetch
+        if (carData.success && carData.data) {
+          setCar(carData.data);
 
-                // Fetch user profile
-                const userProfileResponse = await getUserProfile(session.user.token);
+          // Fetch provider details (name and verified status)
+          const providerId = carData.data.provider_id; // Assuming provider_id is available in car data
+          const providerResponse = await fetch(
+            `${API_BASE_URL}/Car_Provider/${providerId}`,
+            { headers: { Authorization: `Bearer ${session.user.token}` } }
+          );
 
-                if (userProfileResponse.success && userProfileResponse.data) {
-                    setUserData({
-                        name: userProfileResponse.data.name,
-                        telephone_number: userProfileResponse.data.telephone_number
-                    });
+          if (!providerResponse.ok) {
+            console.log("test : ", providerResponse);
+            throw new Error("Failed to fetch provider details");
+          }
+
+          const providerData = await providerResponse.json();
+
+          if (providerData.success && providerData.data) {
+            setProvider({
+              name: providerData.data.name,
+              verified: providerData.data.verified,
+            });
+          } else {
+            throw new Error("Invalid provider data received");
+          }
+        } else {
+          throw new Error("Invalid car data received");
+        }
+
+        // Fetch user profile
+        const userProfileResponse = await getUserProfile(session.user.token);
+
+        if (userProfileResponse.success && userProfileResponse.data) {
+          setUserData({
+            name: userProfileResponse.data.name,
+            telephone_number: userProfileResponse.data.telephone_number,
+          });
 
                     // Prefill form with user data
                     setNameLastname(userProfileResponse.data.name);
@@ -294,22 +346,22 @@ export default function Booking() {
             }
         };
 
-        // Prefill dates and times
-        if (startDate) {
-            setPickupDate(dayjs(startDate));
-        }
-        if (endDate) {
-            setReturnDate(dayjs(endDate));
-        }
-        if (providedPickupTime) {
-            setPickupTime(providedPickupTime);
-        }
-        if (providedReturnTime) {
-            setReturnTime(providedReturnTime);
-        }
+    // Prefill dates and times
+    if (startDate) {
+      setPickupDate(dayjs(startDate));
+    }
+    if (endDate) {
+      setReturnDate(dayjs(endDate));
+    }
+    if (providedPickupTime) {
+      setPickupTime(providedPickupTime);
+    }
+    if (providedReturnTime) {
+      setReturnTime(providedReturnTime);
+    }
 
-        fetchData();
-    }, [searchParams, session]);
+    fetchData();
+  }, [searchParams, session]);
 
     // Calculate rental period and total cost
     const getRentalPeriod = () => {
@@ -335,77 +387,81 @@ export default function Booking() {
         return total-tierDiscount;
     };
 
-    // Tier name mapping
-    const getTierName = (tier: number) => {
-        const tierNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-        return tierNames[tier] || `Tier ${tier}`;
-    };
+  // Tier name mapping
+  const getTierName = (tier: number) => {
+    const tierNames = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
+    return tierNames[tier] || `Tier ${tier}`;
+  };
 
-    // Format currency
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(amount);
-    };
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
 
-    if (loading) {
-        return (
-            <main className="max-w-6xl mx-auto py-10 px-4 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55] mx-auto"></div>
-                <p className="mt-4">Loading car details...</p>
-            </main>
-        );
-    }
+  if (loading) {
+    return (
+      <main className="max-w-6xl mx-auto py-10 px-4 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55] mx-auto"></div>
+        <p className="mt-4">Loading car details...</p>
+      </main>
+    );
+  }
 
-    if (error) {
-        return (
-            <main className="max-w-6xl mx-auto py-10 px-4 text-center">
-                <div className="bg-red-100 text-red-800 p-4 rounded-lg">
-                    <p>{error}</p>
-                    {!session && (
-                        <div className="mt-4">
-                            <Link
-                                href="/signin?callbackUrl=/catalog" 
-                                className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
-                            >
-                                Sign In
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </main>
-        );
-    }
+  if (error) {
+    return (
+      <main className="max-w-6xl mx-auto py-10 px-4 text-center">
+        <div className="bg-red-100 text-red-800 p-4 rounded-lg">
+          <p>{error}</p>
+          {!session && (
+            <div className="mt-4">
+              <Link
+                href="/signin?callbackUrl=/catalog"
+                className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
+              >
+                Sign In
+              </Link>
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
 
-    return(
-        <main className="max-w-6xl mx-auto py-10 px-4">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl font-medium mb-3 font-serif">Make Your Reservation</h1>
-            <p className="text-gray-600 max-w-3xl mx-auto">
-              Complete the details below to reserve your premium vehicle
-            </p>
-          </div>
-      
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            {/* Car Details */}
-            {car && (
-              <div>
-                <h2 className="text-2xl font-serif font-medium mb-6">Vehicle Details</h2>
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                  <div className="relative h-64">
-                  <FavoriteHeartButton 
-                    carId={car._id || car._id} 
-                    className="top-4 right-4 scale-125" 
-                  />
-                    <Image 
-                      src="/img/banner.jpg" 
-                      alt={`${car.brand} ${car.model}`} 
-                      fill
-                      className="object-cover"
-                    />
-                    {/* {!car.available && (
+  return (
+    <main className="max-w-6xl mx-auto py-10 px-4">
+      <div className="text-center mb-12">
+        <h1 className="text-3xl font-medium mb-3 font-serif">
+          Make Your Reservation
+        </h1>
+        <p className="text-gray-600 max-w-3xl mx-auto">
+          Complete the details below to reserve your premium vehicle
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* Car Details */}
+        {car && (
+          <div>
+            <h2 className="text-2xl font-serif font-medium mb-6">
+              Vehicle Details
+            </h2>
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              <div className="relative h-64">
+                <FavoriteHeartButton
+                  carId={car._id || car._id}
+                  className="top-4 right-4 scale-125"
+                />
+                <Image
+                  src="/img/banner.jpg"
+                  alt={`${car.brand} ${car.model}`}
+                  fill
+                  className="object-cover"
+                />
+                {/* {!car.available && (
                       <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
                         <span className="text-white font-bold text-lg">Currently Rented</span>
                       </div>
