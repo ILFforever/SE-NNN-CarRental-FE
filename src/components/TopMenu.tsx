@@ -2,7 +2,7 @@
 
 import styles from "./topmenu.module.css";
 import Image from "next/image";
-import TopMenuItem from "./TopMenuItem";
+import TopMenuItem from "./util/TopMenuItem";
 import { useSession } from "next-auth/react";
 import NextLink from "next/link";
 import { Icon } from "@iconify/react";
