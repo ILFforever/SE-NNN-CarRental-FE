@@ -1,5 +1,5 @@
 .menucontainer {
-  height: 60px;
+  height: 70px; /* Increased height for better visual impact */
   background-color: white;
   position: fixed;
   top: 0px;
@@ -13,7 +13,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.07); /* Enhanced shadow */
+  transition: all 0.3s ease;
+}
+
+/* Subtle animation on scroll */
+.menucontainer.scrolled {
+  height: 60px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
 }
 
 .logoContainer {
@@ -23,116 +32,321 @@
 }
 
 .logowrapper {
-  border: 2px solid #8A7D55; /* Elegant border color that matches your theme */
-  border-radius: 6px; /* Smaller rounded corners */
-  padding: 2px; /* Reduced space between logo and border */
+  border: 2px solid #8A7D55;
+  border-radius: 8px; /* More rounded corners */
+  padding: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white; /* Optional background */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  transition: all 0.3s ease; /* Smooth transition */
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(138, 125, 85, 0.15); /* Enhanced shadow with brand color */
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy animation */
+  position: relative;
+  overflow: hidden;
+}
+
+.logowrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .logowrapper:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  border-color: #a59572; /* Slightly lighter on hover */
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(138, 125, 85, 0.25);
+  border-color: #a59572;
+}
+
+.logowrapper:hover::after {
+  opacity: 1;
 }
 
 .logoimg {
   height: auto;
   width: auto;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1));
 }
 
-.logoimg:hover {
-  opacity: 0.85;
+.logowrapper:hover .logoimg {
+  transform: scale(1.05);
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.15));
 }
 
-/* Desktop Menu Styles */
+/* Desktop Menu Styles - Enhanced */
 .desktopMenu {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  height: 100%;
+  margin: 0 25px; /* More breathing space */
 }
 
 .leftSide {
   display: flex;
   align-items: center;
+  margin-left: 30px;
+  height: 100%;
 }
 
 .rightSide {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 24px; /* Increased gap */
+  margin-right: 30px;
+  height: 100%;
 }
 
+/* Improved menu item styling with distinct buttons */
 .menuItem {
   font-family: 'Montserrat', sans-serif;
-  font-size: 11pt;
+  font-size: 12pt; /* Slightly larger */
   color: #5a5a5a;
   text-decoration: none;
-  padding: 5px 0;
-  margin: 0 12px;
+  padding: 8px 16px; /* More padding */
+  margin: 0 6px;
   position: relative;
-  transition: color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth easing */
+  border-radius: 8px; /* More rounded */
+  background-color: transparent;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.3px; /* Better readability */
+}
+
+/* Create a modern hover effect with indicator line */
+.menuItem::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8A7D55, #a59572);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  opacity: 0;
+  border-radius: 3px;
+}
+
+.menuItem:hover::after {
+  width: 80%;
+  opacity: 1;
 }
 
 .menuItem:hover {
   color: #8A7D55;
+  background-color: rgba(248, 245, 240, 0.7);
+  border-color: rgba(230, 225, 216, 0.7);
+  box-shadow: 0 4px 10px rgba(138, 125, 85, 0.12);
+  transform: translateY(-2px);
 }
 
-.menuItem:after {
+.menuItem:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(138, 125, 85, 0.08);
+}
+
+/* Special styling for authentication buttons */
+.authButton {
+  border: 1px solid #e6e1d8;
+  background-color: #f8f5f0;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(138, 125, 85, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.authButton::before {
   content: '';
   position: absolute;
-  width: 0;
-  height: 1px;
-  bottom: 0;
+  top: 0;
   left: 0;
-  background-color: #8A7D55;
-  transition: width 0.3s ease;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(138, 125, 85, 0.05) 0%, rgba(138, 125, 85, 0.15) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.menuItem:hover:after {
-  width: 100%;
+.authButton:hover {
+  background-color: #f0ece3;
+  border-color: #d9d1c0;
+  transform: translateY(-2px) scale(1.02);
 }
 
+.authButton:hover::before {
+  opacity: 1;
+}
+
+/* Catalog button styling - make it stand out */
+.catalogButton {
+  background: linear-gradient(135deg, #8A7D55, #6e6344); /* Gradient background */
+  color: white;
+  font-weight: 600;
+  border: 1px solid #8A7D55;
+  box-shadow: 0 4px 10px rgba(138, 125, 85, 0.3);
+  padding: 9px 18px; /* Larger button */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.catalogButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #766b48, #8A7D55);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.catalogButton:hover {
+  color: white;
+  border-color: #766b48;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(138, 125, 85, 0.4);
+}
+
+.catalogButton:hover::before {
+  opacity: 1;
+}
+
+.catalogButton:hover::after {
+  opacity: 0; /* Hide the underline for cataloh button */
+}
+
+.catalogButton:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(138, 125, 85, 0.3);
+}
+
+/* Admin and Provider tool buttons - distinctive styling */
+.adminToolsButton {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.08), rgba(255, 0, 0, 0.15));
+  color: #ff0000;
+  font-weight: 600;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.adminToolsButton::after {
+  background: linear-gradient(90deg, #ff0000, #ff5555);
+}
+
+.adminToolsButton:hover {
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.12), rgba(255, 0, 0, 0.2));
+  border-color: rgba(255, 0, 0, 0.3);
+  color: #ff0000;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.15);
+}
+
+.providerToolsButton {
+  background: linear-gradient(135deg, rgba(0, 0, 255, 0.08), rgba(0, 0, 255, 0.15));
+  color: #0000ff;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.providerToolsButton::after {
+  background: linear-gradient(90deg, #0000ff, #5555ff);
+}
+
+.providerToolsButton:hover {
+  background: linear-gradient(135deg, rgba(0, 0, 255, 0.12), rgba(0, 0, 255, 0.2));
+  border-color: rgba(0, 0, 255, 0.3);
+  color: #0000ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 255, 0.15);
+}
+
+/* Username styling with refined icon and animation */
 .username {
-  font-size: 11pt;
+  font-size: 12pt;
   color: #000;
   font-weight: 500;
-  margin: 0 12px;
-  padding: 5px 0;
-  font-style: italic;
+  margin: 0 15px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background-color: #f8f5f0;
+  border: 1px solid #e6e1d8;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.username::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 80%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.username:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.username:hover::before {
+  opacity: 1;
 }
 
 .username.provider {
   color: #1e90ff;
+  background: linear-gradient(135deg, rgba(30, 144, 255, 0.08), rgba(30, 144, 255, 0.12));
+  border-color: rgba(30, 144, 255, 0.2);
 }
 
-.adminTools {
-  color: #ff0000 !important;
-  font-weight: 600;
+.userIcon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(138, 125, 85, 0.1);
+  margin-right: 10px;
+  align-items: center;
+  justify-content: center;
+  color: #8A7D55;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 0 1px rgba(138, 125, 85, 0.2);
 }
 
-.menuItem.adminTools:after {
-  background-color: #ff0000;
+.username:hover .userIcon {
+  transform: scale(1.1);
+  background-color: rgba(138, 125, 85, 0.15);
 }
 
-.providerTools {
-  color: #0000ff !important;
-  font-weight: 600;
+.provider .userIcon {
+  background-color: rgba(30, 144, 255, 0.1);
+  color: #1e90ff;
+  box-shadow: inset 0 0 0 1px rgba(30, 144, 255, 0.2);
 }
 
-.menuItem.providerTools:after {
-  background-color: #0000ff;
-}
-
-/* Mobile Menu Toggle */
+/* Mobile Menu Toggle - Enhanced */
 .mobileMenuToggle {
-  display: none; /* Hide by default on all screen sizes */
+  display: none;
   cursor: pointer;
   z-index: 101;
   background: none;
@@ -215,7 +429,7 @@
 
 /* Mobile Menu Backdrop */
 .menuBackdrop {
-  display: none; /* Hidden by default on all screen sizes */
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -224,13 +438,7 @@
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 99;
   animation: fadeIn 0.3s ease;
-}
-
-/* Only show backdrop on mobile devices */
-@media (max-width: 768px) {
-  .menuBackdrop {
-    display: block;
-  }
+  overflow: hidden; /* Prevent scroll */
 }
 
 @keyframes fadeIn {
@@ -238,9 +446,9 @@
   to { opacity: 1; }
 }
 
-/* Mobile Menu Styles */
+/* Mobile Menu Styles - Fixed horizontal scroll issue */
 .mobileMenu {
-  display: none; /* Hidden on all screen sizes initially */
+  display: none;
   position: fixed;
   top: 0;
   right: 0;
@@ -252,7 +460,8 @@
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
-  padding-top: 60px; /* Space for the fixed header */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  padding-top: 60px;
   box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
   border-left: 1px solid #e6e1d8;
 }
@@ -323,6 +532,8 @@
   flex-direction: column;
   padding: 1.5rem;
   gap: 0.25rem;
+  width: 100%; /* Ensure content fits */
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 .mobileUserInfo {
@@ -337,6 +548,8 @@
   flex-direction: column;
   align-items: center;
   border: 1px solid rgba(138, 125, 85, 0.2);
+  width: 100%; /* Ensure fit */
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .mobileUserInfo::after {
@@ -375,6 +588,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%; /* Ensure content fits */
 }
 
 .userType {
@@ -386,6 +600,10 @@
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   border: 1px solid rgba(138, 125, 85, 0.2);
+  max-width: 100%; /* Prevent overflow */
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Hide overflow */
+  text-overflow: ellipsis; /* Show ellipsis for overflow */
 }
 
 .mobileMenuItem {
@@ -407,6 +625,7 @@
   align-items: center;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .mobileMenuItem::before {
@@ -478,6 +697,8 @@
   display: flex;
   justify-content: center;
   opacity: 0.7;
+  width: 100%; /* Ensure fit */
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .menuLogo {
@@ -515,27 +736,141 @@
   
   .menucontainer {
     padding: 0 15px;
+    width: 100vw; /* Force full width */
+    max-width: 100%; /* Prevent overflow */
+    box-sizing: border-box; /* Include padding in width */
   }
   
   .logowrapper {
     border-width: 1px;
     padding: 1px;
   }
+  
+  /* Only show backdrop on mobile devices */
+  .menuBackdrop {
+    display: block;
+    width: 100vw; /* Force full width */
+    max-width: 100%; /* Prevent overflow */
+  }
+  
+  /* Fix body when mobile menu is open to prevent horizontal scroll */
+  body.mobile-menu-open {
+    overflow-x: hidden !important;
+    width: 100%;
+    position: fixed;
+  }
 }
 
 /* For medium sized screens */
 @media (min-width: 769px) and (max-width: 1024px) {
   .menuItem {
-    margin: 0 8px;
+    margin: 0 4px;
     font-size: 10pt;
+    padding: 6px 10px;
   }
   
   .rightSide {
-    gap: 15px;
+    gap: 10px;
   }
   
   .username {
     font-size: 10pt;
     margin: 0 8px;
+  }
+  
+  .leftSide {
+    margin-left: 10px;
+  }
+  
+  .rightSide {
+    margin-right: 10px;
+  }
+}
+
+/* Enhanced Desktop Experience */
+@media (min-width: 1025px) {
+  .menucontainer {
+    padding: 0 40px; /* More breathing room */
+    transition: all 0.3s ease;
+  }
+  
+  /* Create subtle animation on scroll */
+  .menucontainer.scrolled {
+    height: 60px;
+    padding: 0 50px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .menuItem {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0 8px; /* More spacing between items */
+  }
+  
+  .menuItem:active {
+    transform: scale(0.97);
+  }
+  
+  /* Add subtle highlight to current page */
+  .menuItem.active {
+    color: #8A7D55;
+    background-color: rgba(248, 245, 240, 0.7);
+    border-color: rgba(230, 225, 216, 0.7);
+    box-shadow: 0 2px 8px rgba(138, 125, 85, 0.12);
+  }
+  
+  .menuItem.active::after {
+    width: 80%;
+    opacity: 1;
+  }
+  
+  /* Larger catalog button on desktop */
+  .catalogButton {
+    padding: 9px 20px;
+    font-size: 12.5pt;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* Additional animation for desktop menu */
+@media (min-width: 1280px) {
+  .leftSide, .rightSide {
+    gap: 8px; /* Create consistent spacing */
+  }
+  
+  .menuItem {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .menuItem::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(138, 125, 85, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease;
+    z-index: -1;
+  }
+  
+  .menuItem:hover::before {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  
+  /* Enhance buttons with subtle animations */
+  .authButton, .catalogButton, .adminToolsButton, .providerToolsButton {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .authButton:hover, .catalogButton:hover, .adminToolsButton:hover, .providerToolsButton:hover {
+    transform: translateY(-3px) scale(1.03);
+  }
+  
+  .authButton:active, .catalogButton:active, .adminToolsButton:active, .providerToolsButton:active {
+    transform: translateY(0) scale(0.98);
   }
 }

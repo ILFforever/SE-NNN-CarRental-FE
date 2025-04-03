@@ -14,40 +14,27 @@ export default function TopMenu() {
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Lock scroll when mobile menu is open
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : 'auto';
+    return () => { document.body.style.overflow = 'auto'; };
   }, [mobileMenuOpen]);
 
-  // Close mobile menu on navigation
-  const handleNavigation = () => {
-    setMobileMenuOpen(false);
-  };
+  const handleNavigation = () => setMobileMenuOpen(false);
 
-  // Handle logout
+  // จัดการ logout
   const handleSignOut = async () => {
     try {
       if (session?.user?.token) {
-        // Choose logout method based on user type
-        if (session.user.userType === 'provider') {
-          await carProviderLogOut(session.user.token);
-        } else {
-          await userLogOut(session.user.token);
-        }
+        // เลือกวิธี logout ตามประเภทผู้ใช้
+        session.user.userType === 'provider' 
+          ? await carProviderLogOut(session.user.token)
+          : await userLogOut(session.user.token);
       }
       
-      // Force sign out through NextAuth
+      // บังคับ sign out ผ่าน NextAuth
       await signOut({ redirect: false });
       
-      // Close mobile menu and redirect
+      // ปิด mobile menu และ redirect
       setMobileMenuOpen(false);
       router.push('/');
       router.refresh();
@@ -56,9 +43,122 @@ export default function TopMenu() {
     }
   };
 
+  // คอมโพเนนต์สำหรับแสดงเมนูของ Customer
+  const CustomerMenu = () => (
+    <>
+      <Link href="/account/profile" className={styles.menuItem} onClick={handleNavigation}>
+        My Profile
+      </Link>
+      <Link href="/account/reservations" className={styles.menuItem} onClick={handleNavigation}>
+        My Reservations
+      </Link>
+      {session?.user.role === 'admin' && (
+        <Link href="/admin/tools" className={`${styles.menuItem} ${styles.adminToolsButton}`} onClick={handleNavigation}>
+          Admin Tools
+        </Link>
+      )}
+    </>
+  );
+
+  // คอมโพเนนต์สำหรับแสดงเมนูของ Provider
+  const ProviderMenu = () => (
+    <>
+      <Link href="/provider/profile" className={styles.menuItem} onClick={handleNavigation}>
+        My Profile
+      </Link>
+      <Link href="/provider/tools" className={`${styles.menuItem} ${styles.providerToolsButton}`} onClick={handleNavigation}>
+        Provider Tools
+      </Link>
+    </>
+  );
+
+  // คอมโพเนนต์สำหรับแสดงเมนูของ Customer บนมือถือ
+  const MobileCustomerMenu = () => (
+    <>
+      <Link href="/account/profile" className={styles.mobileMenuItem} onClick={handleNavigation}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        My Profile
+      </Link>
+      <Link href="/account/reservations" className={styles.mobileMenuItem} onClick={handleNavigation}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        My Reservations
+      </Link>
+      {session?.user.role === 'admin' && (
+        <Link href="/admin/tools" className={`${styles.mobileMenuItem} ${styles.adminTools}`} onClick={handleNavigation}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Admin Tools
+        </Link>
+      )}
+    </>
+  );
+
+  // คอมโพเนนต์สำหรับแสดงเมนูของ Provider บนมือถือ
+  const MobileProviderMenu = () => (
+    <>
+      <Link href="/provider/profile" className={styles.mobileMenuItem} onClick={handleNavigation}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        My Profile
+      </Link>
+      <Link href="/provider/tools" className={`${styles.mobileMenuItem} ${styles.providerTools}`} onClick={handleNavigation}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        Provider Tools
+      </Link>
+    </>
+  );
+
+  // คอมโพเนนต์สำหรับแสดงเมนู Service และ Catalog
+  const ServiceCatalogMenu = () => (
+      <>
+        <Link href="/service" className={styles.menuItem} onClick={handleNavigation}>
+          Services
+        </Link>
+        <Link href="/catalog" className={`${styles.menuItem} ${styles.catalogButton}`} onClick={handleNavigation}>
+          Catalog
+        </Link>
+      </>
+  );
+
+  // คอมโพเนนต์สำหรับแสดงเมนู Service และ Catalog บนมือถือ
+  const MobileServiceCatalogMenu = () => (
+    session?.user.userType !== 'provider' && (
+      <>
+        <Link href="/service" className={styles.mobileMenuItem} onClick={handleNavigation}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Services
+        </Link>
+        <Link href="/catalog" className={styles.mobileMenuItem} onClick={handleNavigation}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          Catalog
+        </Link>
+      </>
+    )
+  );
+
+  // ไอคอนผู้ใช้
+  const UserIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+    </svg>
+  );
+
   return (
     <div className={styles.menucontainer}>
-      {/* Logo - Always visible on both mobile and desktop */}
+      {/* โลโก้ - แสดงทั้งบนมือถือและเดสก์ท็อป */}
       <div className={styles.logoContainer}>
         <Link href="/">
           <div className={styles.logowrapper}>
@@ -74,15 +174,18 @@ export default function TopMenu() {
         </Link>
       </div>
 
-      {/* Desktop Menu */}
+      {/* เมนูเดสก์ท็อป */}
       <div className={styles.desktopMenu}>
-        {/* Left Side - Authentication & Account Links */}
+        {/* ฝั่งซ้าย - ลิงก์การรับรองและบัญชี */}
         <div className={styles.leftSide}>
           {session ? (
             <>
               <span 
                 className={`${styles.username} ${session.user.userType === 'provider' ? styles.provider : ''}`}
               >
+                <span className={styles.userIcon}>
+                  <UserIcon />
+                </span>
                 {session.user.name}
               </span>
               <Link 
@@ -93,64 +196,30 @@ export default function TopMenu() {
                 Sign-Out
               </Link>
               
-              {session.user.userType === 'customer' && (
-                <>
-                  <Link href="/account/profile" className={styles.menuItem} onClick={handleNavigation}>
-                    My Profile
-                  </Link>
-                  <Link href="/account/reservations" className={styles.menuItem} onClick={handleNavigation}>
-                    My Reservations
-                  </Link>
-                  {session.user.role === 'admin' && (
-                    <Link href="/admin/tools" className={`${styles.menuItem} ${styles.adminTools}`} onClick={handleNavigation}>
-                      Admin Tools
-                    </Link>
-                  )}
-                </>
-              )}
-
-              {session.user.userType === 'provider' && (
-                <>
-                  <Link href="/provider/profile" className={styles.menuItem} onClick={handleNavigation}>
-                    My Profile
-                  </Link>
-                  <Link href="/provider/tools" className={`${styles.menuItem} ${styles.providerTools}`} onClick={handleNavigation}>
-                    Provider Tools
-                  </Link>
-                </>
-              )}
+              {session.user.userType === 'customer' ? <CustomerMenu /> : <ProviderMenu />}
             </>
           ) : (
             <>
-              <Link href="/signin" className={styles.menuItem} onClick={handleNavigation}>
+              <Link href="/signin" className={`${styles.menuItem} ${styles.authButton}`} onClick={handleNavigation}>
                 Sign-In
               </Link>
-              <Link href="/register" className={styles.menuItem} onClick={handleNavigation}>
+              <Link href="/register" className={`${styles.menuItem} ${styles.authButton}`} onClick={handleNavigation}>
                 Register
               </Link>
             </>
           )}
         </div>
         
-        {/* Right Side - Navigation Items */}
+        {/* ฝั่งขวา - รายการนำทาง */}
         <div className={styles.rightSide}>
           <Link href="/about" className={styles.menuItem} onClick={handleNavigation}>
             About
           </Link>
-          {session?.user.userType !== 'provider' && (
-            <>
-              <Link href="/service" className={styles.menuItem} onClick={handleNavigation}>
-                Services
-              </Link>
-              <Link href="/catalog" className={styles.menuItem} onClick={handleNavigation}>
-                Catalog
-              </Link>
-            </>
-          )}
+          <ServiceCatalogMenu />
         </div>
       </div>
 
-      {/* Mobile Menu Toggle Button */}
+      {/* ปุ่มสลับเมนูมือถือ */}
       <button 
         className={`${styles.mobileMenuToggle} ${mobileMenuOpen ? styles.active : ''}`}
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -163,14 +232,14 @@ export default function TopMenu() {
         </div>
       </button>
 
-      {/* Backdrop for mobile menu */}
+      {/* พื้นหลังสำหรับเมนูมือถือ */}
       {mobileMenuOpen && <div className={styles.menuBackdrop} onClick={() => setMobileMenuOpen(false)}></div>}
       
-      {/* Mobile Menu - Slides in from the right */}
+      {/* เมนูมือถือ - เลื่อนเข้ามาจากด้านขวา */}
       <div className={`${styles.mobileMenu} ${mobileMenuOpen ? styles.open : ''}`}>
         <div className={styles.menuDecoration}></div>
         <div className={styles.mobileNav}>
-          {/* User Info if logged in */}
+          {/* ข้อมูลผู้ใช้เมื่อเข้าสู่ระบบ */}
           {session && (
             <div className={styles.mobileUserInfo}>
               <div className={styles.userAvatar}>
@@ -189,7 +258,7 @@ export default function TopMenu() {
             </div>
           )}
           
-          {/* Authentication Links */}
+          {/* ลิงก์การรับรอง */}
           {!session ? (
             <>
               <Link href="/signin" className={styles.mobileMenuItem} onClick={handleNavigation}>
@@ -206,76 +275,20 @@ export default function TopMenu() {
               </Link>
             </>
           ) : (
-            <>
-              {/* User/Provider Specific Links */}
-              {session.user.userType === 'customer' ? (
-                <>
-                  <Link href="/account/profile" className={styles.mobileMenuItem} onClick={handleNavigation}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    My Profile
-                  </Link>
-                  <Link href="/account/reservations" className={styles.mobileMenuItem} onClick={handleNavigation}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                    My Reservations
-                  </Link>
-                  {session.user.role === 'admin' && (
-                    <Link href="/admin/tools" className={`${styles.mobileMenuItem} ${styles.adminTools}`} onClick={handleNavigation}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Admin Tools
-                    </Link>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Link href="/provider/profile" className={styles.mobileMenuItem} onClick={handleNavigation}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    My Profile
-                  </Link>
-                  <Link href="/provider/tools" className={`${styles.mobileMenuItem} ${styles.providerTools}`} onClick={handleNavigation}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Provider Tools
-                  </Link>
-                </>
-              )}
-            </>
+            /* ลิงก์เฉพาะผู้ใช้/ผู้ให้บริการ */
+            session.user.userType === 'customer' ? <MobileCustomerMenu /> : <MobileProviderMenu />
           )}
           
-          {/* Navigation Links */}
+          {/* ลิงก์นำทาง */}
           <Link href="/about" className={styles.mobileMenuItem} onClick={handleNavigation}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             About
           </Link>
-          {session?.user.userType !== 'provider' && (
-            <>
-              <Link href="/service" className={styles.mobileMenuItem} onClick={handleNavigation}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Services
-              </Link>
-              <Link href="/catalog" className={styles.mobileMenuItem} onClick={handleNavigation}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                Catalog
-              </Link>
-            </>
-          )}
+          <MobileServiceCatalogMenu />
           
-          {/* Sign Out Option - if logged in */}
+          {/* ตัวเลือกออกจากระบบ - หากเข้าสู่ระบบแล้ว */}
           {session && (
             <button 
               onClick={handleSignOut} 
