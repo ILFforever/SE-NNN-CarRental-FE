@@ -1,0 +1,94 @@
+.menucontainer {
+  @apply h-[60px] bg-white fixed top-0 left-0 right-0 z-[1000] border-t border-b border-[#e6e1d8] flex flex-row justify-between items-center px-5;
+}
+
+.leftSide {
+  @apply hidden md:flex items-center;
+
+}
+
+.rightSide {
+  @apply flex items-center gap-7;
+}
+
+.logoimg {
+  @apply h-auto w-auto transition-opacity duration-300 ease-linear;
+}
+
+.logoimg:hover {
+  @apply opacity-85;
+}
+
+.logowrapper {
+  @apply border-2 border-[#8A7D55] rounded-lg p-2 flex items-center justify-center bg-white shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-[#a59572];
+}
+
+.menuItem {
+  @apply font-sans font-medium text-[#5a5a5a] text-[11pt] no-underline text-lg py-1 mx-3 relative transition-colors duration-300 ease-in-out hover:text-[#8A7D55];
+}
+
+
+.menuItem:after {
+  content: '';
+  @apply absolute w-0 h-[1px] bottom-0 left-0 bg-[#8A7D55] transition-all duration-300 ease-in-out;
+}
+
+.menuItem:hover:after {
+  @apply w-full;
+}
+
+/* Username style */
+.username {
+  @apply text-lg font-sans font-medium mx-3 py-1 italic;
+}
+
+/* Admin tools link */
+.menuItem.adminTools {
+  @apply font-semibold text-[#ff0000] relative;
+}
+
+.menuItem.adminTools:after {
+  @apply bg-[#ff0000];
+}
+
+/* Provider tools link */
+.menuItem.providerTools {
+  @apply font-medium text-[#0000ff] relative;
+}
+
+.menuItem.providerTools:after {
+  @apply bg-[#0000ff];
+}
+
+.username {
+  @apply text-[#000];
+}
+
+.provider {
+  @apply text-[#1e90ff];
+}
+
+.mobileMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  z-index: 999;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.mobileMenu.open {
+  transform: translateY(0);
+}
+
+.mobileMenuContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+}
