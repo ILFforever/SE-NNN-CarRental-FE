@@ -160,7 +160,7 @@ export default function FavoriteCars() {
         <div className="text-center py-12">
           <p className="text-gray-600 mb-6">You haven't added any cars to your favorites yet.</p>
           <Link 
-            href="/reserve" 
+            href="/catalog" 
             className="px-6 py-3 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
           >
             Browse Cars
