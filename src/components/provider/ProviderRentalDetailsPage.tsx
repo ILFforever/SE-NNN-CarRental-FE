@@ -15,12 +15,55 @@ interface ProviderRentalDetailsProps {
   };
 }
 
+// Define TypeScript interface for Car
+interface Car {
+  _id: string;
+  license_plate: string;
+  brand: string;
+  model: string;
+  type: string;
+  color: string;
+  manufactureDate: string;
+  available: boolean;
+  dailyRate: number;
+  tier: number;
+  provider_id: string;
+  service?: string[];
+  images?: string[];
+  image?: string; // Fallback single image property
+}
+
+// Define TypeScript interface for User
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  telephone_number: string;
+  role?: string;
+}
+
+// Define TypeScript interface for Rental
+interface Rental {
+  _id: string;
+  startDate: string;
+  returnDate: string;
+  actualReturnDate?: string;
+  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  price: number;
+  additionalCharges?: number;
+  notes?: string;
+  car: Car | string;
+  user: User | string;
+  createdAt: string;
+  service?: string[];
+}
+
 export default function ProviderRentalDetailsPage({ params }: ProviderRentalDetailsProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   
   // State for rental data and loading
-  const [rental, setRental] = useState<any>(null);
+  const [rental, setRental] = useState<Rental | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -28,6 +71,35 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
   // State for editing notes
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
+
+  // Define a function to fetch car details if needed
+  const fetchCarDetails = async (carId: string, token: string): Promise<Car | null> => {
+    try {
+      console.log('DEBUG: Fetching detailed car info for ID:', carId);
+      const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!carResponse.ok) {
+        throw new Error(`Failed to fetch car with ID: ${carId}`);
+      }
+      
+      const carData = await carResponse.json();
+      console.log('DEBUG: Car details response:', carData);
+      
+      if (carData.success && carData.data) {
+        return carData.data as Car;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching car details:', error);
+      return null;
+    }
+  };
 
   // Fetch rental details
   useEffect(() => {
@@ -79,30 +151,26 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
               throw new Error('You do not have permission to view this rental');
             }
           } else {
-            // Need to fetch the car to check its provider
+            // Need to fetch the car to check its provider and get complete car details including images
             const carId = typeof data.data.car === 'string' ? data.data.car : data.data.car._id;
             console.log('DEBUG: Car data is a reference. Fetching car details for ID:', carId);
             
-            const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
-              headers: {
-                'Authorization': `Bearer ${session.user.token}`,
-                'Content-Type': 'application/json'
-              }
-            });
+            const carDetails = await fetchCarDetails(carId, session.user.token);
             
-            console.log('DEBUG: Car API response status:', carResponse.status);
-            
-            if (!carResponse.ok) {
-              throw new Error('Failed to verify car ownership');
+            if (!carDetails) {
+              throw new Error('Failed to fetch car details');
             }
             
-            const carData = await carResponse.json();
-            console.log('DEBUG: Car data received:', carData);
+            console.log('DEBUG: Car details fetched:', carDetails);
             
-            if (carData.success && carData.data && carData.data.provider_id !== session.user.id) {
-              console.log('DEBUG: Provider ID mismatch - Car provider:', carData.data.provider_id, 'Session user:', session.user.id);
+            // Check provider ID
+            if (carDetails.provider_id !== session.user.id) {
+              console.log('DEBUG: Provider ID mismatch - Car provider:', carDetails.provider_id, 'Session user:', session.user.id);
               throw new Error('You do not have permission to view this rental');
             }
+            
+            // Update the car data in the rental with the full details including images
+            data.data.car = carDetails;
           }
         }
         
@@ -123,8 +191,8 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
   // Handle updating notes
   const handleUpdateNotes = async () => {
     console.log('DEBUG: Starting notes update');
-    if (!session?.user?.token) {
-      console.log('DEBUG: No token available, aborting notes update');
+    if (!session?.user?.token || !rental) {
+      console.log('DEBUG: No token or rental data available, aborting notes update');
       return;
     }
 
@@ -156,10 +224,13 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
 
       // Update local state
       console.log('DEBUG: Updating local rental state with new notes');
-      setRental((prev: any) => ({
-        ...prev,
-        notes: editedNotes
-      }));
+      setRental((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          notes: editedNotes
+        };
+      });
       setIsEditingNotes(false);
       setSuccess('Notes updated successfully');
     } catch (err) {
@@ -172,7 +243,7 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
 
   // Handle updating rental status
   const updateRentalStatus = async (action: 'confirm' | 'complete' | 'cancel') => {
-    if (!session?.user?.token) return;
+    if (!session?.user?.token || !rental) return;
 
     setIsLoading(true);
     setError(null);
@@ -231,11 +302,14 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
       const data = await response.json();
       
       // Update the rental in state
-      setRental((prev: any) => ({
-        ...prev,
-        status: newStatus,
-        ...(data.data || {})
-      }));
+      setRental((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          status: newStatus,
+          ...(data.data || {})
+        };
+      });
       
       setSuccess(`Rental ${actionText} successfully`);
     } catch (err) {
@@ -279,7 +353,7 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
   };
 
   // Calculate late days and fees
-  const calculateLateFees = (rentalData: any) => {
+  const calculateLateFees = (rentalData: Rental) => {
     if (!rentalData.actualReturnDate) return { daysLate: 0, lateFeePerDay: 0, totalLateFee: 0 };
 
     const expectedReturnDate = new Date(rentalData.returnDate);
@@ -309,6 +383,49 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Handle car image display more robustly with enhanced URL handling
+  const getCarImageUrl = (carData: Car | null): string => {
+    if (!carData) return '/img/car-placeholder.jpg';
+    
+    // Case 1: car has images array with at least one entry
+    if (carData.images && Array.isArray(carData.images) && carData.images.length > 0) {
+      const image = carData.images[0];
+      console.log('DEBUG: Found image in car.images array:', image);
+      
+      // Check if the image is already a full URL
+      if (typeof image === 'string' && image.startsWith('http')) {
+        console.log('DEBUG: Using full URL from images array');
+        return image;
+      }
+      
+      // Check if it's a relative path that should be used as-is
+      if (typeof image === 'string' && (image.startsWith('/') || image.includes('/'))) {
+        console.log('DEBUG: Using relative path from images array');
+        return image;
+      }
+      
+      // Otherwise, assume it's a filename in the R2 bucket
+      console.log('DEBUG: Using R2 bucket path for filename:', image);
+      return `https://blob.ngixx.me/images/${image}`;
+    }
+    
+    // Case 2: car has a single image property
+    if (carData.image) {
+      console.log('DEBUG: Using car.image property:', carData.image);
+      
+      // If it's a full URL, use it as is
+      if (typeof carData.image === 'string' && carData.image.startsWith('http')) {
+        return carData.image;
+      }
+      
+      return carData.image;
+    }
+    
+    // Default fallback
+    console.log('DEBUG: No valid image found, using placeholder');
+    return '/img/car-placeholder.jpg';
   };
 
   // Loading state
@@ -363,16 +480,14 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
 
   console.log('DEBUG: Car data:', car);
   console.log('DEBUG: User data:', user);
-
-  // Get image URL from car data
-  const carImage = car && car.images && car.images.length > 0 
-    ? `https://blob.ngixx.me/images/${car.images[0]}` 
-    : '/img/car-placeholder.jpg';
   
+  // Get the car image URL
+  const carImage = getCarImageUrl(car);
   console.log('DEBUG: Selected car image URL:', carImage);
 
   // Calculate late fees if applicable
   const { daysLate, lateFeePerDay, totalLateFee } = calculateLateFees(rental);
+
 
   return (
     <main className="py-10 px-4 max-w-4xl mx-auto">
@@ -548,7 +663,7 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
                 </>
               )}
               
-              {rental.additionalCharges > 0 && (
+              {rental.additionalCharges && rental.additionalCharges > 0 && (
                 <div>
                   <p className="text-gray-600 text-sm">Additional Charges</p>
                   <p className="font-medium text-amber-600">{formatCurrency(rental.additionalCharges)}</p>
