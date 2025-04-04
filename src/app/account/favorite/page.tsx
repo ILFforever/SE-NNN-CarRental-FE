@@ -37,10 +37,6 @@ interface Provider {
   verified?: boolean;
 }
 
-interface ProvidersMap {
-  [key: string]: Provider;
-}
-
 interface Car {
   id: string;
   _id?: string;
@@ -55,6 +51,7 @@ interface Car {
   providerName: string;
   manufactureDate: string;
   provider_id?: string;
+  provider?: Provider;
   image?: string;
   tier?: number;
   available?: boolean;
@@ -86,6 +83,28 @@ export default function FavoriteCars(): React.ReactNode {
       fetchFavorites();
     }
   }, [status, session, router]);
+
+  async function fetchProviderDetails(providerId: string, headers: HeadersInit): Promise<Provider | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/Car_Provider/${providerId}`, { headers });
+      
+      if (!response.ok) {
+        console.warn(`Failed to fetch provider details for ID: ${providerId}`);
+        return null;
+      }
+      
+      const providerData = await response.json();
+      
+      if (providerData.success && providerData.data) {
+        return providerData.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error fetching provider details for ID ${providerId}:`, error);
+      return null;
+    }
+  }
 
   async function fetchFavorites(): Promise<void> {
     setLoading(true);
@@ -120,61 +139,48 @@ export default function FavoriteCars(): React.ReactNode {
         return;
       }
 
-      // Fetch all cars
-      const carsRes = await fetch(`${API_BASE_URL}/cars`, { headers });
-      if (!carsRes.ok) {
-        throw new Error("Failed to fetch cars data");
-      }
-
-      const carsData: ApiResponse<Car[]> = await carsRes.json();
-
-      if (!carsData.success) {
-        throw new Error("Invalid car data format received");
-      }
-
-      // Also fetch providers to check for verified status
-      const providersRes = await fetch(`${API_BASE_URL}/Car_Provider`, {
-        headers,
-      });
-      let providersMap: ProvidersMap = {};
-
-      if (providersRes.ok) {
-        const providersData: ApiResponse<Provider[]> =
-          await providersRes.json();
-        if (providersData.success && Array.isArray(providersData.data)) {
-          providersMap = providersData.data.reduce<ProvidersMap>(
-            (map, provider) => {
-              map[provider._id] = provider;
-              return map;
-            },
-            {}
-          );
+      // Fetch cars using specific car IDs
+      const carPromises = favoriteCarIds.map(carId => 
+        fetch(`${API_BASE_URL}/cars/${carId}`, { headers })
+      );
+      
+      const carResponses = await Promise.all(carPromises);
+      
+      // Process car data
+      const carDataPromises = carResponses.map(async (response) => {
+        if (!response.ok) {
+          console.warn(`Failed to fetch car details for a favorite car`);
+          return null;
         }
-      }
+        
+        const carData = await response.json();
+        if (!carData.success || !carData.data) {
+          console.warn(`Invalid car data received`);
+          return null;
+        }
+        
+        const car = carData.data;
+        
+        // Fetch provider details if provider_id exists
+        let provider: Provider | null = null;
+        if (car.provider_id) {
+          provider = await fetchProviderDetails(car.provider_id, headers);
+        }
 
-      // Filter cars based on favorite IDs
-      const favorites: Car[] = carsData.data
-        .filter((car: Car) => favoriteCarIds.includes(car._id || car.id))
-        .map((car: Car) => {
-          // Get the provider from providersMap by matching the provider_id
-          const provider =
-            car.provider_id && providersMap[car.provider_id]
-              ? providersMap[car.provider_id]
-              : null;
-
-          // Return the car data with the provider's information merged
-          return {
-            ...car,
-            id: car._id || car.id,
-            price: car.dailyRate || car.price || 0,
-            verified: provider ? provider.verified : false, // Add the provider's verified status
-            providerName: provider ? provider.name : "Unknown Provider", // Add the provider's name
-          };
-        });
+        // Return the car data with the provider's information merged
+        return {
+          ...car,
+          id: car._id || car.id,
+          price: car.dailyRate || car.price || 0,
+          verified: provider ? provider.verified : false,
+          providerName: provider ? provider.name : "Unknown Provider",
+          provider: provider
+        };
+      });
+      
+      const favorites = (await Promise.all(carDataPromises)).filter(car => car !== null) as Car[];
 
       setFavoriteCars(favorites);
-      console.log("test : ", providersMap);
-      console.log("test2 : ", favoriteCars);
     } catch (err: unknown) {
       console.error("Error fetching favorites:", err);
       setError(
@@ -185,7 +191,7 @@ export default function FavoriteCars(): React.ReactNode {
     }
   }
 
-  // Function to remove a car from favorites
+  // Function to remove a car from favorites remains the same
   async function removeFavorite(carId: string): Promise<void> {
     try {
       const payload: FavoriteAction = {
@@ -279,20 +285,20 @@ export default function FavoriteCars(): React.ReactNode {
                     <h2 className="text-lg font-bold">
                       {car.brand} {car.model}
                     </h2>
-                    <p className="text-sm text-gray-600 -mt-1">
+                    <div className="text-sm text-gray-600 -mt-1 flex items-center">
                       {new Date(car.manufactureDate).getFullYear()} •{" "}
-                      <span className="font-medium text-[#8A7D55]">
+                      <span className="font-medium text-[#8A7D55] ml-1">
                         {car.providerName}
                       </span>
                       {car.verified && (
-                        <div className="mb-[-3px] ml-2 relative group inline-block">
+                        <span className="ml-2 relative group inline-block">
                           <CheckCircle className="text-green-500 w-4 h-4" />
                           <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
                             Verified
                           </span>
-                        </div>
+                        </span>
                       )}
-                    </p>
+                    </div>
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-lg text-[#8A7D55]">
@@ -329,14 +335,6 @@ export default function FavoriteCars(): React.ReactNode {
                       Reserve Now
                     </button>
                   </Link>
-
-                  {/* <button 
-                    onClick={() => removeFavorite(car.id)}
-                    className="py-2.5 px-3 border border-red-300 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors duration-200"
-                    title="Remove from favorites"
-                  >
-                    ✕
-                  </button> */}
                 </div>
               </div>
             </div>
