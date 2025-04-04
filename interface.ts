@@ -2,7 +2,7 @@
 interface CarItem {
   id: string;
   name: string;
-  picture: string;
+  images: string[];
   description: string;
   category: string;
   make: string;
