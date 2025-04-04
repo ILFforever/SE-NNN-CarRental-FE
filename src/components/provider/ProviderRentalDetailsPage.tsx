@@ -32,14 +32,23 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
   // Fetch rental details
   useEffect(() => {
     async function fetchRentalDetails() {
+      console.log('DEBUG: Starting to fetch rental details for ID:', params.rentalId);
+      console.log('DEBUG: Session state:', {
+        status,
+        hasToken: !!session?.user?.token,
+        userId: session?.user?.id
+      });
+
       // Check if session exists
       if (!session?.user?.token) {
+        console.log('DEBUG: No token found, redirecting to signin');
         router.push('/signin?callbackUrl=/provider/tools');
         return;
       }
 
       setIsLoading(true);
       try {
+        console.log('DEBUG: Fetching rental data from API');
         const response = await fetch(`${API_BASE_URL}/rents/${params.rentalId}`, {
           headers: {
             'Authorization': `Bearer ${session.user.token}`,
@@ -47,23 +56,33 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
           }
         });
 
+        console.log('DEBUG: Rental API response status:', response.status);
+        
         if (!response.ok) {
           throw new Error('Failed to fetch rental details');
         }
 
         const data = await response.json();
+        console.log('DEBUG: Rental data received:', data);
         
         // Verify this rental is for a car owned by this provider
         if (data.success && data.data) {
+          console.log('DEBUG: Verifying car ownership');
           // If car is fully populated
           if (typeof data.data.car === 'object' && data.data.car.provider_id) {
+            console.log('DEBUG: Car data is an object with provider_id:', data.data.car.provider_id);
+            console.log('DEBUG: Session user id:', session.user.id);
+            
             // Direct check on populated car
             if (data.data.car.provider_id !== session.user.id) {
+              console.log('DEBUG: Provider ID mismatch - Car provider:', data.data.car.provider_id, 'Session user:', session.user.id);
               throw new Error('You do not have permission to view this rental');
             }
           } else {
             // Need to fetch the car to check its provider
             const carId = typeof data.data.car === 'string' ? data.data.car : data.data.car._id;
+            console.log('DEBUG: Car data is a reference. Fetching car details for ID:', carId);
+            
             const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
               headers: {
                 'Authorization': `Bearer ${session.user.token}`,
@@ -71,18 +90,23 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
               }
             });
             
+            console.log('DEBUG: Car API response status:', carResponse.status);
+            
             if (!carResponse.ok) {
               throw new Error('Failed to verify car ownership');
             }
             
             const carData = await carResponse.json();
+            console.log('DEBUG: Car data received:', carData);
             
             if (carData.success && carData.data && carData.data.provider_id !== session.user.id) {
+              console.log('DEBUG: Provider ID mismatch - Car provider:', carData.data.provider_id, 'Session user:', session.user.id);
               throw new Error('You do not have permission to view this rental');
             }
           }
         }
         
+        console.log('DEBUG: Setting rental data in state');
         setRental(data.data);
         setEditedNotes(data.data.notes || '');
       } catch (err) {
@@ -94,17 +118,22 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
     }
 
     fetchRentalDetails();
-  }, [params.rentalId, session?.user?.token, router, session?.user?.id]);
+  }, [params.rentalId, session?.user?.token, router, session?.user?.id, status]);
 
   // Handle updating notes
   const handleUpdateNotes = async () => {
-    if (!session?.user?.token) return;
+    console.log('DEBUG: Starting notes update');
+    if (!session?.user?.token) {
+      console.log('DEBUG: No token available, aborting notes update');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
+      console.log('DEBUG: Sending notes update request with notes:', editedNotes);
       const response = await fetch(`${API_BASE_URL}/rents/${params.rentalId}`, {
         method: 'PUT',
         headers: {
@@ -114,12 +143,19 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
         body: JSON.stringify({ notes: editedNotes })
       });
 
+      console.log('DEBUG: Notes update response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('DEBUG: Notes update error response:', errorData);
         throw new Error(errorData.message || 'Failed to update notes');
       }
 
+      const successData = await response.json();
+      console.log('DEBUG: Notes update success response:', successData);
+
       // Update local state
+      console.log('DEBUG: Updating local rental state with new notes');
       setRental((prev: any) => ({
         ...prev,
         notes: editedNotes
@@ -325,6 +361,16 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
   const car = typeof rental.car === 'object' ? rental.car : null;
   const user = typeof rental.user === 'object' ? rental.user : null;
 
+  console.log('DEBUG: Car data:', car);
+  console.log('DEBUG: User data:', user);
+
+  // Get image URL from car data
+  const carImage = car && car.images && car.images.length > 0 
+    ? `https://blob.ngixx.me/images/${car.images[0]}` 
+    : '/img/car-placeholder.jpg';
+  
+  console.log('DEBUG: Selected car image URL:', carImage);
+
   // Calculate late fees if applicable
   const { daysLate, lateFeePerDay, totalLateFee } = calculateLateFees(rental);
 
@@ -370,7 +416,7 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
               <div className="space-y-3">
                 <div className="aspect-w-16 aspect-h-9 bg-gray-100 mb-4 rounded-md overflow-hidden">
                   <Image 
-                    src="/img/car-placeholder.jpg" 
+                    src={carImage}
                     alt={`${car.brand} ${car.model}`}
                     width={400}
                     height={225}
