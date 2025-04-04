@@ -75,7 +75,6 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
   // Define a function to fetch car details if needed
   const fetchCarDetails = async (carId: string, token: string): Promise<Car | null> => {
     try {
-      console.log('DEBUG: Fetching detailed car info for ID:', carId);
       const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -87,9 +86,7 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
         throw new Error(`Failed to fetch car with ID: ${carId}`);
       }
       
-      const carData = await carResponse.json();
-      console.log('DEBUG: Car details response:', carData);
-      
+      const carData = await carResponse.json();      
       if (carData.success && carData.data) {
         return carData.data as Car;
       }
@@ -100,17 +97,10 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
       return null;
     }
   };
-
+//images/car/
   // Fetch rental details
   useEffect(() => {
     async function fetchRentalDetails() {
-      console.log('DEBUG: Starting to fetch rental details for ID:', params.rentalId);
-      console.log('DEBUG: Session state:', {
-        status,
-        hasToken: !!session?.user?.token,
-        userId: session?.user?.id
-      });
-
       // Check if session exists
       if (!session?.user?.token) {
         console.log('DEBUG: No token found, redirecting to signin');
@@ -195,11 +185,11 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
       console.log('DEBUG: No token or rental data available, aborting notes update');
       return;
     }
-
+  
     setIsLoading(true);
     setError(null);
     setSuccess(null);
-
+  
     try {
       console.log('DEBUG: Sending notes update request with notes:', editedNotes);
       const response = await fetch(`${API_BASE_URL}/rents/${params.rentalId}`, {
@@ -210,7 +200,7 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
         },
         body: JSON.stringify({ notes: editedNotes })
       });
-
+  
       console.log('DEBUG: Notes update response status:', response.status);
       
       if (!response.ok) {
@@ -218,19 +208,20 @@ export default function ProviderRentalDetailsPage({ params }: ProviderRentalDeta
         console.log('DEBUG: Notes update error response:', errorData);
         throw new Error(errorData.message || 'Failed to update notes');
       }
-
+  
       const successData = await response.json();
       console.log('DEBUG: Notes update success response:', successData);
-
+  
       // Update local state
       console.log('DEBUG: Updating local rental state with new notes');
-      setRental((prev) => {
+      setRental(prev => {
         if (!prev) return null;
         return {
           ...prev,
           notes: editedNotes
         };
       });
+      
       setIsEditingNotes(false);
       setSuccess('Notes updated successfully');
     } catch (err) {
