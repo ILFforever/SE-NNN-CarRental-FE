@@ -114,6 +114,9 @@ export default function UnifiedReservationDetails({
 
       setIsLoading(true);
       try {
+        console.log(`Fetching reservation ID: ${reservationId}`);
+        
+        // Make API call to fetch reservation details - this should match the pattern in ReservationManagement
         const response = await fetch(`${API_BASE_URL}/rents/${reservationId}`, {
           headers: {
             'Authorization': `Bearer ${session.user.token}`,
@@ -121,60 +124,105 @@ export default function UnifiedReservationDetails({
           }
         });
 
+        console.log('API Response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch rental details');
+          console.error('Failed to fetch reservation details, status:', response.status);
+          throw new Error('Failed to fetch reservation details');
         }
 
         const data = await response.json();
+        console.log('API Response data:', data);
         
-        // Verify access based on user type
-        if (data.success && data.data) {
-          // If user type is provider, verify this is their car
-          if (userType === 'provider') {
-            // If car is fully populated
-            if (typeof data.data.car === 'object' && data.data.car.provider_id) {
-              // Direct check on populated car
-              if (data.data.car.provider_id !== session.user.id) {
-                throw new Error('You do not have permission to view this rental');
-              }
-            } else {
-              // Need to fetch the car to check its provider
-              const carId = typeof data.data.car === 'string' ? data.data.car : data.data.car._id;
-              const carDetails = await fetchCarDetails(carId, session.user.token);
-              
-              if (!carDetails) {
-                throw new Error('Failed to fetch car details');
-              }
-              
-              // Check provider ID
-              if (carDetails.provider_id !== session.user.id) {
-                throw new Error('You do not have permission to view this rental');
-              }
-              
-              // Update the car data in the rental with the full details
-              data.data.car = carDetails;
-            }
-          }
-          // If user type is customer, verify this is their rental
-          else if (userType === 'customer' && data.data.user && typeof data.data.user === 'string') {
-            if (data.data.user !== session.user.id) {
-              throw new Error('You do not have permission to view this rental');
-            }
-          }
-          // Admin can view all rentals, no additional checks needed
+        if (!data.success || !data.data) {
+          console.error('Invalid response format:', data);
+          throw new Error('Received invalid data format from server');
         }
         
+        // Process car data if needed
+        if (typeof data.data.car === 'string') {
+          // Car is just an ID, fetch the details
+          console.log('Car is an ID, fetching details:', data.data.car);
+          try {
+            const carResponse = await fetch(`${API_BASE_URL}/cars/${data.data.car}`, {
+              headers: {
+                'Authorization': `Bearer ${session.user.token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (carResponse.ok) {
+              const carResponseData = await carResponse.json();
+              if (carResponseData.success && carResponseData.data) {
+                data.data.car = carResponseData.data;
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching car details:', error);
+          }
+        }
+        
+        // Process user data if needed
+        if (typeof data.data.user === 'string' && userType !== 'customer') {
+          // User is just an ID, fetch the details
+          console.log('User is an ID, fetching details:', data.data.user);
+          try {
+            const userResponse = await fetch(`${API_BASE_URL}/auth/users/${data.data.user}`, {
+              headers: {
+                'Authorization': `Bearer ${session.user.token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (userResponse.ok) {
+              const userResponseData = await userResponse.json();
+              if (userResponseData.success && userResponseData.data) {
+                data.data.user = userResponseData.data;
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching user details:', error);
+          }
+        }
+        
+        // Verify access based on user type
+        if (userType === 'provider') {
+          // For providers: Check if this is their car
+          const providerId = session.user.id || session.user._id;
+          const carData = data.data.car;
+          
+          if (typeof carData === 'object' && carData.provider_id !== providerId) {
+            console.error('Provider ID mismatch:', carData.provider_id, 'vs', providerId);
+            throw new Error('You do not have permission to view this reservation');
+          }
+        } 
+        else if (userType === 'customer') {
+          // For customers: Check if this is their reservation
+          const userId = session.user.id || session.user._id;
+          const userData = data.data.user;
+          const reservationUserId = typeof userData === 'string' ? userData : userData?._id;
+          
+          if (reservationUserId !== userId) {
+            console.error('User ID mismatch:', reservationUserId, 'vs', userId);
+            throw new Error('You do not have permission to view this reservation');
+          }
+        }
+        // Admin: No checks needed, they can view all reservations
+        
+        console.log('Setting rental data after validation:', data.data);
         setRental(data.data);
         setEditedNotes(data.data.notes || '');
       } catch (err) {
-        console.error('Error fetching rental details:', err);
+        console.error('Error in fetching rental details:', err);
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchRentalDetails();
+    if (session?.user?.token) {
+      fetchRentalDetails();
+    }
   }, [reservationId, session?.user?.token, router, session?.user?.id, status, userType, backUrl]);
 
   // Handle updating notes

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Edit, Trash2, Eye, Check, ChevronDown } from
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/config/apiConfig';
+import { useSession } from 'next-auth/react';
 import ConfirmationModal from '@/components/util/ConfirmationModal';
 
 // Type definitions
@@ -56,7 +57,8 @@ interface ReservationManagementProps {
 
 export default function ReservationManagement({ token }: ReservationManagementProps) {
   const router = useRouter();
-  
+  const { data: session } = useSession();
+  const [usertype, setusertype] = useState(''); //edit this to store usertype
   // State variables
   const [rentals, setRentals] = useState<Rent[]>([]);
   const [filteredRentals, setFilteredRentals] = useState<Rent[]>([]);
@@ -87,25 +89,49 @@ export default function ReservationManagement({ token }: ReservationManagementPr
   const [providers, setProviders] = useState<{[key: string]: Provider}>({});
   
   // Fetch all rentals data
+  // Fetch all rentals data
   useEffect(() => {
     const fetchRentals = async () => {
+      if (!session?.user?.token) {
+        setError('Authentication required. Please sign in.');
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError('');
       
       try {
-        // Fetch all rentals
-        const response = await fetch(`${API_BASE_URL}/rents/all`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        let response;
+        let data;
+
+        // Check user type and fetch rentals accordingly
+        if (session?.user?.userType === 'provider') {
+          // For providers, fetch rentals for their cars
+          const queryParams = new URLSearchParams();
+          // Optionally add any filtering params if needed
+          
+          response = await fetch(`${API_BASE_URL}/rents/provider`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+        } else {
+          // For admin, fetch all rentals
+          response = await fetch(`${API_BASE_URL}/rents/all`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+        }
 
         if (!response.ok) {
           throw new Error(`Failed to fetch rentals: ${response.status}`);
         }
 
-        const data = await response.json();
+        data = await response.json();
         
         if (!data.success) {
           throw new Error('Failed to fetch rental data');
@@ -165,7 +191,7 @@ export default function ReservationManagement({ token }: ReservationManagementPr
     };
 
     fetchRentals();
-  }, [token, itemsPerPage]);
+  }, [token, itemsPerPage, session?.user?.userType]);
 
   // Apply filters
   useEffect(() => {
@@ -318,12 +344,8 @@ export default function ReservationManagement({ token }: ReservationManagementPr
     }
   };
 
-  // Handle rental deletion - Admin only
+  // Handle rental deletion - Admin and Provider only
   const handleDeleteRental = async (rentalId: string) => {
-    if (!confirm("Are you sure you want to permanently delete this rental? This action cannot be undone.")) {
-      return;
-    }
-    
     setIsLoading(true);
     setError('');
     setSuccess('');
@@ -389,14 +411,31 @@ export default function ReservationManagement({ token }: ReservationManagementPr
     }).format(amount);
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+// Format date and time for date column
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return {
+    date: date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
-    });
+    }),
+    time: date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
   };
+};
+
+// Simple date formatting for other columns
+const formatSimpleDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
 
   // Get status badge classes
   const getStatusBadgeClasses = (status: string) => {
@@ -426,16 +465,23 @@ export default function ReservationManagement({ token }: ReservationManagementPr
     
     const rentalId = rental._id;
     
-    // Direct navigation actions - no confirmation needed
-    if (action === 'view') {
-      router.push(`/admin/reservations/${rentalId}`);
-      return;
-    }
-    
-    if (action === 'edit') {
-      router.push(`/admin/reservations/${rentalId}`);
-      return;
-    }
+  // Direct navigation actions - no confirmation needed
+  if (action === 'view') {
+    const basePath = session?.user?.userType === 'provider' 
+      ? '/provider/reservations' 
+      : '/admin/reservations';
+    router.push(`${basePath}/${rentalId}`);
+    return;
+  }
+
+  if (action === 'edit') {
+    const basePath = session?.user?.userType === 'provider' 
+      ? '/provider/reservations' 
+      : '/admin/reservations';
+    router.push(`${basePath}/${rentalId}`);
+    return;
+  }
+
   // For actions that need confirmation, show the modal
   if (['confirm', 'complete', 'cancel', 'delete'].includes(action)) {
     setSelectedRental(rental);
@@ -644,9 +690,11 @@ export default function ReservationManagement({ token }: ReservationManagementPr
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Vehicle
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Provider
-                  </th>
+                  {session?.user?.userType !== 'provider' && (
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Provider
+                    </th>
+                  )}
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Dates
                   </th>
@@ -672,7 +720,10 @@ export default function ReservationManagement({ token }: ReservationManagementPr
                       {/* Date Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium">
-                          {formatDate(rental.createdAt)}
+                          {formatDate(rental.createdAt).date}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatDate(rental.createdAt).time}
                         </div>
                       </td>
                       
@@ -709,25 +760,27 @@ export default function ReservationManagement({ token }: ReservationManagementPr
                       </td>
                       
                       {/* Provider Column */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{providerName}</div>
-                      </td>
+                        {session?.user?.userType !== 'provider' && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{providerName}</div>
+                          </td>
+                        )}
                       
                       {/* Dates Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-xs flex">
                             <span className="text-xs font-medium text-gray-900 w-12">From:</span>
-                            <span>{formatDate(rental.startDate)}</span>
+                            <span>{formatSimpleDate(rental.startDate)}</span>
                           </div>
                           <div className="text-xs flex">
                             <span className="text-xs font-medium text-gray-900 w-12">Until:</span>
-                            <span>{formatDate(rental.returnDate)}</span>
+                            <span>{formatSimpleDate(rental.returnDate)}</span>
                           </div>
                           {rental.actualReturnDate && (
                             <div className="text-xs flex">
                               <span className="text-xs font-medium text-gray-900 w-12">Actual:</span>
-                              <span>{formatDate(rental.actualReturnDate)}</span>
+                              <span>{formatSimpleDate(rental.actualReturnDate)}</span>
                             </div>
                           )}
                         </div>
