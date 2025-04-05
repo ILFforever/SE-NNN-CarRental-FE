@@ -430,10 +430,10 @@ export default function ProviderRentalManagement({
         updateRentalStatus(rentalId, 'cancel');
         break;
       case 'view':
-        router.push(`/provider/rentals/${rentalId}`);
+        router.push(`/provider/reservations/${rentalId}`);
         break;
       case 'edit':
-        router.push(`/provider/rentals/${rentalId}/edit`);
+        router.push(`/provider/reservations/${rentalId}`);
         break;
       default:
         console.error('Unknown action:', action);

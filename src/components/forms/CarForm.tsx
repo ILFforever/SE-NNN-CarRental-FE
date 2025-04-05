@@ -1,11 +1,12 @@
-// src/components/common/CarForm.tsx
+// src/components/forms/CarForm.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/config/apiConfig';
 import Link from 'next/link';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import CarImageUpload from './CarImageUpload';
 
 // Service interface
 interface Service {
@@ -65,6 +66,11 @@ export default function CarForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
   
+  // Image states
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  
   // Service states
   const [services, setServices] = useState<Service[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(true);
@@ -97,6 +103,11 @@ export default function CarForm({
   };
 
   const [formData, setFormData] = useState<CarFormData>(initialFormData);
+
+  // Handle selected images change
+  const handleImagesChange = (files: File[]) => {
+    setSelectedImages(files);
+  };
 
   // If admin, fetch car providers
   useEffect(() => {
@@ -200,6 +211,10 @@ export default function CarForm({
             .toISOString()
             .split('T')[0];
 
+          if (data.data.images && Array.isArray(data.data.images)) {
+            setExistingImages(data.data.images);
+          }
+          
           setFormData({
             license_plate: data.data.license_plate,
             brand: data.data.brand,
@@ -270,6 +285,12 @@ export default function CarForm({
     }).format(amount);
   };
 
+  // Mark existing image for removal
+  const handleRemoveExistingImage = (imageUrl: string) => {
+    setImagesToRemove(prev => [...prev, imageUrl]);
+    setExistingImages(prev => prev.filter(img => img !== imageUrl));
+  };
+
   // Form validation
   const validateForm = () => {
     if (!formData.license_plate || 
@@ -312,20 +333,46 @@ export default function CarForm({
     setSuccess(null);
 
     try {
+      // Create form data for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all fields to form data
+      Object.keys(formData).forEach(key => {
+        if (key === 'service') {
+          // Handle services array
+          formData.service.forEach(serviceId => {
+            formDataToSend.append('service', serviceId);
+          });
+        } else {
+          formDataToSend.append(key, formData[key as keyof CarFormData].toString());
+        }
+      });
+      
+      // Add images to form data
+      selectedImages.forEach(file => {
+        formDataToSend.append('images', file);
+      });
+      
+      // Add list of images to remove if updating
+      if (carId && imagesToRemove.length > 0) {
+        formDataToSend.append('removeImage', JSON.stringify(imagesToRemove));
+      }
+
       // Determine if we're creating a new car or updating an existing one
       const url = carId 
         ? `${API_BASE_URL}/cars/${carId}` 
         : `${API_BASE_URL}/cars`;
       
       const method = carId ? 'PUT' : 'POST';
-
+      console.log("Files to upload:", selectedImages);
+      console.log("Form data being submitted:", Object.fromEntries(formDataToSend));
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
+          // Don't set Content-Type - it will be set automatically with the boundary
         },
-        body: JSON.stringify(formData)
+        body: formDataToSend
       });
 
       if (!response.ok) {
@@ -460,7 +507,7 @@ export default function CarForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* License Plate */}
           <div>
@@ -626,6 +673,42 @@ export default function CarForm({
             </div>
           )}
         </div>
+
+        {/* Car Image Upload Section */}
+        <div className="col-span-1 md:col-span-3 mb-6">
+          <CarImageUpload 
+            onImagesChange={handleImagesChange}
+            maxImages={5}
+          />
+          
+          {/* Display existing images if editing */}
+          {existingImages.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium text-gray-700 mb-2">Current Images</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {existingImages.map((image, index) => (
+                  <div key={index} className="relative border rounded-md overflow-hidden">
+                    <img
+                      src={image.startsWith('http') ? image : `https://blob.ngixx.me/images/${image}`}
+                      alt={`Car image ${index + 1}`}
+                      className="w-full h-32 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingImage(image)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    >
+                      <span className="sr-only">Remove</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* Service Selection */}
         <div className="col-span-1 md:col-span-3 mt-2 mb-6">
@@ -651,146 +734,21 @@ export default function CarForm({
           <button
             type="submit"
             disabled={isSaving}
-            className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-50 flex items-center"
           >
-            {isSaving ? 'Saving...' : carId ? 'Save Changes' : 'Add Car'}
+            {isSaving ? (
+              <>
+                <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                Saving...
+              </>
+            ) : carId ? (
+              'Save Changes'
+            ) : (
+              'Add Car'
+            )}
           </button>
         </div>
       </form>
     </div>
-  );
-}
-
-// Car Services Dropdown Component for displaying in tables
-export function CarServicesDropdown({ token, serviceIds }: { token: string, serviceIds: string[] }) {
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Fetch services data
-  useEffect(() => {
-    const fetchServices = async () => {
-      if (!serviceIds || serviceIds.length === 0) {
-        setServices([]);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        
-        const response = await fetch(`${API_BASE_URL}/services`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch services');
-        }
-
-        const data = await response.json();
-        
-        if (data.success && Array.isArray(data.data)) {
-          // Filter to only include services that are in the serviceIds array
-          const filteredServices = data.data.filter((service: Service) => 
-            serviceIds.includes(service._id)
-          );
-          setServices(filteredServices);
-        } else {
-          setServices([]);
-        }
-      } catch (err) {
-        console.error('Error fetching services:', err);
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchServices();
-  }, [token, serviceIds]);
-
-  // Handle click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
-
-  if (isLoading) {
-    return (
-      <td className="px-4 py-3">
-        <div className="text-sm text-gray-500">Loading...</div>
-      </td>
-    );
-  }
-
-  if (error) {
-    return (
-      <td className="px-4 py-3">
-        <div className="text-sm text-red-500">Error: {error}</div>
-      </td>
-    );
-  }
-
-  if (services.length === 0) {
-    return (
-      <td className="px-4 py-3">
-        <div className="text-sm text-gray-500">No services</div>
-      </td>
-    );
-  }
-
-  return (
-    <td className="px-4 py-3">
-      <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center text-sm text-gray-700 hover:text-[#8A7D55] focus:outline-none"
-        >
-          <span>{services.length} service{services.length !== 1 ? 's' : ''}</span>
-          <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
-        </button>
-        
-        {isOpen && (
-          <div className="absolute left-0 mt-2 w-60 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-            <div className="py-1">
-              {services.map(service => (
-                <div key={service._id} className="px-4 py-2 hover:bg-gray-50">
-                  <div className="flex justify-between">
-                    <span className="font-medium text-gray-700">{service.name}</span>
-                    <span className="text-[#8A7D55]">{formatCurrency(service.rate)}</span>
-                  </div>
-                  {service.description && (
-                    <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </td>
   );
 }

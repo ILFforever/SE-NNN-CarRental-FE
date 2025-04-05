@@ -421,22 +421,21 @@ export default function ReservationManagement({ token }: ReservationManagementPr
   );
 
   // Execute actions on rentals
-const executeAction = (action: 'confirm' | 'complete' | 'cancel' | 'view' | 'edit' | 'delete', rental: Rent) => {
-  if (!rental) return;
-  
-  const rentalId = rental._id;
-  
-  // Direct navigation actions - no confirmation needed
-  if (action === 'view') {
-    router.push(`/admin/reservations/${rentalId}`);
-    return;
-  }
-  
-  if (action === 'edit') {
-    router.push(`/account/reservations/${rentalId}`);
-    return;
-  }
-  
+  const executeAction = (action: 'confirm' | 'complete' | 'cancel' | 'view' | 'edit' | 'delete', rental: Rent) => {
+    if (!rental) return;
+    
+    const rentalId = rental._id;
+    
+    // Direct navigation actions - no confirmation needed
+    if (action === 'view') {
+      router.push(`/admin/reservations/${rentalId}`);
+      return;
+    }
+    
+    if (action === 'edit') {
+      router.push(`/admin/reservations/${rentalId}`);
+      return;
+    }
   // For actions that need confirmation, show the modal
   if (['confirm', 'complete', 'cancel', 'delete'].includes(action)) {
     setSelectedRental(rental);

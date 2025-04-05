@@ -40,7 +40,7 @@ export default async function ProviderToolsPage() {
           <h2 className="text-xl font-medium mb-4 text-[#8A7D55]">Manage Rentals</h2>
           <p className="text-gray-600 mb-4">View and manage all rentals for your fleet.</p>
           <Link
-            href="/provider/manageReservation"
+            href="/provider/reservations"
             className="inline-block px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
           >
             Manage Rentals

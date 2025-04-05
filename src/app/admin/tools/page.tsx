@@ -78,7 +78,7 @@ export default async function AdminToolsPage() {
           <p className="text-gray-600 mb-4">Search, view and edit details about any booking in the system.</p>
           <div className="mb-4">
             <div className="relative">
-              <form action="/admin/manageReservations" method="GET" className="w-full">
+              <form action="/admin/reservations" method="GET" className="w-full">
                 <input
                   type="text"
                   name="search"
@@ -108,7 +108,7 @@ export default async function AdminToolsPage() {
             </div>
           </div>
           <Link
-            href="/admin/manageReservations"
+            href="/admin/reservations"
             className="inline-block px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
           >
             View All Bookings
