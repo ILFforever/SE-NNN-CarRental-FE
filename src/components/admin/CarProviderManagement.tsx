@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { API_BASE_URL, createAuthHeader } from "@/config/apiConfig";
+import { CheckCircle, XCircle } from 'lucide-react';
 
 // Comprehensive type definitions
 interface CarProviderData {
@@ -573,14 +574,15 @@ export default function CarProvider({ token }: CarProviderProps) {
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Actions
+                  Verification
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Verify
+                  Deactivate
                 </th>
+                
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -613,6 +615,41 @@ export default function CarProvider({ token }: CarProviderProps) {
                         : "N/A"}
                     </div>
                   </td>
+                  <td className="px-15 py-4 text-center w-50">
+                    <button
+                      onClick={() => handleToggleVerified(provider)}
+                      className={`
+                        w-full 
+                        px-6 py-2.5 
+                        rounded-md 
+                        text-white 
+                        font-medium 
+                        text-sm 
+                        transition-colors 
+                        duration-200 
+                        flex items-center justify-center 
+                        space-x-2
+                        ${provider.verified 
+                          ? "bg-green-800 hover:bg-green-900" 
+                          : "bg-red-700 hover:bg-red-800"
+                        }
+                        focus:outline-none 
+                        focus:ring-2 
+                        focus:ring-opacity-50 
+                        ${provider.verified 
+                          ? "focus:ring-green-700" 
+                          : "focus:ring-red-600"
+                        }
+                      `}
+                    >
+                      {/* {provider.verified ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )} */}
+                      <span>{provider.verified ? "Verified" : "Not Verified"}</span>
+                    </button>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleDeactivateProvider(provider._id)}
@@ -621,18 +658,7 @@ export default function CarProvider({ token }: CarProviderProps) {
                       Deactivate
                     </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    {" "}
-                    {/* Center the button */}
-                    <button
-                      onClick={() => handleToggleVerified(provider)}
-                      className={`${
-                        provider.verified ? "bg-green-500" : "bg-gray-500"
-                      } text-white px-4 py-2 rounded-md transition-all duration-200 hover:scale-105 hover:shadow-xl`}
-                    >
-                      {provider.verified ? "Verified" : "Not Verified"}
-                    </button>
-                  </td>
+                  
                 </tr>
               ))}
             </tbody>
