@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
 import ServiceSelection from "@/components/service/ServiceSelection";
 import CarServicesDropdown from "@/components/service/CarServicesDropdown";
-
+import CarForm from '@/components/forms/CarForm';
 // Type definitions
 interface Car {
   _id: string;
@@ -160,6 +160,11 @@ export default function CarManagement() {
       service: selectedServices,
     }));
   };
+
+  const handleAddCarSuccess = () => {
+    setShowCreateForm(false);
+    fetchCars(); // Your existing function to refresh the car list
+  }
 
   // Fetch provider's cars
   const fetchCars = async (page = 1) => {
@@ -446,197 +451,14 @@ export default function CarManagement() {
 
       {/* Create Car Form */}
       {showCreateForm && (
-        <div className="mb-8 p-5 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-medium mb-4">Add New Car</h2>
-
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* License Plate */}
-              <div>
-                <label
-                  htmlFor="license_plate"
-                  className="block text-gray-700 mb-1"
-                >
-                  License Plate *
-                </label>
-                <input
-                  type="text"
-                  id="license_plate"
-                  name="license_plate"
-                  value={formData.license_plate}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="e.g., ABC-123"
-                />
-              </div>
-
-              {/* Brand */}
-              <div>
-                <label htmlFor="brand" className="block text-gray-700 mb-1">
-                  Brand *
-                </label>
-                <input
-                  type="text"
-                  id="brand"
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="e.g., Mercedes, BMW"
-                />
-              </div>
-
-              {/* Model */}
-              <div>
-                <label htmlFor="model" className="block text-gray-700 mb-1">
-                  Model *
-                </label>
-                <input
-                  type="text"
-                  id="model"
-                  name="model"
-                  value={formData.model}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="e.g., C-Class, 5 Series"
-                />
-              </div>
-
-              {/* Type */}
-              <div>
-                <label htmlFor="type" className="block text-gray-700 mb-1">
-                  Type *
-                </label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                >
-                  {carTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Color */}
-              <div>
-                <label htmlFor="color" className="block text-gray-700 mb-1">
-                  Color *
-                </label>
-                <select
-                  id="color"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                >
-                  <option value="">Select Color</option>
-                  {carColors.map((color) => (
-                    <option key={color} value={color}>
-                      {color}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Manufacture Date */}
-              <div>
-                <label
-                  htmlFor="manufactureDate"
-                  className="block text-gray-700 mb-1"
-                >
-                  Manufacture Date *
-                </label>
-                <input
-                  type="date"
-                  id="manufactureDate"
-                  name="manufactureDate"
-                  value={formData.manufactureDate}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                />
-              </div>
-
-              {/* Daily Rate */}
-              <div>
-                <label htmlFor="dailyRate" className="block text-gray-700 mb-1">
-                  Daily Rate (USD) *
-                </label>
-                <input
-                  type="number"
-                  id="dailyRate"
-                  name="dailyRate"
-                  value={formData.dailyRate}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                />
-              </div>
-
-              {/* Tier */}
-              <div>
-                <label htmlFor="tier" className="block text-gray-700 mb-1">
-                  Tier *
-                </label>
-                <select
-                  id="tier"
-                  name="tier"
-                  value={formData.tier}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                >
-                  {tiers.map((tier) => (
-                    <option key={tier} value={tier}>
-                      {getTierName(tier)} (Tier {tier})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Service Selection */}
-            <div className="col-span-1 md:col-span-3 mt-2 mb-6">
-              <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                <h3 className="text-lg font-medium text-[#8A7D55] mb-3">
-                  Additional Services
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Select the additional services you want to offer with this
-                  car. These services will be available for customers to add
-                  during booking.
-                </p>
-                {session?.user?.token && (
-                  <ServiceSelection
-                    selectedServices={formData.service}
-                    onServicesChange={handleServicesChange}
-                    token={session?.user?.token}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={handleCancelCreate}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-50"
-              >
-                {isLoading ? "Adding Car..." : "Add Car"}
-              </button>
-            </div>
-          </form>
+        <div className="mb-8">
+          <CarForm 
+            token={session?.user?.token || ''}
+            providerId={session?.user?.id || session?.user?._id || ''}
+            onSuccess={handleAddCarSuccess}
+            backUrl="/provider/manageCars"
+            title="Add New Car"
+          />
         </div>
       )}
 

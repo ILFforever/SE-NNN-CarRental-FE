@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import CarForm from '@/components/forms/CarForm';
 
 // Type definitions
 interface Car {
@@ -163,6 +164,11 @@ export default function CarManagement({ token }: CarManagementProps) {
       setError('Could not load car providers. Please try again later.');
     }
   };
+
+  const handleAddCarSuccess = () => {
+    setShowCreateForm(false);
+    fetchCars(); // Your existing function to refresh the car list
+  }
 
   // Fetch all cars
   const fetchCars = async (page = 1) => {
@@ -415,213 +421,14 @@ export default function CarManagement({ token }: CarManagementProps) {
 
       {/* Create Car Form */}
       {showCreateForm && (
-        <div className="mb-8 p-5 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-medium mb-4">Add New Car</h2>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* License Plate */}
-              <div>
-                <label htmlFor="license_plate" className="block text-gray-700 mb-1">
-                  License Plate *
-                </label>
-                <input
-                  type="text"
-                  id="license_plate"
-                  name="license_plate"
-                  value={formData.license_plate}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="e.g., ABC-123"
-                />
-              </div>
-              
-              {/* Brand */}
-              <div>
-                <label htmlFor="brand" className="block text-gray-700 mb-1">
-                  Brand *
-                </label>
-                <input
-                  type="text"
-                  id="brand"
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="e.g., Mercedes, BMW"
-                />
-              </div>
-              
-              {/* Model */}
-              <div>
-                <label htmlFor="model" className="block text-gray-700 mb-1">
-                  Model *
-                </label>
-                <input
-                  type="text"
-                  id="model"
-                  name="model"
-                  value={formData.model}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="e.g., C-Class, 5 Series"
-                />
-              </div>
-              
-              {/* Type */}
-              <div>
-                <label htmlFor="type" className="block text-gray-700 mb-1">
-                  Type *
-                </label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                >
-                  {carTypes.map(type => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Color */}
-              <div>
-                <label htmlFor="color" className="block text-gray-700 mb-1">
-                  Color *
-                </label>
-                <select
-                  id="color"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                >
-                  <option value="">Select Color</option>
-                  {carColors.map(color => (
-                    <option key={color} value={color}>
-                      {color}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Manufacture Date */}
-              <div>
-                <label htmlFor="manufactureDate" className="block text-gray-700 mb-1">
-                  Manufacture Date *
-                </label>
-                <input
-                  type="date"
-                  id="manufactureDate"
-                  name="manufactureDate"
-                  value={formData.manufactureDate}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                />
-              </div>
-              
-              {/* Daily Rate */}
-              <div>
-                <label htmlFor="dailyRate" className="block text-gray-700 mb-1">
-                  Daily Rate (USD) *
-                </label>
-                <input
-                  type="number"
-                  id="dailyRate"
-                  name="dailyRate"
-                  value={formData.dailyRate}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                />
-              </div>
-              
-              {/* Tier */}
-              <div>
-                <label htmlFor="tier" className="block text-gray-700 mb-1">
-                  Tier *
-                </label>
-                <select
-                  id="tier"
-                  name="tier"
-                  value={formData.tier}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                >
-                  {tiers.map(tier => (
-                    <option key={tier} value={tier}>
-                      {getTierName(tier)} (Tier {tier})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Provider */}
-              <div>
-                <label htmlFor="provider_id" className="block text-gray-700 mb-1">
-                  Car Provider *
-                </label>
-                <div className="relative">
-                  <select
-                    id="provider_id"
-                    name="provider_id"
-                    value={formData.provider_id}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${
-                      !formData.provider_id && carProviders.length > 0 
-                        ? 'border-yellow-300 bg-yellow-50' 
-                        : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]`}
-                  >
-                    <option value="">Select Provider</option>
-                    {carProviders.map(provider => (
-                      <option key={provider._id} value={provider._id}>
-                        {provider.name}
-                      </option>
-                    ))}
-                  </select>
-                  {carProviders.length === 0 && (
-                    <div className="mt-1 text-sm text-red-600">
-                      No providers available. Please create a provider first.
-                    </div>
-                  )}
-                  {carProviders.length > 0 && !formData.provider_id && (
-                    <div className="absolute right-3 top-2.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                {carProviders.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    This will associate the car with the selected provider.
-                  </div>
-                )}
-              </div></div>
-            
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={handleCancelCreate}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading || carProviders.length === 0}
-                className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-50"
-              >
-                {isLoading ? 'Adding Car...' : 'Add Car'}
-              </button>
-            </div>
-          </form>
+        <div className="mb-8">
+          <CarForm 
+            token={session?.user?.token || ''}
+            providerId={session?.user?.id || session?.user?._id || ''}
+            onSuccess={handleAddCarSuccess}
+            backUrl="/provider/manageCars"
+            title="Add New Car"
+          />
         </div>
       )}
 
