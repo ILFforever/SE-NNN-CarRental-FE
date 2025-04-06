@@ -8,7 +8,7 @@ import { API_BASE_URL } from "@/config/apiConfig";
 import Image from "next/image";
 import Link from "next/link";
 import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle,Star } from "lucide-react";
 
 // Type definitions
 interface Provider {
@@ -1256,27 +1256,34 @@ export default function CatalogPage() {
                     <h2 className="text-lg font-bold">
                       {car.brand} {car.model}
                     </h2>
-                    <p className="text-sm text-gray-600 -mt-1">
+                      <p className="text-sm text-gray-600 -mt-1 flex items-center">
                       {car.year} •{" "}
-                      <span className="font-medium text-[#8A7D55]">
+                      <span className="font-medium text-[#8A7D55] ml-1">
                         {car.provider}
                       </span>
                       {/* verified icon */}
-                      {car.verified ? (
-                        <div className="mb-[-3px] ml-2 relative group inline-block">
+                      {car.verified && (
+                        <div className="ml-2 relative group inline-flex items-center">
                           <CheckCircle className="text-green-500 w-4 h-4" />
                           <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
                             Verified
                           </span>
                         </div>
-                      ) : null}
-                        {/* แสดงคะแนน */}
-                      {providers[car.providerId].review?.averageRating !== undefined && (
-                        <span className="ml-2 text-yellow-500 text-sm">
-                          ⭐ {providers[car.providerId].review?.averageRating.toFixed(1)}
-                        </span>
                       )}
-                    </p>
+                      {/* แสดงคะแนน */}
+                      {providers[car.providerId]?.review?.averageRating !== undefined && (
+                        <div className="ml-2 relative group inline-flex items-center">
+                          <Star className="text-yellow-500 w-4 h-4" />
+                          <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
+                            Rated by {providers[car.providerId]?.review?.totalReviews}{" "}
+                            {providers[car.providerId]?.review?.totalReviews === 1 ? "person" : "people"}
+                          </span>
+                          <span className="ml-1 text-sm text-yellow-500">
+                            {providers[car.providerId]?.review?.averageRating?.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                    </p> 
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-lg text-[#8A7D55]">
