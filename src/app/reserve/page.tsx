@@ -18,6 +18,7 @@ import Link from "next/link";
 import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { CheckCircle } from "lucide-react";
+import ProviderDetail from "@/components/provider/providerDetail";
 
 // Define the Car interface based on your API response
 interface Car {
@@ -444,7 +445,6 @@ export default function Booking() {
           Complete the details below to reserve your premium vehicle
         </p>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         {/* Car Details */}
         {car && (
@@ -469,255 +469,349 @@ export default function Booking() {
                         <span className="text-white font-bold text-lg">Currently Rented</span>
                       </div>
                     )} */}
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-[#8A7D55] font-serif">
+                    {car.brand} {car.model}
+                  </h3>
+                  <p className="text-gray-600">
+                    {car.type} {car.color ? `| ${car.color}` : ""}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">License Plate</p>
+                    <p className="font-medium">{car.license_plate || "N/A"}</p>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-[#8A7D55] font-serif">{car.brand} {car.model}</h3>
-                      <p className="text-gray-600">{car.type} {car.color ? `| ${car.color}` : ''}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">License Plate</p>
-                        <p className="font-medium">{car.license_plate || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Daily Rate</p>
-                        <p className="font-medium">${car.dailyRate?.toFixed(2) || '0.00'}/day</p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Manufacture Date</p>
-                        <p className="font-medium">
-                          {car.manufactureDate 
-                            ? new Date(car.manufactureDate).toLocaleDateString() 
-                            : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Tier</p>
-                        <p className="font-medium">{car.tier !== undefined ? getTierName(car.tier) : 'N/A'}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-500">Status</p>
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {isAvailable ? 'Available' : 'Not Available for Selected Dates'}
-                      </span>
-                    </div>
-                    
-                    {/* Vehicle features */}
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Features</p>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                          Air Conditioning
-                        </span>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                          Bluetooth
-                        </span>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                          Navigation
-                        </span>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                          Leather Seats
-                        </span>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Daily Rate</p>
+                    <p className="font-medium">
+                      ${car.dailyRate?.toFixed(2) || "0.00"}/day
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Manufacture Date</p>
+                    <p className="font-medium">
+                      {car.manufactureDate
+                        ? new Date(car.manufactureDate).toLocaleDateString()
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Tier</p>
+                    <p className="font-medium">
+                      {car.tier !== undefined ? getTierName(car.tier) : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <span
+                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      isAvailable
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {isAvailable
+                      ? "Available"
+                      : "Not Available for Selected Dates"}
+                  </span>
+                </div>
+
+                {/* Vehicle features */}
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Features</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                      Air Conditioning
+                    </span>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                      Bluetooth
+                    </span>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                      Navigation
+                    </span>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                      Leather Seats
+                    </span>
                   </div>
                 </div>
               </div>
-            )}
-            
-            {/* Booking Form */}
-            <div>
-              <h2 className="text-2xl font-serif font-medium mb-6">Booking Information</h2>
-              <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <div className="p-6 space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Full Name</p>
-                    <input 
-                      type="text"
-                      value={nameLastname}
-                      onChange={(e) => setNameLastname(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
-                      required
+            </div>
+          </div>
+        )}
+
+        {/* Booking Form / Booking Information*/}
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-serif font-medium mb-6">
+            Booking Information
+          </h2>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="p-6 space-y-4 ">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Full Name</p>
+                <input
+                  type="text"
+                  value={nameLastname}
+                  onChange={(e) => setNameLastname(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  Contact Number
+                </p>
+                <input
+                  type="tel"
+                  value={tel}
+                  onChange={(e) => setTel(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Pickup Date
+                  </p>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3 w-3 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      type="date"
+                      value={pickupDate ? pickupDate.format("YYYY-MM-DD") : ""}
+                      onChange={(e) =>
+                        setPickupDate(
+                          e.target.value ? dayjs(e.target.value) : null
+                        )
+                      }
+                      className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
                     />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Contact Number</p>
-                    <input 
-                      type="tel"
-                      value={tel}
-                      onChange={(e) => setTel(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
-                      required
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Pickup Time
+                  </p>
+                  <select
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                  >
+                    {timeOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Return Date
+                  </p>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3 w-3 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      type="date"
+                      value={returnDate ? returnDate.format("YYYY-MM-DD") : ""}
+                      onChange={(e) =>
+                        setReturnDate(
+                          e.target.value ? dayjs(e.target.value) : null
+                        )
+                      }
+                      min={
+                        pickupDate ? pickupDate.format("YYYY-MM-DD") : undefined
+                      }
+                      className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
                     />
                   </div>
-      
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Pickup Date</p>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <input
-                          type="date"
-                          value={pickupDate ? pickupDate.format("YYYY-MM-DD") : ""}
-                          onChange={(e) => setPickupDate(e.target.value ? dayjs(e.target.value) : null)}
-                          className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                        />
-                      </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Return Time
+                  </p>
+                  <select
+                    value={returnTime}
+                    onChange={(e) => setReturnTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                  >
+                    {timeOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Availability message */}
+              {availabilityMessage && (
+                <div
+                  className={`p-3 rounded-md text-sm ${
+                    isAvailable
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {isCheckingAvailability ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-current mr-2"></div>
+                      {availabilityMessage}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Pickup Time</p>
-                      <select 
-                        value={pickupTime}
-                        onChange={(e) => setPickupTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                      >
-                        {timeOptions.map(time => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-      
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Return Date</p>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <input
-                          type="date"
-                          value={returnDate ? returnDate.format("YYYY-MM-DD") : ""}
-                          onChange={(e) => setReturnDate(e.target.value ? dayjs(e.target.value) : null)}
-                          min={pickupDate ? pickupDate.format("YYYY-MM-DD") : undefined}
-                          className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Return Time</p>
-                      <select 
-                        value={returnTime}
-                        onChange={(e) => setReturnTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                      >
-                        {timeOptions.map(time => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-      
-                  {/* Availability message */}
-                  {availabilityMessage && (
-                    <div className={`p-3 rounded-md text-sm ${
-                      isAvailable ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                    }`}>
-                      {isCheckingAvailability ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-current mr-2"></div>
-                          {availabilityMessage}
-                        </div>
-                      ) : (
-                        availabilityMessage
-                      )}
-                    </div>
+                  ) : (
+                    availabilityMessage
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-      
-          {/* Reservation Summary */}
-          {car && pickupDate && returnDate && (
-            <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-              <div className="bg-[#8A7D55] text-white px-6 py-4">
-                <h2 className="text-xl font-serif font-medium">Reservation Summary</h2>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Vehicle</h3>
-                    <p className="text-gray-700"><span className="text-gray-500">Make/Model:</span> {car.brand} {car.model}</p>
-                    <p className="text-gray-700"><span className="text-gray-500">License:</span> {car.license_plate || 'N/A'}</p>
-                    <p className="text-gray-700"><span className="text-gray-500">Daily Rate:</span> ${car.dailyRate?.toFixed(2) || '0.00'}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Rental Period</h3>
-                    <p className="text-gray-700">
-                      <span className="text-gray-500">Pickup:</span> {pickupDate?.format('MMM D, YYYY')} at {pickupTime}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="text-gray-500">Return:</span> {returnDate?.format('MMM D, YYYY')} at {returnTime}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="text-gray-500">Duration:</span> {getRentalPeriod()} days
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="border-t border-gray-200 mt-6 pt-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Daily Rate:</span>
-                    <span>${car.dailyRate?.toFixed(2) || '0.00'}</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-gray-600">Number of Days:</span>
-                    <span>{getRentalPeriod()}</span>
-                  </div>
-                  {
-                    userTier>0? (
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-gray-600">Discount:</span>
-                        <span>{getTierDiscount(userTier)}%</span>
-                      </div>
-                    ):null
-                  }
-                  <div className="flex justify-between items-center mt-4 text-lg font-medium">
-                    <span>Total Cost:</span>
-                    <span className="text-[#8A7D55]">{formatCurrency(getTotalCost())}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-      
-          {/* Submit Button */}
-          <div className="text-center">
-            <button
-              onClick={makeBooking}
-              disabled={!formValid || isSubmitting}
-              className={`px-8 py-3 text-white rounded-md font-medium transition-all duration-200 ${
-                formValid && !isSubmitting
-                  ? 'bg-[#8A7D55] hover:bg-[#766b48] shadow-md hover:shadow-lg'
-                  : 'bg-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </span>
-              ) : (
-                'Confirm Reservation'
               )}
-            </button>
+            </div>
           </div>
-        </main>
-      );}
+
+          {/* Provider Details */}
+          <div
+            className={` ${
+              isAvailable ? "mt-4" : "mt-8"
+            } bottom-0 bg-white shadow-md rounded-lg overflow-hidden`}
+          >
+            {provider && car?.provider_id && (
+              <ProviderDetail
+                providerId={car?.provider_id}
+                token={session?.user?.token}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Reservation Summary */}
+      {car && pickupDate && returnDate && (
+        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+          <div className="bg-[#8A7D55] text-white px-6 py-4">
+            <h2 className="text-xl font-serif font-medium">
+              Reservation Summary
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-medium mb-3">Vehicle</h3>
+                <p className="text-gray-700">
+                  <span className="text-gray-500">Make/Model:</span> {car.brand}{" "}
+                  {car.model}
+                </p>
+                <p className="text-gray-700">
+                  <span className="text-gray-500">License:</span>{" "}
+                  {car.license_plate || "N/A"}
+                </p>
+                <p className="text-gray-700">
+                  <span className="text-gray-500">Daily Rate:</span> $
+                  {car.dailyRate?.toFixed(2) || "0.00"}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-3">Rental Period</h3>
+                <p className="text-gray-700">
+                  <span className="text-gray-500">Pickup:</span>{" "}
+                  {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
+                </p>
+                <p className="text-gray-700">
+                  <span className="text-gray-500">Return:</span>{" "}
+                  {returnDate?.format("MMM D, YYYY")} at {returnTime}
+                </p>
+                <p className="text-gray-700">
+                  <span className="text-gray-500">Duration:</span>{" "}
+                  {getRentalPeriod()} days
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 mt-6 pt-6">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Daily Rate:</span>
+                <span>${car.dailyRate?.toFixed(2) || "0.00"}</span>
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-gray-600">Number of Days:</span>
+                <span>{getRentalPeriod()}</span>
+              </div>
+              {userTier > 0 ? (
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-600">Discount:</span>
+                  <span>{getTierDiscount(userTier)}%</span>
+                </div>
+              ) : null}
+              <div className="flex justify-between items-center mt-4 text-lg font-medium">
+                <span>Total Cost:</span>
+                <span className="text-[#8A7D55]">
+                  {formatCurrency(getTotalCost())}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <div className="text-center">
+        <button
+          onClick={makeBooking}
+          disabled={!formValid || isSubmitting}
+          className={`px-8 py-3 text-white rounded-md font-medium transition-all duration-200 ${
+            formValid && !isSubmitting
+              ? "bg-[#8A7D55] hover:bg-[#766b48] shadow-md hover:shadow-lg"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+              Processing...
+            </span>
+          ) : (
+            "Confirm Reservation"
+          )}
+        </button>
+      </div>
+    </main>
+  );}
