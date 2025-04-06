@@ -18,8 +18,18 @@ interface Provider {
   telephone_number?: string;
   email?: string;
   verified?: boolean;
+  review?: {
+    totalReviews: number;
+    averageRating: number;
+    ratingDistribution: {
+      "1": number;
+      "2": number;
+      "3": number;
+      "4": number;
+      "5": number;
+    };
+  };
 }
-
 interface Rent {
   _id: string;
   startDate: string;
@@ -1260,6 +1270,12 @@ export default function CatalogPage() {
                           </span>
                         </div>
                       ) : null}
+                        {/* แสดงคะแนน */}
+                      {providers[car.providerId].review?.averageRating !== undefined && (
+                        <span className="ml-2 text-yellow-500 text-sm">
+                          ⭐ {providers[car.providerId].review?.averageRating.toFixed(1)}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
