@@ -428,6 +428,7 @@ export default function CarManagement({ token }: CarManagementProps) {
             onSuccess={handleAddCarSuccess}
             backUrl="/provider/manageCars"
             title="Add New Car"
+            isAdmin={true}
           />
         </div>
       )}
