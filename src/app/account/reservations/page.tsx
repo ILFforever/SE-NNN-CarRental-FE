@@ -43,7 +43,7 @@ export default function MyReservationsPage() {
     if (rating !== null && activeRatingReservation) {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/v1/rents/${activeRatingReservation}/rate`,
+          `${API_BASE_URL}/rents/${activeRatingReservation}/rate`,
           {
             method: "POST",
             headers: {
@@ -63,6 +63,15 @@ export default function MyReservationsPage() {
         console.log(
           `Rating ${rating} submitted for reservation ${activeRatingReservation}`
         );
+
+        // Update the reservations state so that isRated is updated.
+        setReservations((prevReservations) =>
+          prevReservations.map((reservation) =>
+            reservation._id === activeRatingReservation
+              ? { ...reservation, isRated: true } // Change isRated value here as needed
+              : reservation
+          )
+        );
       } catch (error) {
         console.error("Error submitting rating:", error);
       }
@@ -73,6 +82,7 @@ export default function MyReservationsPage() {
     }
     setActiveRatingReservation(null);
   };
+
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -328,6 +338,10 @@ export default function MyReservationsPage() {
                     {/* New Rating column */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       {reservation.isRated ? (
+                        <span className="text-gray-400 font-medium">
+                          Review Provider
+                        </span>
+                      ) : (
                         <a
                           onClick={(e) => {
                             e.preventDefault();
@@ -337,10 +351,6 @@ export default function MyReservationsPage() {
                         >
                           Review Provider
                         </a>
-                      ) : (
-                        <span className="text-gray-400 font-medium">
-                          Review Provider
-                        </span>
                       )}
                     </td>
                     {/* Details link */}
@@ -356,11 +366,11 @@ export default function MyReservationsPage() {
                 );
               })}
             </tbody>
-            {/* Render the rating popup if a reservation is active for rating */}
-            {activeRatingReservation && (
-              <RatingPopup onSelect={handleRatingSelect} />
-            )}
           </table>
+          {/* Render the rating popup if a reservation is active for rating */}
+          {activeRatingReservation && (
+            <RatingPopup onSelect={handleRatingSelect} />
+          )}
         </div>
       )}
     </main>
