@@ -6,12 +6,14 @@ import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import RatingPopup from "@/components/reservations/RatingPopup";
+import { Info } from "lucide-react";
 
 interface Car {
   _id: string;
   brand: string;
   model: string;
   license_plate: string;
+  provider_id: string;
 }
 
 interface Rent {
@@ -32,11 +34,14 @@ export default function MyReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cars, setCars] = useState<{ [key: string]: Car }>({});
-
   // Add state to track which reservation's rating popup is active
   const [activeRatingReservation, setActiveRatingReservation] = useState<
     string | null
   >(null);
+  // At the top of your component (inside MyReservationsPage)
+  const [providers, setProviders] = useState<{
+    [key: string]: { name: string };
+  }>({});
 
   // Handler for when a rating is selected (or cancelled)
   const handleRatingSelect = async (rating: number | null) => {
@@ -82,7 +87,6 @@ export default function MyReservationsPage() {
     }
     setActiveRatingReservation(null);
   };
-
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -167,6 +171,48 @@ export default function MyReservationsPage() {
       console.error("Error fetching car details:", err);
     }
   };
+
+  // After you have fetched car details and set them in state, add this effect:
+  useEffect(() => {
+    if (!session?.user?.token) return;
+
+    // Collect unique provider IDs from your cars
+    const providerIds = new Set<string>();
+    Object.values(cars).forEach((car) => {
+      if (car.provider_id) {
+        providerIds.add(car.provider_id);
+      }
+    });
+
+    // For each provider id not already fetched, fetch the provider details
+    providerIds.forEach(async (providerId) => {
+      if (!providers[providerId]) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/Car_Provider/${providerId}`,
+            {
+              headers: { Authorization: `Bearer ${session.user.token}` },
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+              setProviders((prev) => ({
+                ...prev,
+                [providerId]: { name: data.data.name },
+              }));
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching provider details for",
+            providerId,
+            error
+          );
+        }
+      }
+    });
+  }, [cars, providers, session?.user?.token]);
 
   // Helper function to get car details
   const getCarDetails = (car: string | Car): Car | undefined => {
@@ -338,9 +384,21 @@ export default function MyReservationsPage() {
                     {/* New Rating column */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       {reservation.isRated ? (
-                        <span className="text-gray-400 font-medium">
-                          Review Provider
-                        </span>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-gray-400 font-medium">
+                            Review Provider
+                          </span>
+                          {/* Info Icon with tooltip */}
+                          {car?.provider_id && (
+                            <div className="relative group">
+                              <Info className="w-3 h-3 text-gray-500" />
+                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                {providers[car.provider_id]?.name ||
+                                  car.provider_id}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <a
                           onClick={(e) => {
@@ -349,7 +407,19 @@ export default function MyReservationsPage() {
                           }}
                           className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
                         >
-                          Review Provider
+                          <div className="flex items-center space-x-1">
+                            <span>Review Provider</span>
+                            {/* Info Icon with tooltip */}
+                            {car?.provider_id && (
+                              <div className="relative group">
+                                <Info className="w-3 h-3 text-gray-500" />
+                                <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {providers[car.provider_id]?.name ||
+                                    car.provider_id}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </a>
                       )}
                     </td>
