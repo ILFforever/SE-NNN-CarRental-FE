@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
-import CarManagement from '@/components/admin/CarManagement';
+import UnifiedCarManagement from '@/components/cars/CarManagement';
 
 export const metadata: Metadata = {
   title: 'Manage Cars | CEDT Rentals',
@@ -26,7 +26,10 @@ export default async function ManageCarsPage() {
       </p>
       
       {session?.user?.token ? (
-        <CarManagement token={session.user.token} />
+        <UnifiedCarManagement 
+          token={session.user.token} 
+          userType="admin"
+        />
       ) : (
         <div className="bg-yellow-100 p-4 rounded-md text-yellow-800">
           Authentication token not available. Please try logging out and back in.
