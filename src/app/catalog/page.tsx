@@ -9,6 +9,9 @@ import Image from "next/image";
 import Link from "next/link";
 import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
 import { CheckCircle,Star } from "lucide-react";
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
+import { redirect } from 'next/navigation';
 
 // Type definitions
 interface Provider {
@@ -95,7 +98,11 @@ export default function CatalogPage() {
 
   // Authentication
   const { data: session } = useSession();
-
+  useEffect(() => {
+    if (session?.user?.userType === 'provider') {
+      router.back(); // Go back to previous page
+    }
+  }, [session, router]);
   // Car data state
   const [cars, setCars] = useState<Car[]>([]);
   const [providers, setProviders] = useState<ProvidersMap>({});
@@ -173,6 +180,9 @@ export default function CatalogPage() {
   const [itemsPerPage, setItemsPerPage] = useState<number>(25); // Default from API
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalMatchingCount, setTotalMatchingCount] = useState<number>(0);
+
+
+
 
   function useLocationSuggestions() {
     const [showLocationSuggestions, setShowLocationSuggestions] =

@@ -47,6 +47,11 @@ export default function Booking() {
   useScrollToTop();
   const router = useRouter();
   const { data: session } = useSession();
+  useEffect(() => {
+    if (session?.user?.userType === 'provider') {
+      router.back(); // Go back to previous page
+    }
+  }, [session, router]);
   const searchParams = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
 
