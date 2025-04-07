@@ -1,20 +1,40 @@
 // src/components/forms/CarImageUpload.tsx
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { XCircle, Image as ImageIcon, Move, ArrowUp, ArrowDown } from 'lucide-react';
+
+interface ExistingImage {
+  url: string;
+  id: string;
+}
 
 interface CarImageUploadProps {
   onImagesChange: (files: File[]) => void;
   maxImages?: number;
+  existingImages?: ExistingImage[];
+  onExistingImageRemove?: (imageId: string) => void;
+  onExistingImagesReorder?: (newOrder: string[]) => void;
 }
 
-export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarImageUploadProps) {
+export default function CarImageUpload({ 
+  onImagesChange, 
+  maxImages = 5,
+  existingImages = [],
+  onExistingImageRemove,
+  onExistingImagesReorder
+}: CarImageUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedExistingIndex, setDraggedExistingIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [dropExistingIndex, setDropExistingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Total image count for validation
+  const totalImageCount = selectedFiles.length + existingImages.length;
+  const remainingSlots = maxImages - selectedFiles.length - existingImages.length;
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,8 +43,9 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
       const newFiles = [...selectedFiles];
       const newPreviews = [...previews];
       
-      // Add only up to the max number of allowed images
-      fileArray.slice(0, maxImages - selectedFiles.length).forEach(file => {
+      // Only add up to the max number of allowed images
+      const remainingSlots = maxImages - existingImages.length - selectedFiles.length;
+      fileArray.slice(0, remainingSlots).forEach(file => {
         // Only add image files
         if (file.type.startsWith('image/')) {
           newFiles.push(file);
@@ -44,7 +65,7 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
     }
   };
 
-  // Remove a file
+  // Remove a new file
   const removeFile = (index: number) => {
     const newFiles = [...selectedFiles];
     const newPreviews = [...previews];
@@ -61,7 +82,14 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
     onImagesChange(newFiles);
   };
 
-  // Move an image up in the order
+  // Remove an existing image
+  const removeExistingImage = (index: number) => {
+    if (onExistingImageRemove && existingImages[index]) {
+      onExistingImageRemove(existingImages[index].id);
+    }
+  };
+
+  // Move a new image up in the order
   const moveImageUp = (index: number) => {
     if (index <= 0) return;
     
@@ -77,7 +105,7 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
     onImagesChange(newFiles);
   };
 
-  // Move an image down in the order
+  // Move a new image down in the order
   const moveImageDown = (index: number) => {
     if (index >= selectedFiles.length - 1) return;
     
@@ -93,16 +121,51 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
     onImagesChange(newFiles);
   };
 
-  // Drag and drop handlers
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
+  // Move an existing image up in the order
+  const moveExistingImageUp = (index: number) => {
+    if (index <= 0 || !onExistingImagesReorder) return;
+    
+    const newExistingOrder = existingImages.map(img => img.id);
+    
+    // Swap with the previous item
+    [newExistingOrder[index], newExistingOrder[index - 1]] = 
+      [newExistingOrder[index - 1], newExistingOrder[index]];
+    
+    onExistingImagesReorder(newExistingOrder);
   };
 
-  const handleDragEnter = (index: number) => {
-    setDropIndex(index);
+  // Move an existing image down in the order
+  const moveExistingImageDown = (index: number) => {
+    if (index >= existingImages.length - 1 || !onExistingImagesReorder) return;
+    
+    const newExistingOrder = existingImages.map(img => img.id);
+    
+    // Swap with the next item
+    [newExistingOrder[index], newExistingOrder[index + 1]] = 
+      [newExistingOrder[index + 1], newExistingOrder[index]];
+    
+    onExistingImagesReorder(newExistingOrder);
+  };
+
+  // Drag and drop handlers for new images
+  const handleDragStart = (index: number, isExisting: boolean = false) => {
+    if (isExisting) {
+      setDraggedExistingIndex(index);
+    } else {
+      setDraggedIndex(index);
+    }
+  };
+
+  const handleDragEnter = (index: number, isExisting: boolean = false) => {
+    if (isExisting) {
+      setDropExistingIndex(index);
+    } else {
+      setDropIndex(index);
+    }
   };
 
   const handleDragEnd = () => {
+    // Handle drag between new images
     if (draggedIndex !== null && dropIndex !== null && draggedIndex !== dropIndex) {
       const newFiles = [...selectedFiles];
       const newPreviews = [...previews];
@@ -119,9 +182,25 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
       setPreviews(newPreviews);
       onImagesChange(newFiles);
     }
+    // Handle drag between existing images
+    else if (draggedExistingIndex !== null && dropExistingIndex !== null && 
+             draggedExistingIndex !== dropExistingIndex && onExistingImagesReorder) {
+      const newExistingOrder = existingImages.map(img => img.id);
+      
+      // Remove item at draggedIndex
+      const [draggedId] = newExistingOrder.splice(draggedExistingIndex, 1);
+      
+      // Insert at dropIndex
+      newExistingOrder.splice(dropExistingIndex, 0, draggedId);
+      
+      onExistingImagesReorder(newExistingOrder);
+    }
     
+    // Reset drag state
     setDraggedIndex(null);
+    setDraggedExistingIndex(null);
     setDropIndex(null);
+    setDropExistingIndex(null);
   };
 
   return (
@@ -131,9 +210,18 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
           <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
           <h3 className="text-lg font-medium text-gray-700 mb-1">Car Photos</h3>
           <p className="text-sm text-gray-500 text-center">
-            Upload up to {maxImages} images of your car.
-            <br />
-            The first image will be used as the main photo.
+            {totalImageCount === 0 ? (
+              <>
+                Upload up to {maxImages} images of your car.
+                <br />
+                The first image will be used as the main photo.
+              </>
+            ) : (
+              <>
+                {totalImageCount} of {maxImages} images selected.
+                {remainingSlots > 0 ? ` You can add ${remainingSlots} more.` : ' Maximum limit reached.'}
+              </>
+            )}
           </p>
         </div>
         
@@ -144,15 +232,15 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
           onChange={handleFileChange} 
           className="hidden" 
           ref={fileInputRef} 
-          disabled={selectedFiles.length >= maxImages}
+          disabled={totalImageCount >= maxImages}
         />
         
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={selectedFiles.length >= maxImages}
+          disabled={totalImageCount >= maxImages}
           className={`w-full py-2.5 rounded-md mt-2 flex items-center justify-center 
-            ${selectedFiles.length >= maxImages 
+            ${totalImageCount >= maxImages 
               ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
               : 'bg-[#8A7D55] text-white hover:bg-[#766b48]'} 
             transition-colors`}
@@ -160,23 +248,88 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
           Select Photos
         </button>
         
-        {selectedFiles.length > 0 && (
+        {(existingImages.length > 0 || selectedFiles.length > 0) && (
           <div className="mt-4">
             <p className="text-sm text-gray-600 mb-2 font-medium">
-              {selectedFiles.length} photo{selectedFiles.length !== 1 ? 's' : ''} selected
+              {totalImageCount} image{totalImageCount !== 1 ? 's' : ''} selected
             </p>
             <p className="text-xs text-gray-500 mb-2">
               <Move className="inline h-3 w-3 mr-1" />
-              Drag and drop or use arrows to reorder
+              Drag and drop or use arrows to reorder. The first image will be used as the main photo.
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {previews.map((src, index) => (
+              {/* Existing images */}
+              {existingImages.map((image, index) => (
                 <div 
-                  key={index}
+                  key={`existing-${image.id}`}
                   className={`
                     relative p-1 rounded-md 
-                    ${index === 0 ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
+                    ${index === 0 && selectedFiles.length === 0 ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
+                    ${draggedExistingIndex === index ? 'opacity-50' : 'opacity-100'}
+                    ${dropExistingIndex === index ? 'bg-gray-100' : 'bg-white'}
+                  `}
+                  draggable
+                  onDragStart={() => handleDragStart(index, true)}
+                  onDragEnter={() => handleDragEnter(index, true)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="aspect-w-16 aspect-h-9 mb-1 overflow-hidden rounded">
+                    <img 
+                      src={image.url} 
+                      alt={`Car photo ${index + 1}`} 
+                      className="w-full h-32 object-cover rounded"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex space-x-1">
+                      <button
+                        type="button"
+                        onClick={() => moveExistingImageUp(index)}
+                        disabled={index === 0}
+                        className={`p-1 rounded-md text-gray-600 ${index === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                        title="Move up"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveExistingImageDown(index)}
+                        disabled={index === existingImages.length - 1}
+                        className={`p-1 rounded-md text-gray-600 ${index === existingImages.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                        title="Move down"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    {index === 0 && selectedFiles.length === 0 && (
+                      <span className="text-xs font-medium text-[#8A7D55] bg-[#f8f5f0] px-2 py-0.5 rounded-md">
+                        Main Photo
+                      </span>
+                    )}
+                    
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(index)}
+                      className="p-1 rounded-md text-red-500 hover:bg-red-50"
+                      title="Remove image"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* New images */}
+              {previews.map((src, index) => (
+                <div 
+                  key={`new-${index}`}
+                  className={`
+                    relative p-1 rounded-md 
+                    ${index === 0 && existingImages.length === 0 ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
                     ${draggedIndex === index ? 'opacity-50' : 'opacity-100'}
                     ${dropIndex === index ? 'bg-gray-100' : 'bg-white'}
                   `}
@@ -189,8 +342,8 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
                   <div className="aspect-w-16 aspect-h-9 mb-1 overflow-hidden rounded">
                     <img 
                       src={src} 
-                      alt={`Car photo ${index + 1}`} 
-                      className="w-full h-full object-cover"
+                      alt={`Car photo ${existingImages.length + index + 1}`} 
+                      className="w-full h-32 object-cover rounded"
                     />
                   </div>
                   
@@ -216,7 +369,7 @@ export default function CarImageUpload({ onImagesChange, maxImages = 5 }: CarIma
                       </button>
                     </div>
                     
-                    {index === 0 && (
+                    {index === 0 && existingImages.length === 0 && (
                       <span className="text-xs font-medium text-[#8A7D55] bg-[#f8f5f0] px-2 py-0.5 rounded-md">
                         Main Photo
                       </span>
