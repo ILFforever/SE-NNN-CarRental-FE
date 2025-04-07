@@ -142,11 +142,6 @@ const ProviderDetails: React.FC<ProviderDetailsProps> = ({
           </div>
         )}
       </div>
-      {/* Provider Address */}
-      <div className="relative group inline-flex items-center">
-        <Building className="text-gray-500 w-5 h-5 mr-2" />
-        <div className="text-gray-600">Address: {providerData.address}</div>
-      </div>
       {/* Provider Phone number */}
       <div className="relative group inline-flex items-center">
         <Phone className="text-gray-500 w-5 h-5 mr-2" />
