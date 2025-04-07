@@ -39,17 +39,38 @@ export default function MyReservationsPage() {
   >(null);
 
   // Handler for when a rating is selected (or cancelled)
-  const handleRatingSelect = (rating: number | null) => {
+  const handleRatingSelect = async (rating: number | null) => {
     if (rating !== null && activeRatingReservation) {
-      console.log(
-        `Rating ${rating} selected for reservation ${activeRatingReservation}`
-      );
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/rents/${activeRatingReservation}/rate`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session?.user?.token}`,
+            },
+            body: JSON.stringify({
+              rating: rating,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to submit rating");
+        }
+
+        console.log(
+          `Rating ${rating} submitted for reservation ${activeRatingReservation}`
+        );
+      } catch (error) {
+        console.error("Error submitting rating:", error);
+      }
     } else {
       console.log(
         `Rating cancelled for reservation ${activeRatingReservation}`
       );
     }
-    // Close the popup
     setActiveRatingReservation(null);
   };
 
@@ -253,7 +274,7 @@ export default function MyReservationsPage() {
                   scope="col"
                   className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Rating
+                  Review Provider
                 </th>
                 <th
                   scope="col"
@@ -305,27 +326,24 @@ export default function MyReservationsPage() {
                       </span>
                     </td>
                     {/* New Rating column */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => {
-                          console.log(
-                            "Rate button clicked for reservation",
-                            reservation._id
-                          );
-                          if (reservation.isRated) {
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      {reservation.isRated ? (
+                        <a
+                          onClick={(e) => {
+                            e.preventDefault();
                             setActiveRatingReservation(reservation._id);
-                          }
-                        }}
-                        disabled={!reservation.isRated}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                          reservation.isRated
-                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
-                      >
-                        Rate
-                      </button>
+                          }}
+                          className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                        >
+                          Review Provider
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 font-medium">
+                          Review Provider
+                        </span>
+                      )}
                     </td>
+                    {/* Details link */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <Link
                         href={`/account/reservations/${reservation._id}`}
