@@ -208,7 +208,7 @@ const ProviderDetails: React.FC<ProviderDetailsProps> = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
     </div>
   );
 };

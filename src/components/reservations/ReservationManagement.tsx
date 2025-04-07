@@ -97,20 +97,17 @@ export default function ReservationManagement({ token }: ReservationManagementPr
         setIsLoading(false);
         return;
       }
-
+    
       setIsLoading(true);
       setError('');
       
       try {
         let response;
         let data;
-
-        // Check user type and fetch rentals accordingly
-        if (session?.user?.userType === 'provider') {
-          // For providers, fetch rentals for their cars
-          const queryParams = new URLSearchParams();
-          // Optionally add any filtering params if needed
-          
+    
+        // Use the appropriate endpoint based on user type
+        if (session.user.userType === 'provider') {
+          // For providers, use the enhanced provider-specific endpoint
           response = await fetch(`${API_BASE_URL}/rents/provider`, {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -126,11 +123,11 @@ export default function ReservationManagement({ token }: ReservationManagementPr
             }
           });
         }
-
+    
         if (!response.ok) {
           throw new Error(`Failed to fetch rentals: ${response.status}`);
         }
-
+    
         data = await response.json();
         
         if (!data.success) {
@@ -140,7 +137,7 @@ export default function ReservationManagement({ token }: ReservationManagementPr
         // Process the rental data
         const rentals = data.data;
         
-        // Create maps for cars and users to avoid refetching
+        // Create maps for cars and users from the populated data
         const carMap: {[key: string]: Car} = {};
         const userMap: {[key: string]: User} = {};
         const providerMap: {[key: string]: Provider} = {};
@@ -156,21 +153,28 @@ export default function ReservationManagement({ token }: ReservationManagementPr
           }
         });
         
-        // Also fetch providers to have their names for reference
-        const providersResponse = await fetch(`${API_BASE_URL}/Car_Provider`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (providersResponse.ok) {
-          const providersData = await providersResponse.json();
-          
-          if (providersData.success && Array.isArray(providersData.data)) {
-            providersData.data.forEach((provider: Provider) => {
-              providerMap[provider._id] = provider;
+        // For admin only: Fetch providers if needed
+        if (session.user.userType !== 'provider') {
+          try {
+            const providersResponse = await fetch(`${API_BASE_URL}/Car_Provider`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
             });
+            
+            if (providersResponse.ok) {
+              const providersData = await providersResponse.json();
+              
+              if (providersData.success && Array.isArray(providersData.data)) {
+                providersData.data.forEach((provider: Provider) => {
+                  providerMap[provider._id] = provider;
+                });
+              }
+            }
+          } catch (providerError) {
+            console.error('Error fetching providers:', providerError);
+            // Non-fatal error, continue with available data
           }
         }
         

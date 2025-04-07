@@ -119,48 +119,41 @@ export default function UnifiedReservationDetails({
       setIsLoading(true);
       try {
         console.log(`Fetching reservation ID: ${reservationId}`);
-
-        // Make API call to fetch reservation details - this should match the pattern in ReservationManagement
+      
+        // Make API call to fetch reservation details
         const response = await fetch(`${API_BASE_URL}/rents/${reservationId}`, {
           headers: {
             Authorization: `Bearer ${session.user.token}`,
-            "Content-Type": "application/json",
-          },
+            'Content-Type': 'application/json'
+          }
         });
-
+      
         console.log("API Response status:", response.status);
-
+      
         if (!response.ok) {
-          console.error(
-            "Failed to fetch reservation details, status:",
-            response.status
-          );
+          console.error("Failed to fetch reservation details, status:", response.status);
           throw new Error("Failed to fetch reservation details");
         }
-
+      
         const data = await response.json();
         console.log("API Response data:", data);
-
+      
         if (!data.success || !data.data) {
           console.error("Invalid response format:", data);
           throw new Error("Received invalid data format from server");
         }
-
-        // Process car data if needed
+      
+        // Process car data if needed (only if car is just an ID)
         if (typeof data.data.car === "string") {
-          // Car is just an ID, fetch the details
           console.log("Car is an ID, fetching details:", data.data.car);
           try {
-            const carResponse = await fetch(
-              `${API_BASE_URL}/cars/${data.data.car}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${session.user.token}`,
-                  "Content-Type": "application/json",
-                },
+            const carResponse = await fetch(`${API_BASE_URL}/cars/${data.data.car}`, {
+              headers: {
+                Authorization: `Bearer ${session.user.token}`,
+                'Content-Type': 'application/json'
               }
-            );
-
+            });
+      
             if (carResponse.ok) {
               const carResponseData = await carResponse.json();
               if (carResponseData.success && carResponseData.data) {
@@ -170,78 +163,37 @@ export default function UnifiedReservationDetails({
           } catch (error) {
             console.error("Error fetching car details:", error);
           }
-        }
+        }      
 
-        // Process user data if needed
-        if (typeof data.data.user === "string" && userType !== "customer") {
-          // User is just an ID, fetch the details
-          console.log("User is an ID, fetching details:", data.data.user);
-          try {
-            const userResponse = await fetch(
-              `${API_BASE_URL}/auth/users/${data.data.user}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${session.user.token}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-
-            if (userResponse.ok) {
-              const userResponseData = await userResponse.json();
-              if (userResponseData.success && userResponseData.data) {
-                data.data.user = userResponseData.data;
-              }
-            }
-          } catch (error) {
-            console.error("Error fetching user details:", error);
-          }
-        }
-
-        // Verify access based on user type
+         // Verify access based on user type
         if (userType === "provider") {
           // For providers: Check if this is their car
           const providerId = session.user.id || session.user._id;
           const carData = data.data.car;
 
-          if (
-            typeof carData === "object" &&
-            carData.provider_id !== providerId
-          ) {
-            console.error(
-              "Provider ID mismatch:",
-              carData.provider_id,
-              "vs",
-              providerId
-            );
-            throw new Error(
-              "You do not have permission to view this reservation"
-            );
+          if (typeof carData === "object" && carData.provider_id !== providerId) {
+            console.error("Provider ID mismatch:", carData.provider_id, "vs", providerId);
+            throw new Error("You do not have permission to view this reservation");
           }
         } else if (userType === "customer") {
           // For customers: Check if this is their reservation
           const userId = session.user.id || session.user._id;
           const userData = data.data.user;
-          const reservationUserId =
-            typeof userData === "string" ? userData : userData?._id;
+          const reservationUserId = typeof userData === "string" ? userData : userData?._id;
 
           if (reservationUserId !== userId) {
             console.error("User ID mismatch:", reservationUserId, "vs", userId);
-            throw new Error(
-              "You do not have permission to view this reservation"
-            );
+            throw new Error("You do not have permission to view this reservation");
           }
         }
-        // Admin: No checks needed, they can view all reservations
 
+        // Admin: No checks needed, they can view all reservations
         console.log("Setting rental data after validation:", data.data);
         setRental(data.data);
         setEditedNotes(data.data.notes || "");
       } catch (err) {
         console.error("Error in fetching rental details:", err);
-        setError(
-          err instanceof Error ? err.message : "An unexpected error occurred"
-        );
+        setError(err instanceof Error ? err.message : "An unexpected error occurred");
       } finally {
         setIsLoading(false);
       }
