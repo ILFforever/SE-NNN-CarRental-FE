@@ -717,7 +717,7 @@ export default function UnifiedReservationDetails({
 
           {/* Customer details - only shown to admin and provider */}
           {(userType === "admin" || userType === "provider") && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="bg-white p-6 rounded-lg shadow-md mb-6" >
               <h2 className="text-xl font-medium mb-4 text-[#8A7D55]">
                 Customer Information
               </h2>
@@ -751,6 +751,62 @@ export default function UnifiedReservationDetails({
               )}
             </div>
           )}
+
+           {/* Notes card */}
+           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-medium text-[#8A7D55]">Notes</h2>
+
+              {/* Edit button - only shown for appropriate user types */}
+              {((userType === "provider" && rental.status !== "cancelled") ||
+                userType === "admin" ||
+                (userType === "customer" && rental.status === "pending")) &&
+                !isEditingNotes && (
+                  <button
+                    onClick={() => setIsEditingNotes(true)}
+                    className="text-gray-500 hover:text-gray-700 flex items-center"
+                  >
+                    <Edit size={16} className="mr-1" />
+                    Edit
+                  </button>
+                )}
+            </div>
+
+            {isEditingNotes ? (
+              <div>
+                <textarea
+                  value={editedNotes}
+                  onChange={(e) => setEditedNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                  placeholder="Add notes about this reservation..."
+                />
+
+                <div className="flex justify-end space-x-2 mt-3">
+                  <button
+                    onClick={() => setIsEditingNotes(false)}
+                    className="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleUpdateNotes}
+                    className="px-3 py-1.5 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
+                  >
+                    Save Notes
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="min-h-[100px] text-gray-700 whitespace-pre-line">
+                {rental.notes ? (
+                  rental.notes
+                ) : (
+                  <span className="text-gray-400 italic">No notes added</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right column - Rental Details and Actions */}
@@ -852,61 +908,16 @@ export default function UnifiedReservationDetails({
             </div>
           </div>
 
-          {/* Notes card */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-medium text-[#8A7D55]">Notes</h2>
-
-              {/* Edit button - only shown for appropriate user types */}
-              {((userType === "provider" && rental.status !== "cancelled") ||
-                userType === "admin" ||
-                (userType === "customer" && rental.status === "pending")) &&
-                !isEditingNotes && (
-                  <button
-                    onClick={() => setIsEditingNotes(true)}
-                    className="text-gray-500 hover:text-gray-700 flex items-center"
-                  >
-                    <Edit size={16} className="mr-1" />
-                    Edit
-                  </button>
-                )}
-            </div>
-
-            {isEditingNotes ? (
-              <div>
-                <textarea
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  placeholder="Add notes about this reservation..."
-                />
-
-                <div className="flex justify-end space-x-2 mt-3">
-                  <button
-                    onClick={() => setIsEditingNotes(false)}
-                    className="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    onClick={handleUpdateNotes}
-                    className="px-3 py-1.5 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
-                  >
-                    Save Notes
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-[100px] text-gray-700 whitespace-pre-line">
-                {rental.notes ? (
-                  rental.notes
-                ) : (
-                  <span className="text-gray-400 italic">No notes added</span>
-                )}
-              </div>
+          {/* Provider Details */}  
+          <div className="mb-6"> {/* Added pb-8 for padding-bottom */}
+            {car?.provider_id && (
+              <ProviderDetail
+                providerId={car?.provider_id}
+                token={session?.user?.token}
+              />
             )}
           </div>
+          
 
           {/* Action buttons - dynamic based on user type and rental status */}
           <div className="bg-white p-6 rounded-lg shadow-md">
@@ -1059,16 +1070,6 @@ export default function UnifiedReservationDetails({
                 Back to All Reservations
               </Link>
             </div>
-          </div>
-
-          {/* Provider Details */}  
-          <div>
-            {car?.provider_id && (
-              <ProviderDetail
-                providerId={car?.provider_id}
-                token={session?.user?.token}
-              />
-            )}
           </div>
         </div>
       </div>
