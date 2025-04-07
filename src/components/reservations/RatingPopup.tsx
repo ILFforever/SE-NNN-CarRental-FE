@@ -16,6 +16,8 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ onSelect }) => {
     if (value && value > 0) {
       onSelect(value);
     } else {
+      // This branch shouldn't trigger because the button is disabled,
+      // but it's here as a safety.
       onSelect(null);
     }
   };
@@ -45,9 +47,10 @@ const RatingPopup: React.FC<RatingPopupProps> = ({ onSelect }) => {
           />
           <Button
             variant="contained"
-            color="primary"
+            className="bg-blue-500 text-white hover:bg-blue-600"
             onClick={handleConfirm}
             fullWidth
+            disabled={!value || value <= 0}
           >
             Confirm Rating
           </Button>
