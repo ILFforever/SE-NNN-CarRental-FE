@@ -415,9 +415,7 @@ export default function AdminUserManagement({ token }: AdminUserManagementProps)
       )}
 
       {/* Admin Users Table */}
-      <div className="overflow-x-auto">
-        <h2 className="text-xl font-medium mb-4">Current Administrators</h2>
-        
+      <div className="overflow-x-auto">      
         {isLoading && !filteredAdminUsers.length ? (
           <p className="text-center py-4">Loading admin users...</p>
         ) : filteredAdminUsers.length === 0 ? (

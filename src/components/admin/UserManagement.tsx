@@ -417,8 +417,6 @@ export default function UserManagement({ token }: UserManagementProps) {
 
       {/* Users Table */}
       <div className="overflow-x-auto">
-        <h2 className="text-xl font-medium mb-4">Current Users</h2>
-        
         {isLoading && !filteredUsers.length ? (
           <p className="text-center py-4">Loading users...</p>
         ) : filteredUsers.length === 0 ? (

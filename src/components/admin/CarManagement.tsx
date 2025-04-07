@@ -435,33 +435,6 @@ export default function CarManagement({ token }: CarManagementProps) {
 
        {/* Cars Table */}
        <div className="overflow-x-auto">
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-medium">
-            Cars {filteredCars.length !== cars.length && `(${filteredCars.length} of ${totalItems})`}            
-            </h2>
-        
- {/* Pagination Controls */}
- <div className="flex items-center space-x-2">
-            <button 
-              onClick={handlePrevPage} 
-              disabled={!pagination.prev}
-              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <span className="text-sm text-gray-600">
-                Page {currentPage} of {pagination.next ? currentPage + 1 : currentPage}
-            </span>
-            <button 
-              onClick={handleNextPage} 
-              disabled={!pagination.next}
-              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-        
         {isLoading && !filteredCars.length ? (
           <p className="text-center py-4">Loading cars...</p>
         ) : filteredCars.length === 0 ? (
@@ -552,6 +525,27 @@ export default function CarManagement({ token }: CarManagementProps) {
           </table>
         )}
       </div>
+      <div className="flex justify-center mt-6">
+          <div className="flex items-center">
+            <button
+              onClick={handlePrevPage}
+              disabled={!pagination.prev}
+              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {Math.ceil(totalItems / 25) || 1}
+            </span>
+            <button
+              onClick={handleNextPage}
+              disabled={!pagination.next}
+              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
     </div>
   );
 }

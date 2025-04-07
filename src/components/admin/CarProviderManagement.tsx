@@ -518,12 +518,6 @@ export default function CarProvider({ token }: CarProviderProps) {
 
       {/* Providers Table */}
       <div className="overflow-x-auto">
-        <h2 className="text-xl font-medium mb-4">
-          Car Providers{" "}
-          {filteredProviders.length !== carProviders.length &&
-            `(${filteredProviders.length} of ${carProviders.length})`}
-        </h2>
-
         {isLoading && !carProviders.length ? (
           <p className="text-center py-4">Loading car providers...</p>
         ) : filteredProviders.length === 0 ? (
