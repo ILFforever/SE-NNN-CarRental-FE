@@ -12,6 +12,7 @@ import { CheckCircle,Star } from "lucide-react";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
+import HoverableCarImage from "@/components/cars/HoverableCarImage";
 
 // Type definitions
 interface Provider {
@@ -54,6 +55,7 @@ interface Car {
   verified?: boolean;
   provider: string;
   image?: string;
+  images?: string[];
   rents?: Rent[];
   available?: boolean;
   license_plate?: string;
@@ -393,20 +395,17 @@ export default function CatalogPage() {
           setTotalMatchingCount(carsData.totalMatchingCount || 0);
           const formattedCars: Car[] = carsData.data.map((car: any) => {
             // Get provider details from our providers map
-
             const provider = providersMap[car.provider_id] || {
               name: "Unknown Provider",
             };
-
-            console.log("name : ",provider.name, ", verfied : ", provider.verified);
-
+          
             return {
               id: car._id || car.id,
               brand: car.brand || "Unknown Brand",
               model: car.model || "Unknown Model",
               year: car.manufactureDate
                 ? new Date(car.manufactureDate).getFullYear()
-                : 2023,
+                : 2025,
               price: car.dailyRate || 0,
               type: car.type || "Other",
               color: car.color || "Unknown",
@@ -416,6 +415,9 @@ export default function CatalogPage() {
               verified: provider.verified || false,
               rents: car.rents || [],
               available: car.available ?? true,
+              // Handle images array properly
+              images: car.images && Array.isArray(car.images) ? car.images : [],
+              // Keep single image for backward compatibility
               image: car.image || "/img/banner.jpg",
               license_plate: car.license_plate,
               manufactureDate: car.manufactureDate,
@@ -1247,17 +1249,11 @@ export default function CatalogPage() {
           {availableCars.map((car) => (
             <div
               key={car.id}
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-            >
+              className="bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 ease-out hover:shadow-xl hover:scale-[1.02] hover:rotate-1"
+                            >
               <div className="relative h-48">
                 <FavoriteHeartButton carId={car.id} className="top-2 right-2" />
-
-                <Image
-                  src={car.image || "/img/banner.jpg"}
-                  alt={`${car.brand} ${car.model}`}
-                  fill
-                  className="object-cover"
-                />
+                <HoverableCarImage car={car} />
               </div>
 
               <div className="p-4">

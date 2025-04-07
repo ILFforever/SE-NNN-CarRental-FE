@@ -523,19 +523,15 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
             </tbody>
           </table>
         )}
-        <div className="flex justify-center mt-6">
-          {/* <h2 className="text-xl font-medium">
-            {userType === 'admin' ? 'All Cars' : 'My Cars'}{' '}
-            {filteredCars.length !== cars.length &&
-              `(${filteredCars.length} of ${totalItems})`}
-          </h2> */}
-
+        
+      </div>
+      <div className="flex justify-center mt-6 ">
           {/* Pagination Controls */}
           <div className="flex items-center">
             <button
               onClick={handlePrevPage}
               disabled={!pagination.prev}
-              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed "
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -545,13 +541,12 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
             <button
               onClick={handleNextPage}
               disabled={!pagination.next}
-              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed "
             >
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }
