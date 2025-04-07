@@ -94,6 +94,8 @@ const HoverableCarImage = ({ car, className = '' }: HoverableCarImageProps) => {
         alt={`${car.brand} ${car.model}`}
         fill
         className="object-cover transition-opacity duration-300"
+        style={{objectFit:"cover"}}
+        sizes="(max-width: 768px) 100vw, 50vw"
       />
       
       {/* Optional: Image counter indicator (only show if multiple images) */}
