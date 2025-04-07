@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle, Star } from "lucide-react";
+import { Mail,Phone,Building,CheckCircle, Star } from "lucide-react";
 import { API_BASE_URL } from "@/config/apiConfig";
 
 interface ProviderReviewData {
@@ -142,7 +142,21 @@ const ProviderDetails: React.FC<ProviderDetailsProps> = ({
           </div>
         )}
       </div>
-
+      {/* Provider Address */}
+      <div className="relative group inline-flex items-center">
+        <Building className="text-gray-500 w-5 h-5 mr-2" />
+        <div className="text-gray-600">Address: {providerData.address}</div>
+      </div>
+      {/* Provider Phone number */}
+      <div className="relative group inline-flex items-center">
+        <Phone className="text-gray-500 w-5 h-5 mr-2" />
+        <div className="text-gray-600">Phone number: {providerData.telephone_number}</div>
+      </div>
+      {/* Provider Email */}
+      <div className="relative group inline-flex items-center">
+        <Mail className="text-gray-500 w-5 h-5 mr-2" />
+        <div className="text-gray-600">Email: {providerData.email}</div>
+      </div>
       {/* Ratings Section */}
       {totalReviews === 0 ? (
         <div className="text-gray-600">No reviews yet.</div>
