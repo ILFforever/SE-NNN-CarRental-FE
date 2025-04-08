@@ -171,11 +171,11 @@ export default function CarImageGallery({ car, showFavoriteButton = true }: Imag
         />
         
         {/* "Not Available" overlay */}
-        {car.available === false && (
+        {/* {car.available === false && (
           <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
             <span className="text-white font-bold text-lg">Currently Rented</span>
           </div>
-        )}
+        )} */}
         
         {/* Gallery expand button */}
         <button 
