@@ -15,6 +15,7 @@ import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import ProviderDetail from "@/components/provider/providerDetail";
 import CarImageGallery from "@/components/cars/CarImageGallery";
+import ServiceSelection from '@/components/service/ServiceSelection';
 
 // Define the Car interface based on your API response
 interface Car {
@@ -37,6 +38,14 @@ interface Rent {
   startDate: string;
   returnDate: string;
   status: "pending" | "active" | "completed" | "cancelled";
+}
+
+interface Service {
+  _id: string;
+  name: string;
+  description: string;
+  rate: number;
+  available?: boolean;
 }
 
 export default function Booking() {
@@ -98,7 +107,9 @@ export default function Booking() {
     const [returnDate, setReturnDate] = useState<Dayjs | null>(null);
     const [pickupTime, setPickupTime] = useState<string>('10:00 AM');
     const [returnTime, setReturnTime] = useState<string>('10:00 AM');
-    
+    const [selectedServices, setSelectedServices] = useState<string[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
+
     // New states for availability checking
     const [isAvailable, setIsAvailable] = useState<boolean>(true);
     const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
@@ -187,6 +198,32 @@ export default function Booking() {
       setIsCheckingAvailability(false);
     }
   }, [car?._id, pickupDate, returnDate, session?.user?.token]);
+  // Add this effect to fetch services data when the component mounts
+  useEffect(() => {
+    const fetchServices = async () => {
+      if (!session?.user?.token) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/services`, {
+          headers: {
+            'Authorization': `Bearer ${session.user.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.data)) {
+            setServices(data.data.filter((s: Service) => s.available !== false));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      }
+    };
+  
+    fetchServices();
+  }, [session?.user?.token]);
 
   // Check availability whenever dates change
   useEffect(() => {
@@ -199,38 +236,39 @@ export default function Booking() {
     if (!formValid || isSubmitting) {
       return;
     }
-
+  
     // Double-check availability one more time
     await checkCarAvailability();
-
+  
     if (!isAvailable) {
       alert(
         "Car is not available for the selected dates. Please choose different dates."
       );
       return;
     }
-
-        if (car && nameLastname && tel && pickupDate && returnDate) {
-            try {
-                setIsSubmitting(true);
-                // Format dates for the API
-                const formattedStartDate = pickupDate.format("YYYY-MM-DD");
-                const formattedReturnDate = returnDate.format("YYYY-MM-DD");
-                
-                // Send booking data to backend
-                const response = await fetch(`${API_BASE_URL}/rents`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${session?.user?.token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        startDate: formattedStartDate,
-                        returnDate: formattedReturnDate,
-                        car: car._id,
-                        price:price
-                    })
-                });
+  
+    if (car && nameLastname && tel && pickupDate && returnDate) {
+      try {
+        setIsSubmitting(true);
+        // Format dates for the API
+        const formattedStartDate = pickupDate.format("YYYY-MM-DD");
+        const formattedReturnDate = returnDate.format("YYYY-MM-DD");
+        
+        // Send booking data to backend
+        const response = await fetch(`${API_BASE_URL}/rents`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session?.user?.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            startDate: formattedStartDate,
+            returnDate: formattedReturnDate,
+            car: car._id,
+            price: price,
+            service: selectedServices // Added this line to include selected services
+          })
+        });
 
         if (response.ok) {
           // Booking successful, dispatch to Redux store
@@ -263,6 +301,7 @@ export default function Booking() {
     }
   };
 
+  
   // Fetch car details and user profile
   useEffect(() => {
     const carId = searchParams.get("carId") || "";
@@ -383,14 +422,24 @@ export default function Booking() {
     const getTotalCost = () => {
       const days = getRentalPeriod();
       const dailyRate = car?.dailyRate || 0;
-      const total = days * dailyRate;
+      
+      // Calculate service rate per day
+      const serviceRate = services
+        .filter(service => selectedServices.includes(service._id))
+        .reduce((sum, service) => sum + service.rate, 0);
+      
+      // Calculate total including services
+      const total = days * (dailyRate + serviceRate);
+      
+      // Apply tier discount
       const tierDiscount = total * (getTierDiscount(userTier) / 100);
+      
       return total - tierDiscount;
     };
-    
+
     useEffect(() => {
-        setPrice(getTotalCost());
-    }, [pickupDate, returnDate, car?.dailyRate, userTier]);
+      setPrice(getTotalCost());
+    }, [pickupDate, returnDate, car?.dailyRate, userTier, selectedServices, services]);
 
   // Tier name mapping
   const getTierName = (tier: number) => {
@@ -406,6 +455,29 @@ export default function Booking() {
       minimumFractionDigits: 2,
     }).format(amount);
   };
+
+  const calculateServicesCost = () => {
+    if (!services || services.length === 0) return 0;
+    
+    return services
+      .filter(service => selectedServices.includes(service._id))
+      .reduce((sum, service) => sum + service.rate, 0);
+  };
+  
+  const calculateSubtotal = () => {
+    const days = getRentalPeriod();
+    const dailyRate = car?.dailyRate || 0;
+    const servicesCost = calculateServicesCost();
+    
+    return days * (dailyRate + servicesCost);
+  };
+  
+  const calculateDiscount = () => {
+    const subtotal = calculateSubtotal();
+    return subtotal * (getTierDiscount(userTier) / 100);
+  };
+  
+
 
   if (loading) {
     return (
@@ -530,7 +602,19 @@ export default function Booking() {
                 </div>
               </div>
             </div>
-          </div>
+            {car && session?.user?.token && (
+            <div className="mt-6">
+              <h2 className="text-2xl font-serif font-medium mb-4">Additional Services</h2>
+              <div className="bg-white shadow-md rounded-lg overflow-hidden p-6">
+                <ServiceSelection
+                  token={session.user.token}
+                  selectedServices={selectedServices}
+                  onServicesChange={setSelectedServices}
+                />
+              </div>
+            </div>
+          )}
+        </div>
         )}
 
         {/* Booking Form / Booking Information*/}
@@ -708,74 +792,137 @@ export default function Booking() {
         </div>
       </div>
 
-      {/* Reservation Summary */}
-      {car && pickupDate && returnDate && (
-        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-          <div className="bg-[#8A7D55] text-white px-6 py-4">
-            <h2 className="text-xl font-serif font-medium">
-              Reservation Summary
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-medium mb-3">Vehicle</h3>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Make/Model:</span> {car.brand}{" "}
-                  {car.model}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">License:</span>{" "}
-                  {car.license_plate || "N/A"}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Daily Rate:</span> $
-                  {car.dailyRate?.toFixed(2) || "0.00"}
-                </p>
-              </div>
+{/* Reservation Summary */}
+{car && pickupDate && returnDate && (
+  <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+    <div className="bg-[#8A7D55] text-white px-6 py-4">
+      <h2 className="text-xl font-serif font-medium">
+        Reservation Summary
+      </h2>
+    </div>
+    <div className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-medium mb-3">Vehicle</h3>
+          <p className="text-gray-700">
+            <span className="text-gray-500">Make/Model:</span> {car.brand}{" "}
+            {car.model}
+          </p>
+          <p className="text-gray-700">
+            <span className="text-gray-500">License:</span>{" "}
+            {car.license_plate || "N/A"}
+          </p>
+          <p className="text-gray-700">
+            <span className="text-gray-500">Daily Rate:</span> $
+            {car.dailyRate?.toFixed(2) || "0.00"}
+          </p>
+          {car.tier !== undefined && (
+            <p className="text-gray-700">
+              <span className="text-gray-500">Vehicle Tier:</span>{" "}
+              {getTierName(car.tier)}
+            </p>
+          )}
+        </div>
 
-              <div>
-                <h3 className="text-lg font-medium mb-3">Rental Period</h3>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Pickup:</span>{" "}
-                  {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Return:</span>{" "}
-                  {returnDate?.format("MMM D, YYYY")} at {returnTime}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Duration:</span>{" "}
-                  {getRentalPeriod()} days
-                </p>
-              </div>
-            </div>
+        <div>
+          <h3 className="text-lg font-medium mb-3">Rental Period</h3>
+          <p className="text-gray-700">
+            <span className="text-gray-500">Pickup:</span>{" "}
+            {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
+          </p>
+          <p className="text-gray-700">
+            <span className="text-gray-500">Return:</span>{" "}
+            {returnDate?.format("MMM D, YYYY")} at {returnTime}
+          </p>
+          <p className="text-gray-700">
+            <span className="text-gray-500">Duration:</span>{" "}
+            {getRentalPeriod()} days
+          </p>
+        </div>
+      </div>
 
-            <div className="border-t border-gray-200 mt-6 pt-6">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Daily Rate:</span>
-                <span>${car.dailyRate?.toFixed(2) || "0.00"}</span>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-600">Number of Days:</span>
-                <span>{getRentalPeriod()}</span>
-              </div>
-              {userTier > 0 ? (
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-gray-600">Discount:</span>
-                  <span>{getTierDiscount(userTier)}%</span>
+      {/* Selected Services Section */}
+      {selectedServices.length > 0 && services.length > 0 && (
+        <div className="border-t border-gray-200 mt-6 pt-6">
+          <h3 className="text-lg font-medium mb-3">Additional Services</h3>
+          <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+            {services
+              .filter(service => selectedServices.includes(service._id))
+              .map(service => (
+                <div key={service._id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                  <div>
+                    <span className="font-medium text-gray-800">{service.name}</span>
+                    {service.description && (
+                      <p className="text-xs text-gray-500 mt-1 max-w-md">{service.description.length > 100 ? `${service.description.substring(0, 100)}...` : service.description}</p>
+                    )}
+                  </div>
+                  <span className="text-[#8A7D55] font-medium">${service.rate.toFixed(2)}/day</span>
                 </div>
-              ) : null}
-              <div className="flex justify-between items-center mt-4 text-lg font-medium">
-                <span>Total Cost:</span>
-                <span className="text-[#8A7D55]">
-                  {formatCurrency(getTotalCost())}
-                </span>
-              </div>
-            </div>
+              ))}
+          </div>
+          <div className="flex justify-between items-center mt-3 text-sm font-medium">
+            <span className="text-gray-600">Additional Services Cost:</span>
+            <span className="text-[#8A7D55]">
+              ${calculateServicesCost().toFixed(2)}/day
+            </span>
           </div>
         </div>
       )}
+
+      {/* Cost Breakdown */}
+      <div className="border-t border-gray-200 mt-6 pt-6">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">Base Daily Rate:</span>
+          <span>${car.dailyRate?.toFixed(2) || "0.00"}</span>
+        </div>
+        
+                {selectedServices.length > 0 && (
+          <>
+            <div className="border-t border-gray-200 mt-3 pt-3">
+              <h4 className="text-gray-800 font-medium mb-2">Additional Services:</h4>
+              {services
+                .filter(service => selectedServices.includes(service._id))
+                .map(service => (
+                  <div key={service._id} className="flex justify-between items-center py-1">
+                    <span className="text-gray-600">{service.name}</span>
+                    <span>${service.rate.toFixed(2)} × {getRentalPeriod()} days</span>
+                  </div>
+                ))}
+              <div className="flex justify-between items-center mt-2 font-medium">
+                <span>Services Subtotal:</span>
+                <span>${(calculateServicesCost() * getRentalPeriod()).toFixed(2)}</span>
+              </div>
+            </div>
+          </>
+        )}
+        
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-gray-600">Number of Days:</span>
+          <span>{getRentalPeriod()}</span>
+        </div>
+        
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-gray-600">Subtotal:</span>
+          <span>${calculateSubtotal().toFixed(2)}</span>
+        </div>
+        
+        {userTier > 0 && (
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-gray-600">Loyalty Discount ({getTierDiscount(userTier)}%):</span>
+            <span>-${calculateDiscount().toFixed(2)}</span>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
+          <span>Total Cost:</span>
+          <span className="text-[#8A7D55]">
+            {formatCurrency(getTotalCost())}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Submit Button */}
       <div className="text-center">

@@ -120,18 +120,26 @@ export default function RentalServices({ token, serviceIds = [] }: RentalService
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-medium text-[#8A7D55]">Additional Services</h2>
-        <button 
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-500 hover:text-gray-700 focus:outline-none"
-        >
-          <ChevronDown 
-            size={20} 
-            className={`transition-transform duration-300 ${isExpanded ? 'transform rotate-180' : ''}`} 
-          />
-        </button>
+        <div className="flex items-center">
+          {!isExpanded && (
+            <span className="mr-3 text-[#8A7D55] font-bold">
+              Total: ${totalAdditionalCost.toFixed(2)}
+            </span>
+          )}
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            aria-label={isExpanded ? "Collapse services" : "Expand services"}
+          >
+            <ChevronDown 
+              size={20} 
+              className={`transition-transform duration-300 ${isExpanded ? 'transform rotate-180' : ''}`} 
+            />
+          </button>
+        </div>
       </div>
       
-      <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-[1000px]' : 'max-h-24'}`}>
+      <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-[1000px]' : 'max-h-0'}`}>
         <div className="rounded-lg bg-[#F8F5F0] p-4 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-gray-700 font-medium">Total additional cost:</span>
