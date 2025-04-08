@@ -16,6 +16,7 @@ import { useScrollToTop } from "@/hooks/useScrollToTop";
 import ProviderDetail from "@/components/provider/providerDetail";
 import CarImageGallery from "@/components/cars/CarImageGallery";
 import ServiceSelection from '@/components/service/ServiceSelection';
+import { ChevronDown } from 'lucide-react';
 
 // Define the Car interface based on your API response
 interface Car {
@@ -109,7 +110,7 @@ export default function Booking() {
     const [returnTime, setReturnTime] = useState<string>('10:00 AM');
     const [selectedServices, setSelectedServices] = useState<string[]>([]);
     const [services, setServices] = useState<Service[]>([]);
-
+    const [servicesExpanded, setServicesExpanded] = useState(false);
     // New states for availability checking
     const [isAvailable, setIsAvailable] = useState<boolean>(true);
     const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
@@ -841,33 +842,60 @@ export default function Booking() {
         </div>
       </div>
 
-      {/* Selected Services Section */}
-      {selectedServices.length > 0 && services.length > 0 && (
-        <div className="border-t border-gray-200 mt-6 pt-6">
-          <h3 className="text-lg font-medium mb-3">Additional Services</h3>
-          <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-            {services
-              .filter(service => selectedServices.includes(service._id))
-              .map(service => (
-                <div key={service._id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                  <div>
-                    <span className="font-medium text-gray-800">{service.name}</span>
-                    {service.description && (
-                      <p className="text-xs text-gray-500 mt-1 max-w-md">{service.description.length > 100 ? `${service.description.substring(0, 100)}...` : service.description}</p>
-                    )}
-                  </div>
-                  <span className="text-[#8A7D55] font-medium">${service.rate.toFixed(2)}/day</span>
-                </div>
-              ))}
-          </div>
-          <div className="flex justify-between items-center mt-3 text-sm font-medium">
-            <span className="text-gray-600">Additional Services Cost:</span>
-            <span className="text-[#8A7D55]">
-              ${calculateServicesCost().toFixed(2)}/day
-            </span>
-          </div>
-        </div>
-      )}
+     {/* Selected Services Section */}
+{selectedServices.length > 0 && services.length > 0 && (
+  <div className="border-t border-gray-200 mt-6 pt-6">
+    <div className="flex justify-between items-center mb-3">
+      <h3 className="text-lg font-medium">Additional Services</h3>
+      <div className="flex items-center">
+        {!servicesExpanded && (
+          <span className="mr-3 text-[#8A7D55] font-medium">
+            ${calculateServicesCost().toFixed(2)}/day
+          </span>
+        )}
+        <button 
+          onClick={() => setServicesExpanded(!servicesExpanded)}
+          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          aria-label={servicesExpanded ? "Collapse services" : "Expand services"}
+        >
+          <ChevronDown 
+            size={18} 
+            className={`transition-transform duration-300 ${servicesExpanded ? 'transform rotate-180' : ''}`} 
+          />
+        </button>
+      </div>
+    </div>
+    
+    <div className={`transition-all duration-300 overflow-hidden ${servicesExpanded ? 'max-h-[400px]' : 'max-h-0'}`}>
+      <div className="space-y-2 pr-2">
+        {services
+          .filter(service => selectedServices.includes(service._id))
+          .map(service => (
+            <div key={service._id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+              <div>
+                <span className="font-medium text-gray-800">{service.name}</span>
+                {service.description && (
+                  <p className="text-xs text-gray-500 mt-1 max-w-md">
+                    {service.description.length > 100 
+                      ? `${service.description.substring(0, 100)}...` 
+                      : service.description}
+                  </p>
+                )}
+              </div>
+              <span className="text-[#8A7D55] font-medium">${service.rate.toFixed(2)}/day</span>
+            </div>
+          ))}
+      </div>
+      
+      <div className="flex justify-between items-center mt-3 text-sm font-medium">
+        <span className="text-gray-600">Total Additional Services:</span>
+        <span className="text-[#8A7D55]">
+          ${calculateServicesCost().toFixed(2)}/day
+        </span>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Cost Breakdown */}
       <div className="border-t border-gray-200 mt-6 pt-6">
