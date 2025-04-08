@@ -92,13 +92,13 @@ export default async function AdminToolsPage() {
           color="bg-gradient-to-br from-teal-50 to-teal-100"
           iconColor="text-teal-600"
           borderColor="border-teal-200"
-          highlight={true}
+          //highlight={true}
         />
 
         {/* System Settings Panel */}
         <AdminToolCard
           title="System Settings"
-          description="Configure system parameters and preferences"
+          description="Place Holder (Not implemented -H)"
           icon={<Settings size={24} />}
           link="/admin/settings"
           color="bg-gradient-to-br from-gray-50 to-gray-100"

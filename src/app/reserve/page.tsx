@@ -6,19 +6,15 @@ import dayjs, { Dayjs } from "dayjs";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { addBooking } from "@/redux/features/bookSlice";
-import { DatePicker } from "@mui/x-date-pickers";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useSession } from "next-auth/react";
-import styles from "@/components/banner-search.module.css";
 import Image from "next/image";
 import getUserProfile from "@/libs/getUserProfile";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
 import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-import { CheckCircle } from "lucide-react";
 import ProviderDetail from "@/components/provider/providerDetail";
+import CarImageGallery from "@/components/cars/CarImageGallery";
 
 // Define the Car interface based on your API response
 interface Car {
@@ -458,23 +454,7 @@ export default function Booking() {
               Vehicle Details
             </h2>
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="relative h-64">
-                <FavoriteHeartButton
-                  carId={car._id || car._id}
-                  className="top-4 right-4 scale-125"
-                />
-                <Image
-                  src="/img/banner.jpg"
-                  alt={`${car.brand} ${car.model}`}
-                  fill
-                  className="object-cover"
-                />
-                {/* {!car.available && (
-                      <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">Currently Rented</span>
-                      </div>
-                    )} */}
-              </div>
+            <CarImageGallery car={car} />
               <div className="p-6 space-y-4">
                 <div>
                   <h3 className="text-xl font-semibold text-[#8A7D55] font-serif">
