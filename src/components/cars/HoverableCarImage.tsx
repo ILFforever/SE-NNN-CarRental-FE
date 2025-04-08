@@ -17,6 +17,7 @@ interface HoverableCarImageProps {
 const HoverableCarImage = ({ car, className = '' }: HoverableCarImageProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [cycleStarted, setCycleStarted] = useState(false);
 
   // Extract and prepare images array
   const images = useMemo(() => {
@@ -45,32 +46,44 @@ const HoverableCarImage = ({ car, className = '' }: HoverableCarImageProps) => {
     return ['/img/car-placeholder.jpg'];
   }, [car]);
 
-  // Memoized function to cycle through images
-  const cycleImages = useCallback(() => {
-    setCurrentImageIndex(prev => (prev + 1) % images.length);
-  }, [images.length]);
+  // Handle the hover state change
+  useEffect(() => {
+    // When hover starts
+    if (isHovering && images.length > 1) {
+      // Immediately show image 1 when hover starts
+      setCurrentImageIndex(1);
+      setCycleStarted(true);
+    } else {
+      // Reset to default image when not hovering
+      setCurrentImageIndex(0);
+      setCycleStarted(false);
+    }
+  }, [isHovering, images.length]);
 
-  // Use a memoized version of interval setup to prevent unnecessary re-renders
+  // Handle the cycling through images
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
 
-    if (isHovering && images.length > 1) {
-      // Change image immediately on first hover
-      if (currentImageIndex === 0) {
-        cycleImages();
-      }
-      
-      // Setup interval for subsequent image changes
-      intervalId = setInterval(cycleImages, 1000); // Change image every second
+    // Only start cycling after we've manually changed to image 1
+    if (isHovering && cycleStarted && images.length > 1) {
+      intervalId = setInterval(() => {
+        setCurrentImageIndex(prevIndex => {
+          // Once we've shown image 1 immediately on hover,
+          // start cycling from index 0 through all images
+          const nextIndex = prevIndex + 1;
+          
+          // If we reached the end, go back to index 0
+          return nextIndex >= images.length ? 0 : nextIndex;
+        });
+      }, 1000); // Change image every second
     }
 
-    // Cleanup function
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [isHovering, images.length, cycleImages, currentImageIndex]);
+  }, [isHovering, cycleStarted, images.length]);
 
   // Memoized mouse enter/leave handlers
   const handleMouseEnter = useCallback(() => {
@@ -79,8 +92,6 @@ const HoverableCarImage = ({ car, className = '' }: HoverableCarImageProps) => {
 
   const handleMouseLeave = useCallback(() => {
     setIsHovering(false);
-    // Reset to first image when mouse leaves
-    setCurrentImageIndex(0);
   }, []);
 
   return (
