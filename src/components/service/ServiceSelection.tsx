@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getAllServices } from '@/libs/getAllServices';
 
-interface Service {
-  _id: string;
-  name: string;
-  description: string;
-  rate: number;
-}
-
 interface ServiceSelectionProps {
   token: string;
   selectedServices: string[];
@@ -20,6 +13,10 @@ export default function ServiceSelection({
   onServicesChange
 }: ServiceSelectionProps) {
   const { services, isLoading, error } = getAllServices(token);
+  
+  // Filter services to include only those that are available
+  const availableServices = services.filter(service => service.available === true);
+
   const [isOpen, setIsOpen] = useState(false);
   const [expandedService, setExpandedService] = useState<string | null>(null);
   
@@ -99,19 +96,19 @@ export default function ServiceSelection({
     e.stopPropagation(); // Stop event bubbling
     e.preventDefault(); // Prevent default behavior
     
-    if (services.length === 0) return;
+    if (availableServices.length === 0) return;
     
-    if (selectedServices.length === services.length) {
+    if (selectedServices.length === availableServices.length) {
       onServicesChange([]);
     } else {
-      const allServiceIds = services.map(service => service._id);
+      const allServiceIds = availableServices.map(service => service._id);
       onServicesChange(allServiceIds);
     }
   };
   
   // Count of selected services for display
   const selectedCount = selectedServices.length;
-  const totalCount = services.length;
+  const totalCount = availableServices.length;
   const allSelected = totalCount > 0 && selectedCount === totalCount;
 
   if (isLoading) {
@@ -160,7 +157,7 @@ export default function ServiceSelection({
       {/* Dropdown content */}
       {isOpen && (
         <div className="mt-1 relative z-10">
-          {services.length === 0 ? (
+          {availableServices.length === 0 ? (
             <p className="text-gray-500 text-sm italic p-3 bg-gray-50 rounded-md border border-gray-300">No additional services available</p>
           ) : (
             <div className="border border-gray-300 rounded-md overflow-hidden shadow-md bg-white">
@@ -200,7 +197,7 @@ export default function ServiceSelection({
                   }
                 `}</style>
                 
-                {services.map(service => {
+                {availableServices.map(service => {
                   const isSelected = selectedServices.includes(service._id);
                   const isExpanded = expandedService === service._id;
                   

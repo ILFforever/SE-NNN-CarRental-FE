@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/apiConfig';
 
 interface Service {
+  available: boolean;
   _id: string;
   name: string;
   description: string;
