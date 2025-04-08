@@ -7,12 +7,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Image from "next/image";
 import Link from "next/link";
-import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
 import { CheckCircle,Star } from "lucide-react";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
 import HoverableCarImage from "@/components/cars/HoverableCarImage";
+import FavoriteHeartButton, { FavoriteCarsProvider } from "@/components/util/FavoriteHeartButton";
 
 // Type definitions
 interface Provider {
@@ -696,6 +696,7 @@ export default function CatalogPage() {
   };
 
   return (
+    <FavoriteCarsProvider>
     <div className="max-w-7xl mx-auto px-4 py-6">
       <header className="mb-6">
         <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
@@ -1444,5 +1445,6 @@ export default function CatalogPage() {
         </div>
       )}
     </div>
+    </FavoriteCarsProvider>
   );
 }

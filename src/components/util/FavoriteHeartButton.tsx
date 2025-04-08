@@ -1,46 +1,161 @@
 // src/components/FavoriteHeartButton.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useSession } from 'next-auth/react';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { Heart } from 'lucide-react';
 
-interface FavoriteHeartButtonProps {
-  carId: string;
-  className?: string;
+// Create a context to store favorite cars
+import React from 'react';
+
+// Define the context type
+interface FavoriteCarsContextType {
+  favoriteCars: string[];
+  refreshFavorites: () => Promise<void>;
+  addFavorite: (carId: string) => Promise<boolean>;
+  removeFavorite: (carId: string) => Promise<boolean>;
+  isLoading: boolean;
 }
 
-export default function FavoriteHeartButton({ carId, className = '' }: FavoriteHeartButtonProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+// Create the context with a default value
+const FavoriteCarsContext = React.createContext<FavoriteCarsContextType>({
+  favoriteCars: [],
+  refreshFavorites: async () => {},
+  addFavorite: async () => false,
+  removeFavorite: async () => false,
+  isLoading: false,
+});
+
+// Create a provider component
+export function FavoriteCarsProvider({ children }: { children: React.ReactNode }) {
+  const [favoriteCars, setFavoriteCars] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { data: session, status } = useSession();
 
-  useEffect(() => {
-    // Only check favorite status if authenticated
-    if (status === 'authenticated' && session?.user?.token) {
-      checkFavoriteStatus();
+  // Fetch favorite cars from API
+  const refreshFavorites = async () => {
+    if (status !== 'authenticated' || !session?.user?.token) {
+      return;
     }
-  }, [carId, status, session]);
 
-  async function checkFavoriteStatus() {
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/curuser`, {
         headers: {
-          'Authorization': `Bearer ${session?.user?.token}`
+          'Authorization': `Bearer ${session.user.token}`
         }
       });
 
       if (response.ok) {
         const userData = await response.json();
         if (userData.success && userData.data.favorite_cars) {
-          setIsFavorite(userData.data.favorite_cars.includes(carId));
+          setFavoriteCars(userData.data.favorite_cars);
         }
       }
     } catch (error) {
-      console.error('Error checking favorite status:', error);
+      console.error('Error fetching favorite cars:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
+
+  // Add a car to favorites
+  const addFavorite = async (carId: string): Promise<boolean> => {
+    if (status !== 'authenticated' || !session?.user?.token) {
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/favorite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.user.token}`
+        },
+        body: JSON.stringify({ carID: carId })
+      });
+
+      if (response.ok) {
+        setFavoriteCars((prev) => [...prev, carId]);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error adding favorite:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Remove a car from favorites
+  const removeFavorite = async (carId: string): Promise<boolean> => {
+    if (status !== 'authenticated' || !session?.user?.token) {
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/favorite`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.user.token}`
+        },
+        body: JSON.stringify({ carID: carId })
+      });
+
+      if (response.ok) {
+        setFavoriteCars((prev) => prev.filter(id => id !== carId));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch favorites when session changes
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.token) {
+      refreshFavorites();
+    }
+  }, [status, session]);
+
+  return (
+    <FavoriteCarsContext.Provider value={{ 
+      favoriteCars, 
+      refreshFavorites, 
+      addFavorite, 
+      removeFavorite,
+      isLoading 
+    }}>
+      {children}
+    </FavoriteCarsContext.Provider>
+  );
+}
+
+// Hook to use the favorites context
+export function useFavoriteCars() {
+  return useContext(FavoriteCarsContext);
+}
+
+// Interface for the FavoriteHeartButton props
+interface FavoriteHeartButtonProps {
+  carId: string;
+  className?: string;
+}
+
+// The FavoriteHeartButton component that uses the context
+export default function FavoriteHeartButton({ carId, className = '' }: FavoriteHeartButtonProps) {
+  const { status } = useSession();
+  const { favoriteCars, addFavorite, removeFavorite, isLoading } = useFavoriteCars();
+  const isFavorite = favoriteCars.includes(carId);
 
   async function toggleFavorite(e: React.MouseEvent) {
     e.preventDefault();
@@ -51,28 +166,10 @@ export default function FavoriteHeartButton({ carId, className = '' }: FavoriteH
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const method = isFavorite ? 'DELETE' : 'POST';
-      const response = await fetch(`${API_BASE_URL}/auth/favorite`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.user?.token}`
-        },
-        body: JSON.stringify({ carID: carId })
-      });
-
-      if (response.ok) {
-        setIsFavorite(!isFavorite);
-      } else {
-        console.error('Failed to update favorite status');
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-    } finally {
-      setIsLoading(false);
+    if (isFavorite) {
+      await removeFavorite(carId);
+    } else {
+      await addFavorite(carId);
     }
   }
 
