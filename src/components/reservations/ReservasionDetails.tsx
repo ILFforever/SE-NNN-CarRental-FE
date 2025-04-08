@@ -9,6 +9,7 @@ import { getTierName } from "@/utils/tierUtils";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { Check, X, Edit, ArrowLeft, Loader2 } from "lucide-react";
 import ProviderDetail from "@/components/provider/providerDetail";
+import RentalServices from '@/components/reservations/ShowRentalServices';
 
 interface UnifiedReservationDetailsProps {
   reservationId: string;
@@ -716,7 +717,6 @@ export default function UnifiedReservationDetails({
           </div>
 
           {/* Customer details - only shown to admin and provider */}
-          {(userType === "admin" || userType === "provider") && (
             <div className="bg-white p-6 rounded-lg shadow-md mb-6" >
               <h2 className="text-xl font-medium mb-4 text-[#8A7D55]">
                 Customer Information
@@ -750,8 +750,6 @@ export default function UnifiedReservationDetails({
                 </p>
               )}
             </div>
-          )}
-
            {/* Notes card */}
            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -906,6 +904,16 @@ export default function UnifiedReservationDetails({
                 </p>
               </div>
             </div>
+          </div>
+          
+          {/* Rental Services - Add this section */}
+          <div className="mb-6">
+            {rental.service && rental.service.length > 0 && (
+              <RentalServices 
+                token={session?.user?.token || ''} 
+                serviceIds={rental.service}
+              />
+            )}
           </div>
 
           {/* Provider Details */}  
