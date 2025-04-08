@@ -123,7 +123,7 @@ export default function RentalServices({ token, serviceIds = [] }: RentalService
         <div className="flex items-center">
           {!isExpanded && (
             <span className="mr-3 text-[#8A7D55] font-bold">
-              Total: ${totalAdditionalCost.toFixed(2)}
+              Total: ${totalAdditionalCost.toFixed(2)}/D
             </span>
           )}
           <button 
@@ -143,7 +143,7 @@ export default function RentalServices({ token, serviceIds = [] }: RentalService
         <div className="rounded-lg bg-[#F8F5F0] p-4 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-gray-700 font-medium">Total additional cost:</span>
-            <span className="text-[#8A7D55] font-bold">${totalAdditionalCost.toFixed(2)}</span>
+            <span className="text-[#8A7D55] font-bold">${totalAdditionalCost.toFixed(2)}/D</span>
           </div>
         </div>
         

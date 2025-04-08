@@ -74,6 +74,7 @@ export default function UnifiedReservationDetails({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+  const [services, setServices] = useState<Service[]>([]);
 
   // State for editing notes
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -107,6 +108,45 @@ export default function UnifiedReservationDetails({
       return null;
     }
   };
+
+  const fetchServices = async () => {
+    if (!rental?.service || rental.service.length === 0 || !session?.user?.token) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/services`, {
+        headers: {
+          'Authorization': `Bearer ${session.user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch services');
+      }
+  
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.data)) {
+        // Filter only the services that are in the rental's service array
+        const rentalServices = data.data.filter(
+          (service: Service) => rental.service?.includes(service._id)
+        );
+        
+        setServices(rentalServices);
+      }
+    } catch (err) {
+      console.error('Error fetching services:', err);
+    }
+  };
+
+  //Fetch Services
+  useEffect(() => {
+    if (rental?.service && rental.service.length > 0) {
+      fetchServices();
+    }
+  }, [rental, session?.user?.token]);
 
   // Fetch rental details
   useEffect(() => {
@@ -396,10 +436,10 @@ export default function UnifiedReservationDetails({
   const calculateLateFees = (rentalData: Rental) => {
     if (!rentalData.actualReturnDate)
       return { daysLate: 0, lateFeePerDay: 0, totalLateFee: 0 };
-
+  
     const expectedReturnDate = new Date(rentalData.returnDate);
     const actualReturnDate = new Date(rentalData.actualReturnDate);
-
+  
     const daysLate = Math.max(
       0,
       Math.ceil(
@@ -407,14 +447,50 @@ export default function UnifiedReservationDetails({
           (1000 * 3600 * 24)
       )
     );
-
+  
     // Get tier from car if it's an object, otherwise use default
     const carTier =
       typeof rentalData.car === "object" ? rentalData.car.tier || 0 : 0;
     const lateFeePerDay = (carTier + 1) * 500;
     const totalLateFee = daysLate * lateFeePerDay;
-
+  
     return { daysLate, lateFeePerDay, totalLateFee };
+  };
+  
+  // Calculate service costs based on rental duration
+  const calculateServiceCost = () => {
+    if (!rental || !rental.service || rental.service.length === 0) {
+      return 0;
+    }
+  
+    // Get service IDs from the rental
+    const serviceIds = rental.service;
+    
+    // Calculate rental period
+    const startDate = new Date(rental.startDate);
+    const endDate = new Date(rental.returnDate);
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    
+    // Calculate total service cost
+    let totalServiceCost = 0;
+    for (const service of services) {
+      if (serviceIds.includes(service._id)) {
+        totalServiceCost += service.rate * days;
+      }
+    }
+    
+    return totalServiceCost;
+  };
+
+  const calculateTotalPrice = () => {
+    if (!rental) return 0;
+    
+    const baseCost = rental.price || 0;
+    const additionalCharges = rental.additionalCharges || 0;
+    const lateFees = daysLate > 0 ? totalLateFee : 0;
+    const serviceCost = calculateServiceCost();
+    
+    return baseCost + additionalCharges + lateFees + serviceCost;
   };
 
   // Get status badge class
@@ -859,37 +935,47 @@ export default function UnifiedReservationDetails({
 
               <hr className="my-3" />
 
-              <div>
-                <p className="text-gray-600 text-sm">Base Price</p>
-                <p className="font-medium">{formatCurrency(rental.price)}</p>
-              </div>
-
-              {daysLate > 0 && (
-                <>
-                  <div>
-                    <p className="text-gray-600 text-sm">Late Return</p>
-                    <p className="font-medium text-amber-600">
-                      {daysLate} days @ {formatCurrency(lateFeePerDay)}/day
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-600 text-sm">Late Fees</p>
-                    <p className="font-medium text-amber-600">
-                      {formatCurrency(totalLateFee)}
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {rental.additionalCharges && rental.additionalCharges > 0 && (
-                <div>
-                  <p className="text-gray-600 text-sm">Additional Charges</p>
-                  <p className="font-medium text-amber-600">
-                    {formatCurrency(rental.additionalCharges)}
-                  </p>
+              {/* Price Column */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">Base Rental</span>
+                  <span className="text-sm font-medium">{formatCurrency(rental.price)}</span>
                 </div>
-              )}
+                
+                {rental.service && rental.service.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">Additional Services</span>
+                    <span className="text-sm font-medium text-blue-600">
+                      {formatCurrency(calculateServiceCost())}
+                    </span>
+                  </div>
+                )}
+                
+                {rental.additionalCharges != null && rental.additionalCharges > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">Additional Charges</span>
+                    <span className="text-sm font-medium text-amber-600">
+                      {formatCurrency(rental.additionalCharges)}
+                    </span>
+                  </div>
+                )}
+                
+                {daysLate > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">Late Fees</span>
+                    <span className="text-sm font-medium text-red-600">
+                      {formatCurrency(totalLateFee)}
+                    </span>
+                  </div>
+                )}
+                              
+                              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between items-center">
+                  <span className="text-gray-800 font-semibold text-sm">Total Amount</span>
+                  <span className="font-bold text-lg text-[#8A7D55]">
+                    {formatCurrency(calculateTotalPrice())}
+                  </span>
+                </div>
+              </div>
 
               <div className="pt-2 border-t">
                 <p className="text-gray-800 font-semibold text-sm">
@@ -899,14 +985,15 @@ export default function UnifiedReservationDetails({
                   {formatCurrency(
                     rental.price +
                       (rental.additionalCharges || 0) +
-                      (daysLate > 0 ? totalLateFee : 0)
+                      (daysLate > 0 ? totalLateFee : 0) +
+                      calculateServiceCost()
                   )}
                 </p>
               </div>
             </div>
           </div>
           
-          {/* Rental Services - Add this section */}
+          {/* Rental Services */}
           <div className="mb-6">
             {rental.service && rental.service.length > 0 && (
               <RentalServices 
