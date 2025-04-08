@@ -212,11 +212,23 @@ export default function CarImageGallery({ car, showFavoriteButton = true }: Imag
               </button>
             </div>
             
-            {/* Main image container with zoom functionality */}
+          {/* Main image container with zoom functionality */}
             <div 
-              className="flex-1 flex items-center justify-center relative p-4"
+              className="flex-1 flex items-center justify-center relative p-4 cursor-zoom-in"
               ref={galleryImageContainerRef}
-              onMouseMove={handleGalleryMouseMove}
+              onMouseMove={(e) => {
+                // Only update position if zoom is already active
+                if (showZoom) {
+                  handleGalleryMouseMove(e);
+                }
+              }}
+              onMouseDown={(e) => {
+                if (e.button === 0) { // Only left mouse button
+                  handleGalleryMouseMove(e); // Initial position
+                  setShowZoom(true);
+                }
+              }}
+              onMouseUp={() => setShowZoom(false)}
               onMouseLeave={() => setShowZoom(false)}
               onClick={(e) => e.stopPropagation()}
             >
@@ -227,21 +239,23 @@ export default function CarImageGallery({ car, showFavoriteButton = true }: Imag
                   width={1200}
                   height={800}
                   className="max-h-[75vh] w-auto object-contain rounded-md"
+                  draggable = {false}
+                  onDragStart={(e) => e.preventDefault()}
                   priority
                 />
                 
-               {/* Zoom view in full gallery */}
+                {/* Zoom view in full gallery */}
                 {showZoom && (
                 <div 
-                    id="gallery-zoom-lens"
-                    className="absolute w-64 h-64 rounded-full overflow-hidden border-2 border-white shadow-lg pointer-events-none z-30 transform -translate-x-1/2 -translate-y-1/2"
-                    style={{
+                  id="gallery-zoom-lens"
+                  className="absolute w-64 h-64 rounded-full overflow-hidden border-2 border-white shadow-lg pointer-events-none z-30 transform -translate-x-1/2 -translate-y-1/2 cursor-zoom-in"
+                  style={{
                     left: `${zoomPosition.x}px`,
                     top: `${zoomPosition.y}px`,
                     backgroundImage: `url(${zoomImage})`,
                     backgroundSize: `${zoomFactor * 500}%`,
                     backgroundRepeat: 'no-repeat',
-                    }}
+                  }}
                 />
                 )}
               </div>
@@ -272,7 +286,7 @@ export default function CarImageGallery({ car, showFavoriteButton = true }: Imag
                 </>
               )}
             </div>
-            
+                        
             {/* Footer with pagination dots */}
             {displayImages.length > 1 && (
               <div className="p-4 flex justify-center border-t border-white border-opacity-20">
