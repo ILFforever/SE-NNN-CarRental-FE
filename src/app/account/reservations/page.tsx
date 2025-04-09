@@ -298,7 +298,7 @@ export default function MyReservationsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -383,23 +383,9 @@ export default function MyReservationsPage() {
                     </td>
                     {/* New Rating column */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      {reservation.isRated ? (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-gray-400 font-medium">
-                            Review Provider
-                          </span>
-                          {/* Info Icon with tooltip */}
-                          {car?.provider_id && (
-                            <div className="relative group">
-                              <Info className="w-3 h-3 text-gray-500" />
-                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                {providers[car.provider_id]?.name ||
-                                  car.provider_id}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
+                      {!reservation.isRated &&
+                      reservation.status == "completed" ? (
+                        // can be rating
                         <a
                           onClick={(e) => {
                             e.preventDefault();
@@ -421,6 +407,23 @@ export default function MyReservationsPage() {
                             )}
                           </div>
                         </a>
+                      ) : (
+                        // can't be rating
+                        <div className="flex items-center space-x-1">
+                          <span className="text-gray-400 font-medium">
+                            Review Provider
+                          </span>
+                          {/* Info Icon with tooltip */}
+                          {car?.provider_id && (
+                            <div className="relative group">
+                              <Info className="w-3 h-3 text-gray-500" />
+                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                {providers[car.provider_id]?.name ||
+                                  car.provider_id}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
                     {/* Details link */}
