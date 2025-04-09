@@ -64,6 +64,7 @@ interface Service {
   name: string;
   available: boolean;
   description: string;
+  daily: boolean;
   rate: number;
   createdAt: string;
 }
