@@ -847,8 +847,7 @@ export default function AdminServiceManagement({
                         className={`p-1 rounded-full transition-colors ${
                           service.available
                             ? "text-green-600 hover:text-green-900 hover:bg-green-50"
-                            : "text-red-600 hover:text-red-900 hover:bg-red-50"
-                        }`}
+                            : "text-red-600 hover:text-red-900 hover:bg-red-50" }`}
                         title={
                           service.available
                             ? "Disable service"
