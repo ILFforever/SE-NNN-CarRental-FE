@@ -228,7 +228,7 @@ export default function CarImageUpload({
         <input 
           type="file" 
           multiple 
-          accept=".jpg,.jpeg,.png" //update to add more data types later
+          accept=".jpg,.jpeg,.png,.gif" //update to add more data types later
           onChange={handleFileChange} 
           className="hidden" 
           ref={fileInputRef} 
