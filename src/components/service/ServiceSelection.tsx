@@ -1,18 +1,99 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { API_BASE_URL } from "@/config/apiConfig";
 import { getAllServices } from '@/libs/getAllServices';
+
+// Define the Service interface
+interface Service {
+  _id: string;
+  name: string;
+  description?: string;
+  rate: number;
+  available: boolean;
+}
+
+// Define the getServicesByCarId function
+export async function getServicesByCarId(
+  token: string,
+  carId: string
+): Promise<Service[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/services/${carId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Error fetching services: ${res.status}`);
+    }
+    
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to fetch services");
+    }
+    
+    return data.data as Service[];
+  } catch (error) {
+    console.error("getServicesByCarId error:", error);
+    throw error;
+  }
+}
 
 interface ServiceSelectionProps {
   token: string;
+  carId?: string; // Made carId optional
   selectedServices: string[];
   onServicesChange: (services: string[]) => void;
 }
 
 export default function ServiceSelection({
   token,
+  carId, // Optional prop
   selectedServices,
   onServicesChange
 }: ServiceSelectionProps) {
-  const { services, isLoading, error } = getAllServices(token);
+  // For the getAllServices hook (used when no carId is provided or when carId services fail)
+  const allServicesResult = getAllServices(token);
+  
+  // For the getServicesByCarId function (used when carId is provided)
+  const [carServices, setCarServices] = useState<Service[]>([]);
+  const [isLoadingCarServices, setIsLoadingCarServices] = useState(false);
+  const [carServicesError, setCarServicesError] = useState<string | null>(null);
+  const [useAllServices, setUseAllServices] = useState(false);
+  
+  // Fetch car-specific services when carId is provided
+  useEffect(() => {
+    if (!carId) {
+      setUseAllServices(true);
+      return;
+    }
+    
+    const fetchCarServices = async () => {
+      try {
+        setIsLoadingCarServices(true);
+        setUseAllServices(false);
+        const services = await getServicesByCarId(token, carId);
+        setCarServices(services);
+        setCarServicesError(null);
+      } catch (err) {
+        console.error("Error fetching car services:", err);
+        // If we get a 401 error or any other error, fallback to all services
+        setUseAllServices(true);
+        setCarServicesError("Could not load car-specific services. Showing all available services instead.");
+      } finally {
+        setIsLoadingCarServices(false);
+      }
+    };
+    
+    fetchCarServices();
+  }, [token, carId]);
+  
+  // Determine which services, loading state, and error to use
+  // If useAllServices is true, use allServicesResult regardless of carId
+  const services = useAllServices ? allServicesResult.services : (carId ? carServices : allServicesResult.services);
+  const isLoading = useAllServices ? allServicesResult.isLoading : (carId ? isLoadingCarServices : allServicesResult.isLoading);
+  const error = useAllServices ? allServicesResult.error : (carId ? carServicesError : allServicesResult.error);
   
   // Filter services to include only those that are available
   const availableServices = services.filter(service => service.available === true);

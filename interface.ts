@@ -29,41 +29,41 @@ interface BookingItem {
   returnDate?: string;
 }
 
-
-
 //OLD STUFF REMOVE LATER
 interface VenueItem {
-    _id: string,
-    name: string,
-    address: string,
-    district: string,
-    province: string,
-    postalcode: string,
-    tel: string,
-    picture: string,
-    dailyrate: number,
-    __v: number,
-    id: string
-  }
-  
-  interface VenueJson {
-    success: boolean,
-    count: number,
-    pagination: Object,
-    data: VenueItem[]
-  }
+  _id: string;
+  name: string;
+  address: string;
+  district: string;
+  province: string;
+  postalcode: string;
+  tel: string;
+  picture: string;
+  dailyrate: number;
+  __v: number;
+  id: string;
+}
 
-  interface BookingItem {
-    nameLastname: string;
-    tel: string;
-    bookDate: string;
-    pickupTime: string;
-    returnTime: string;
-  }
+interface VenueJson {
+  success: boolean;
+  count: number;
+  pagination: Object;
+  data: VenueItem[];
+}
 
-  interface Service {
-    _id: string;
-    name: string;
-    description: string;
-    rate: number;
-  }
+interface BookingItem {
+  nameLastname: string;
+  tel: string;
+  bookDate: string;
+  pickupTime: string;
+  returnTime: string;
+}
+
+interface Service {
+  _id: string;
+  name: string;
+  available: boolean;
+  description: string;
+  rate: number;
+  createdAt: string;
+}

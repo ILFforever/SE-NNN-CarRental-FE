@@ -1,6 +1,5 @@
 export const API_BASE_URL = 'https://se-nnn-carrental-be.fly.dev/api/v1';
 
-
 // Auth endpoints
 export const AUTH_ENDPOINTS = {
   REGISTER: `${API_BASE_URL}/auth/register`,
@@ -22,6 +21,7 @@ export const RESERVATION_ENDPOINTS = {
 // services/vehicle endpoints
 export const SERVICES_ENDPOINTS = {
   GET_ALL: `${API_BASE_URL}/services`,
+  GET_BYCARID: `${API_BASE_URL}/services`
 };
 
 // Helper function to create authentication header
