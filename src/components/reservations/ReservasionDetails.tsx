@@ -10,6 +10,7 @@ import { API_BASE_URL } from "@/config/apiConfig";
 import { Check, X, Edit, ArrowLeft, Loader2 } from "lucide-react";
 import ProviderDetail from "@/components/provider/providerDetail";
 import RentalServices from '@/components/reservations/ShowRentalServices';
+import ReservationDetailsCard from "./ReservationDetailsCard";
 
 interface UnifiedReservationDetailsProps {
   reservationId: string;
@@ -80,33 +81,9 @@ export default function UnifiedReservationDetails({
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState("");
 
-  // Define a function to fetch car details if needed
-  const fetchCarDetails = async (
-    carId: string,
-    token: string
-  ): Promise<Car | null> => {
-    try {
-      const carResponse = await fetch(`${API_BASE_URL}/cars/${carId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!carResponse.ok) {
-        throw new Error(`Failed to fetch car with ID: ${carId}`);
-      }
-
-      const carData = await carResponse.json();
-      if (carData.success && carData.data) {
-        return carData.data as Car;
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Error fetching car details:", error);
-      return null;
-    }
+  const handleRentalUpdate = (updatedRental: Rental) => {
+    setRental(updatedRental);
+    setSuccess('Reservation updated successfully');
   };
 
   const fetchServices = async () => {
@@ -424,12 +401,20 @@ export default function UnifiedReservationDetails({
 
   // Calculate rental period
   const calculateRentalPeriod = (startDate: string, returnDate: string) => {
+    // Convert to Date objects
     const start = new Date(startDate);
     const end = new Date(returnDate);
-    const days = Math.ceil(
-      (end.getTime() - start.getTime()) / (1000 * 3600 * 24)
-    );
-    return days;
+    
+    // Reset to midnight to ignore time components
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    
+    // Calculate difference in days
+    const timeDiff = endDay.getTime() - startDay.getTime();
+    const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    // Add 1 because rental period includes both start and end days
+    return days + 1;
   };
 
   // Calculate late days and fees
@@ -885,114 +870,22 @@ export default function UnifiedReservationDetails({
 
         {/* Right column - Rental Details and Actions */}
         <div>
-          {/* Rental details card */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 className="text-xl font-medium mb-4 text-[#8A7D55]">
-              Reservation Details
-            </h2>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-gray-600 text-sm">Reservation ID</p>
-                <p className="font-medium text-sm">{rental._id}</p>
-              </div>
-
-              <div>
-                <p className="text-gray-600 text-sm">Created On</p>
-                <p className="font-medium">
-                  {formatDate(rental.createdAt)} {formatTime(rental.createdAt)}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-gray-600 text-sm">Start Date</p>
-                  <p className="font-medium">{formatDate(rental.startDate)}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-600 text-sm">Return Date</p>
-                  <p className="font-medium">{formatDate(rental.returnDate)}</p>
-                </div>
-
-                {rental.actualReturnDate && (
-                  <div>
-                    <p className="text-gray-600 text-sm">Actual Return</p>
-                    <p className="font-medium">
-                      {formatDate(rental.actualReturnDate)}
-                    </p>
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-gray-600 text-sm">Duration</p>
-                  <p className="font-medium">
-                    {calculateRentalPeriod(rental.startDate, rental.returnDate)}{" "}
-                    days
-                  </p>
-                </div>
-              </div>
-
-              <hr className="my-3" />
-
-              {/* Price Column */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 text-sm">Base Rental</span>
-                  <span className="text-sm font-medium">{formatCurrency(rental.price)}</span>
-                </div>
-                
-                {rental.service && rental.service.length > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 text-sm">Additional Services</span>
-                    <span className="text-sm font-medium text-blue-600">
-                      {formatCurrency(calculateServiceCost())}
-                    </span>
-                  </div>
-                )}
-                
-                {rental.additionalCharges != null && rental.additionalCharges > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 text-sm">Additional Charges</span>
-                    <span className="text-sm font-medium text-amber-600">
-                      {formatCurrency(rental.additionalCharges)}
-                    </span>
-                  </div>
-                )}
-                
-                {daysLate > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 text-sm">Late Fees</span>
-                    <span className="text-sm font-medium text-red-600">
-                      {formatCurrency(totalLateFee)}
-                    </span>
-                  </div>
-                )}
-                              
-                              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between items-center">
-                  <span className="text-gray-800 font-semibold text-sm">Total Amount</span>
-                  <span className="font-bold text-lg text-[#8A7D55]">
-                    {formatCurrency(calculateTotalPrice())}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t">
-                <p className="text-gray-800 font-semibold text-sm">
-                  Total Amount
-                </p>
-                <p className="font-bold text-lg">
-                  {formatCurrency(
-                    rental.price +
-                      (rental.additionalCharges || 0) +
-                      (daysLate > 0 ? totalLateFee : 0) +
-                      calculateServiceCost()
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-          
+             {rental && (
+            <ReservationDetailsCard
+              rental={rental}
+              userType={userType}
+              token={session?.user?.token || ''}
+              onUpdate={handleRentalUpdate}
+              calculateRentalPeriod={calculateRentalPeriod}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              formatTime={formatTime}
+              calculateServiceCost={calculateServiceCost}
+              calculateTotalPrice={calculateTotalPrice}
+              daysLate={daysLate}
+              totalLateFee={totalLateFee}
+            />
+          )}
           {/* Rental Services */}
           <div className="mb-6">
             {rental.service && rental.service.length > 0 && (

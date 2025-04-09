@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
-import UnifiedReservationDetails from '@/components/reservations//ReservasionDetails';
+import UnifiedReservationDetails from '@/components/reservations/ReservasionDetails';
 
 export const metadata: Metadata = {
   title: 'Reservation Details | CEDT Rentals',
@@ -24,10 +24,13 @@ export default async function CustomerReservationDetailsPage({ params }: PagePro
     redirect('/signin?callbackUrl=/account/reservations');
   }
   
+  // Determine user type based on session
+  const userType = session.user.role === 'admin' ? 'admin' : 'customer';
+  
   return (
     <UnifiedReservationDetails 
       reservationId={params.reservationId} 
-      userType="customer"
+      userType={userType}
       backUrl="/account/reservations" 
     />
   );
