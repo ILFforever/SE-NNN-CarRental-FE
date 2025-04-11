@@ -513,25 +513,53 @@ export default function CarForm({
 
     return (
       <div>
-        {/* Daily Services */}
-        <ServiceList 
-          serviceList={dailyServices}
-          title="Daily Services"
-          rateLabel="/day"
-          selectedServices={formData.service}
-          toggleService={toggleService}
-          formatCurrency={formatCurrency}
-        />
-        
-        {/* One-Time Services */}
-        <ServiceList 
-          serviceList={oneTimeServices}
-          title="One-Time Services"
-          rateLabel="(flat rate)"
-          selectedServices={formData.service}
-          toggleService={toggleService}
-          formatCurrency={formatCurrency}
-        />
+        {/* All services in one list */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {services.map(service => {
+            const isSelected = formData.service.includes(service._id);
+            const badgeColor = service.daily 
+              ? (isSelected ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700')
+              : (isSelected ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700');
+            
+            return (
+              <div 
+                key={service._id}
+                className={`
+                  p-3 rounded-md border transition-all cursor-pointer
+                  ${isSelected 
+                    ? 'border-[#8A7D55] bg-[#f8f5f0]' 
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
+                `}
+                onClick={() => toggleService(service._id)}
+              >
+                <div className="flex items-center">
+                  <div 
+                    className={`
+                      w-5 h-5 rounded border flex items-center justify-center mr-3
+                      ${isSelected ? 'bg-[#8A7D55] border-[#8A7D55]' : 'border-gray-300 bg-white'}
+                    `}
+                  >
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium text-gray-800">{service.name}</h4>
+                      <span className={`text-sm font-semibold ${badgeColor} px-2 py-1 rounded-full`}>
+                        {service.daily ? 'Daily: ' : 'One-time: '}${service.rate.toFixed(2)}
+                      </span>
+                    </div>
+                    {service.description && (
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{service.description}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
         
         {/* Selected Services Summary */}
         {formData.service.length > 0 && (
@@ -540,35 +568,40 @@ export default function CarForm({
             <div className="flex flex-wrap gap-2">
               {services
                 .filter(service => formData.service.includes(service._id))
-                .map(service => (
-                  <div 
-                    key={`selected-${service._id}`}
-                    className="inline-flex items-center bg-[#f8f5f0] text-[#8A7D55] px-3 py-1.5 rounded-full text-sm font-medium group"
-                  >
-                    <span className="truncate max-w-xs">{service.name}</span>
-                    <span className="mx-1 text-xs font-bold">
-                      {formatCurrency(service.rate)} {service.daily ? '/day' : ''}
-                    </span>
-                    <button 
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleService(service._id);
-                      }}
-                      className="ml-1 text-[#8A7D55] hover:text-[#6A5D35] focus:outline-none opacity-60 group-hover:opacity-100"
-                      aria-label={`Remove ${service.name}`}
+                .map(service => {
+                  const tagColor = service.daily 
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'bg-purple-50 text-purple-700 border border-purple-200';
+                  
+                  return (
+                    <div 
+                      key={`selected-${service._id}`}
+                      className={`inline-flex items-center ${tagColor} px-3 py-1.5 rounded-full text-sm font-medium group`}
                     >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                      <span className="truncate max-w-xs">{service.name}</span>
+                      <span className="mx-1 text-xs font-bold">
+                        ({service.daily ? 'Daily' : 'One-time'}: ${service.rate.toFixed(2)})
+                      </span>
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleService(service._id);
+                        }}
+                        className="ml-1 hover:text-red-500 focus:outline-none opacity-60 group-hover:opacity-100"
+                        aria-label={`Remove ${service.name}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         )}
       </div>
     );
-  };
-
+  }
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">

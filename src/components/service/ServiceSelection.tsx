@@ -9,6 +9,7 @@ interface Service {
   description?: string;
   rate: number;
   available: boolean;
+  daily: boolean; // Whether the service is charged per day or one-time
 }
 
 // Define the getServicesByCarId function
@@ -192,6 +193,14 @@ export default function ServiceSelection({
   const totalCount = availableServices.length;
   const allSelected = totalCount > 0 && selectedCount === totalCount;
 
+  // Get rate display with prefix based on service type
+  const getRateDisplay = (service: Service) => {
+    if (service.rate <= 0) return '';
+    
+    const prefix = service.daily ? 'Daily: ' : 'One-time: ';
+    return `${prefix}$${service.rate}`;
+  };
+
   if (isLoading) {
     return <div className="text-center py-3 text-gray-600 animate-pulse">Loading available services...</div>;
   }
@@ -263,7 +272,7 @@ export default function ServiceSelection({
                 </div>
               </div>
               
-              {/* List of services */}
+              {/* All services in one list */}
               <div 
                 ref={listRef}
                 className="max-h-60 overflow-y-auto scrollbar-hide"
@@ -281,6 +290,9 @@ export default function ServiceSelection({
                 {availableServices.map(service => {
                   const isSelected = selectedServices.includes(service._id);
                   const isExpanded = expandedService === service._id;
+                  const badgeColor = service.daily 
+                    ? (isSelected ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700')
+                    : (isSelected ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700');
                   
                   return (
                     <div
@@ -343,12 +355,8 @@ export default function ServiceSelection({
                         
                         <div className="flex items-center">
                           {service.rate > 0 && (
-                            <span className={`text-sm whitespace-nowrap mr-2 ${
-                              isSelected 
-                                ? 'bg-[#8A7D55] text-white' 
-                                : 'bg-gray-100 text-gray-700'
-                            } font-medium px-3 py-1 rounded-full transition-colors duration-200`}>
-                              +${service.rate}/day
+                            <span className={`text-sm whitespace-nowrap mr-2 ${badgeColor} font-medium px-3 py-1 rounded-full transition-colors duration-200`}>
+                              {getRateDisplay(service)}
                             </span>
                           )}
                           
@@ -405,30 +413,38 @@ export default function ServiceSelection({
         <div className="mt-3 flex flex-wrap gap-2">
           {services
             .filter(service => selectedServices.includes(service._id))
-            .map(service => (
-              <div 
-                key={`selected-${service._id}`}
-                className="inline-flex items-center bg-[#F5F2EA] text-[#8A7D55] px-3 py-1 rounded-full text-sm font-medium group"
-              >
-                <span className="truncate max-w-[200px]">{service.name}</span>
-                {service.rate > 0 && (
-                  <span className="mx-1 text-xs font-bold">+${service.rate}/day</span>
-                )}
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleServiceToggle(e, service._id);
-                  }}
-                  className="ml-1 text-[#8A7D55] hover:text-[#6A5D35] focus:outline-none opacity-60 group-hover:opacity-100"
-                  aria-label={`Remove ${service.name}`}
+            .map(service => {
+              const tagColor = service.daily 
+                ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                : 'bg-purple-50 text-purple-700 border border-purple-200';
+              
+              return (
+                <div 
+                  key={`selected-${service._id}`}
+                  className={`inline-flex items-center ${tagColor} px-3 py-1 rounded-full text-sm font-medium group`}
                 >
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            ))}
+                  <span className="truncate max-w-[200px]">{service.name}</span>
+                  {service.rate > 0 && (
+                    <span className="mx-1 text-xs font-bold">
+                      ({service.daily ? 'Daily' : 'One-time'}: ${service.rate})
+                    </span>
+                  )}
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleServiceToggle(e, service._id);
+                    }}
+                    className="ml-1 hover:text-red-500 focus:outline-none opacity-60 group-hover:opacity-100"
+                    aria-label={`Remove ${service.name}`}
+                  >
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
         </div>
       )}
     </div>
