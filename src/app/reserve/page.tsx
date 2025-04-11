@@ -19,6 +19,36 @@ import ServiceSelection from "@/components/service/ServiceSelection";
 import { ChevronDown } from "lucide-react";
 
 // Define the Car interface based on your API response
+interface Car {
+  _id: string;
+  brand: string;
+  model: string;
+  type: string;
+  color?: string;
+  license_plate?: string;
+  dailyRate?: number;
+  tier?: number;
+  provider_id?: string;
+  manufactureDate?: string;
+  available?: boolean;
+  rents?: Rent[];
+}
+
+interface Rent {
+  _id: string;
+  startDate: string;
+  returnDate: string;
+  status: "pending" | "active" | "completed" | "cancelled";
+}
+
+interface Service {
+  daily: any;
+  _id: string;
+  name: string;
+  description: string;
+  rate: number;
+  available?: boolean;
+}
 
 export default function Booking() {
   useScrollToTop();
@@ -942,43 +972,58 @@ export default function Booking() {
                   <span>${car?.dailyRate?.toFixed(2) || "0.00"}</span>
                 </div>
 
-                {selectedServices.length > 0 && (
-                  <>
-                    <div className="border-t border-gray-200 mt-3 pt-3">
-                      <h4 className="text-gray-800 font-medium mb-2">
-                        Additional Services:
-                      </h4>
-                      {services
-                        .filter((service) =>
-                          selectedServices.includes(service._id)
-                        )
-                        .map((service) => (
+              {selectedServices.length > 0 && (
+                <>
+                  <div className="border-t border-gray-200 mt-3 pt-3">
+                    <h4 className="text-gray-800 font-medium mb-2">
+                      Additional Services:
+                    </h4>
+                    {services
+                      .filter((service) =>
+                        selectedServices.includes(service._id)
+                      )
+                      .map((service) => {
+                        const cost = service.daily
+                          ? service.rate * getRentalPeriod()
+                          : service.rate;
+                        return (
                           <div
                             key={service._id}
                             className="flex justify-between items-center py-1"
                           >
                             <span className="text-gray-600">
                               {service.name}
-                              <span className="ml-1 text-xs text-gray-400">
-                                ({service.daily ? "daily" : "one-time"})
-                              </span>
                             </span>
                             <span>
-                              {service.daily 
-                                ? `$${service.rate.toFixed(2)} × ${getRentalPeriod()} days`
-                                : `$${service.rate.toFixed(2)}`}
+                              ${service.rate.toFixed(2)}
+                              {service.daily
+                                ? ` × ${getRentalPeriod()} days`
+                                : ""}{" "}
+                              = ${cost.toFixed(2)}
                             </span>
                           </div>
-                        ))}
-                      <div className="flex justify-between items-center mt-2 font-medium">
-                        <span>Services Subtotal:</span>
-                        <span>
-                          ${calculateServicesTotalCost().toFixed(2)}
-                        </span>
-                      </div>
+                        );
+                      })}
+                    <div className="flex justify-between items-center mt-2 font-medium">
+                      <span>Services Subtotal:</span>
+                      <span>
+                        $
+                        {services
+                          .filter((service) =>
+                            selectedServices.includes(service._id)
+                          )
+                          .reduce((total, service) => {
+                            const cost = service.daily
+                              ? service.rate * getRentalPeriod()
+                              : service.rate;
+                            return total + cost;
+                          }, 0)
+                          .toFixed(2)}
+                      </span>
                     </div>
-                  </>
-                )}
+                  </div>
+                </>
+              )}
 
                 <div className="flex justify-between items-center mt-2">
                   <span className="text-gray-600">Number of Days:</span>

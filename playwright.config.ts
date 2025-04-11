@@ -34,17 +34,25 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // {
+    //   name: 'chromium gui',
+    //   use: { 
+    //     ...devices['Desktop Chrome'],
+    //     headless: false,
+    //     viewport: { width: 1280, height: 720 },
+    //     launchOptions: {
+    //       slowMo: 1000,
+    //     }
+    //   },
+      
+    // },
+
     {
-      name: 'chromium',
+      name: 'chromium cli',
       use: { 
         ...devices['Desktop Chrome'],
-        headless: false,
         viewport: { width: 1280, height: 720 },
-        launchOptions: {
-          slowMo: 1000,
-        }
       },
-      
     },
 
     {
