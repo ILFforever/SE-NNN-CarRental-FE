@@ -91,3 +91,33 @@ interface Service {
   createdAt: string;
 }
 
+// Define the Car Item interface
+interface CarItem {
+  id: string;
+  name: string;
+  images: string[];
+  description: string;
+  category: string;
+  make: string;
+  model: string;
+  year: number;
+  dailyRate: number;
+  transmission: string;
+  seats: number;
+  available: boolean;
+}
+
+// Define the Cars Json interface
+interface CarsJson {
+  count: number;
+  data: CarItem[];
+}
+
+// Define the Booking Item interface for bookslice
+interface BookingItem {
+  nameLastname: string;
+  tel: string;
+  car: string;
+  bookDate: string;
+  returnDate?: string;
+}
