@@ -1,20 +1,29 @@
-// src/components/forms/CarForm.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/config/apiConfig';
 import Link from 'next/link';
-import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Check, ChevronDown, Loader2, X } from 'lucide-react';
 import CarImageUpload from './CarImageUpload';
 
 // Service interface
 interface Service {
   _id: string;
   name: string;
-  description: string;
+  description?: string;
   rate: number;
   available: boolean;
+  daily: boolean;
+}
+
+interface ServiceListProps {
+  serviceList: Service[];
+  title: string;
+  rateLabel: string;
+  selectedServices: string[];
+  toggleService: (id: string) => void;
+  formatCurrency: (amount: number) => string;
 }
 
 // Provider interface
@@ -47,6 +56,66 @@ interface CarFormProps {
   backUrl?: string;
   title?: string;
 }
+
+// ServiceList component for rendering services by type
+const ServiceList: React.FC<ServiceListProps> = ({
+  serviceList,
+  title,
+  rateLabel,
+  selectedServices,
+  toggleService,
+  formatCurrency
+}) => {
+  if (serviceList.length === 0) return null;
+  
+  return (
+    <div className="mb-6">
+      <h3 className="text-lg font-medium text-[#8A7D55] mb-3">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {serviceList.map(service => (
+          <div 
+            key={service._id}
+            className={`
+              p-3 rounded-md border transition-all cursor-pointer
+              ${selectedServices.includes(service._id) 
+                ? 'border-[#8A7D55] bg-[#f8f5f0]' 
+                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
+            `}
+            onClick={() => toggleService(service._id)}
+          >
+            <div className="flex items-center">
+              <div 
+                className={`
+                  w-5 h-5 rounded border flex items-center justify-center mr-3
+                  ${selectedServices.includes(service._id) 
+                    ? 'bg-[#8A7D55] border-[#8A7D55]' 
+                    : 'border-gray-300 bg-white'}
+                `}
+              >
+                {selectedServices.includes(service._id) && (
+                  <Check className="w-3.5 h-3.5 text-white" />
+                )}
+              </div>
+              
+              <div className="flex-grow">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium text-gray-800">{service.name}</h4>
+                  <span className="text-sm font-semibold text-[#8A7D55]">
+                    {formatCurrency(service.rate)}
+                    <span className="text-xs text-gray-500 ml-1">{rateLabel}</span>
+                  </span>
+                </div>
+                {service.description && (
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{service.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function CarForm({
   carId,
@@ -411,8 +480,8 @@ export default function CarForm({
     }
   };
 
-  // Service selection component
-  const ServiceSelection = () => {
+  // Render ServiceSelection component
+  const renderServiceSelection = () => {
     if (isLoadingServices) {
       return (
         <div className="flex items-center justify-center h-32">
@@ -438,47 +507,64 @@ export default function CarForm({
       );
     }
 
+    // Separate daily services from one-time services
+    const dailyServices = services.filter(service => service.daily);
+    const oneTimeServices = services.filter(service => !service.daily);
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {services.map(service => (
-          <div 
-            key={service._id}
-            className={`
-              p-3 rounded-md border transition-all cursor-pointer
-              ${formData.service.includes(service._id) 
-                ? 'border-[#8A7D55] bg-[#f8f5f0]' 
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
-            `}
-            onClick={() => toggleService(service._id)}
-          >
-            <div className="flex items-center">
-              <div 
-                className={`
-                  w-5 h-5 rounded border flex items-center justify-center mr-3
-                  ${formData.service.includes(service._id) 
-                    ? 'bg-[#8A7D55] border-[#8A7D55]' 
-                    : 'border-gray-300 bg-white'}
-                `}
-              >
-                {formData.service.includes(service._id) && (
-                  <Check className="w-3.5 h-3.5 text-white" />
-                )}
-              </div>
-              
-              <div className="flex-grow">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-gray-800">{service.name}</h4>
-                  <span className="text-sm font-semibold text-[#8A7D55]">
-                    {formatCurrency(service.rate)}
-                  </span>
-                </div>
-                {service.description && (
-                  <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                )}
-              </div>
+      <div>
+        {/* Daily Services */}
+        <ServiceList 
+          serviceList={dailyServices}
+          title="Daily Services"
+          rateLabel="/day"
+          selectedServices={formData.service}
+          toggleService={toggleService}
+          formatCurrency={formatCurrency}
+        />
+        
+        {/* One-Time Services */}
+        <ServiceList 
+          serviceList={oneTimeServices}
+          title="One-Time Services"
+          rateLabel="(flat rate)"
+          selectedServices={formData.service}
+          toggleService={toggleService}
+          formatCurrency={formatCurrency}
+        />
+        
+        {/* Selected Services Summary */}
+        {formData.service.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Selected Services</h3>
+            <div className="flex flex-wrap gap-2">
+              {services
+                .filter(service => formData.service.includes(service._id))
+                .map(service => (
+                  <div 
+                    key={`selected-${service._id}`}
+                    className="inline-flex items-center bg-[#f8f5f0] text-[#8A7D55] px-3 py-1.5 rounded-full text-sm font-medium group"
+                  >
+                    <span className="truncate max-w-xs">{service.name}</span>
+                    <span className="mx-1 text-xs font-bold">
+                      {formatCurrency(service.rate)} {service.daily ? '/day' : ''}
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleService(service._id);
+                      }}
+                      className="ml-1 text-[#8A7D55] hover:text-[#6A5D35] focus:outline-none opacity-60 group-hover:opacity-100"
+                      aria-label={`Remove ${service.name}`}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
-        ))}
+        )}
       </div>
     );
   };
@@ -720,7 +806,7 @@ export default function CarForm({
               Select the additional services you want to offer with this car. 
               These services will be available for customers to add during booking.
             </p>
-            <ServiceSelection />
+            {renderServiceSelection()}
           </div>
         </div>
         
