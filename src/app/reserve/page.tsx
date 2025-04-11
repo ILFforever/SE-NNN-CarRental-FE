@@ -41,14 +41,6 @@ interface Rent {
   status: "pending" | "active" | "completed" | "cancelled";
 }
 
-interface Service {
-  _id: string;
-  name: string;
-  description: string;
-  rate: number;
-  available?: boolean;
-}
-
 export default function Booking() {
   useScrollToTop();
   const router = useRouter();
@@ -950,25 +942,43 @@ export default function Booking() {
                       .filter((service) =>
                         selectedServices.includes(service._id)
                       )
-                      .map((service) => (
-                        <div
-                          key={service._id}
-                          className="flex justify-between items-center py-1"
-                        >
-                          <span className="text-gray-600">{service.name}</span>
-                          <span>
-                            ${service.rate.toFixed(2)} × {getRentalPeriod()}{" "}
-                            days
-                          </span>
-                        </div>
-                      ))}
+                      .map((service) => {
+                        const cost = service.daily
+                          ? service.rate * getRentalPeriod()
+                          : service.rate;
+                        return (
+                          <div
+                            key={service._id}
+                            className="flex justify-between items-center py-1"
+                          >
+                            <span className="text-gray-600">
+                              {service.name}
+                            </span>
+                            <span>
+                              ${service.rate.toFixed(2)}
+                              {service.daily
+                                ? ` × ${getRentalPeriod()} days`
+                                : ""}{" "}
+                              = ${cost.toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     <div className="flex justify-between items-center mt-2 font-medium">
                       <span>Services Subtotal:</span>
                       <span>
                         $
-                        {(calculateServicesCost() * getRentalPeriod()).toFixed(
-                          2
-                        )}
+                        {services
+                          .filter((service) =>
+                            selectedServices.includes(service._id)
+                          )
+                          .reduce((total, service) => {
+                            const cost = service.daily
+                              ? service.rate * getRentalPeriod()
+                              : service.rate;
+                            return total + cost;
+                          }, 0)
+                          .toFixed(2)}
                       </span>
                     </div>
                   </div>

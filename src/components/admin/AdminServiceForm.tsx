@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Tag, DollarSign, Calendar, FileText, CheckCircle, Loader } from 'lucide-react';
 
 // Define the props interface for the AdminServiceForm component
@@ -51,6 +51,9 @@ const AdminServiceForm: React.FC<AdminServiceFormProps> = ({
   // Optional - only required for edit mode
   currentService = null
 }) => {
+  // Add a local state to track the rate input value as a string
+  const [rateInputValue, setRateInputValue] = useState(formRate === 0 ? '' : formRate.toString());
+  
   // Determine title and button text based on mode
   const formTitle = isEditMode ? "Edit Service" : "Add New Service";
   const submitButtonText = isEditMode ? "Update Service" : "Create Service";
@@ -59,14 +62,29 @@ const AdminServiceForm: React.FC<AdminServiceFormProps> = ({
   // Form submission handler that calls the appropriate function
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If the rate input is empty or not a valid number, set it to 0 before submitting
+    if (rateInputValue === '' || isNaN(parseFloat(rateInputValue))) {
+      setFormRate(0);
+    }
+    
     handleSubmit(e);
   };
 
-  // Handle rate change - converting string to number
+  // Handle rate change - allowing empty string for editing but only accepting numbers
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Convert the string value to number
-    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-    setFormRate(value);
+    const value = e.target.value;
+    
+    // Only allow empty string or valid numbers (can start with decimal point)
+    if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+      // Store the raw input value
+      setRateInputValue(value);
+      
+      // Only update the actual form rate when the value is not empty
+      if (value !== '') {
+        setFormRate(parseFloat(value));
+      }
+    }
   };
 
   return (
@@ -122,12 +140,12 @@ const AdminServiceForm: React.FC<AdminServiceFormProps> = ({
               <div className="relative">
                 <DollarSign className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                 <input
-                  type="number"
+                  type="text"
                   id="service-rate"
-                  min="0"
-                  step="0.01"
-                  value={formRate} 
+                  value={rateInputValue} 
                   onChange={handleRateChange} 
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
                   className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] bg-white transition-all duration-200"
                   placeholder="0.00"
                   required

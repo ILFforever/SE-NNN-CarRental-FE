@@ -138,6 +138,7 @@ export default function AdminServiceManagement({
     setCurrentService(service);
     setFormName(service.name);
     setFormDescription(service.description);
+    setFormDaily(service.daily);
     setFormRate(service.rate);
     setFormAvailable(service.available);
     setShowEditForm(true);
