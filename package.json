@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "playwright test",
+    "test:watch": "playwright test --watch"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -29,8 +29,9 @@
   "devDependencies": {
     "@iconify-icon/react": "^2.3.0",
     "@iconify/react": "^5.2.1",
+    "@playwright/test": "^1.51.1",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^20",
