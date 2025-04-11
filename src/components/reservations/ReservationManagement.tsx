@@ -8,48 +8,7 @@ import { API_BASE_URL } from '@/config/apiConfig';
 import { useSession } from 'next-auth/react';
 import ConfirmationModal from '@/components/util/ConfirmationModal';
 
-// Type definitions
-interface Car {
-  _id: string;
-  license_plate: string;
-  brand: string;
-  model: string;
-  type: string;
-  color: string;
-  available: boolean;
-  dailyRate: number;
-  tier: number;
-  provider_id: string;
-}
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  telephone_number: string;
-}
-
-interface Provider {
-  _id: string;
-  name: string;
-  email: string;
-  telephone_number?: string;
-  address?: string;
-}
-
-interface Rent {
-  _id: string;
-  startDate: string;
-  returnDate: string;
-  actualReturnDate?: string;
-  status: 'pending' | 'active' | 'completed' | 'cancelled';
-  price: number;
-  additionalCharges?: number;
-  notes?: string;
-  car: string | Car;
-  user: string | User;
-  createdAt: string;
-}
+// Moved Type definitions to interface file -Hammy
 
 interface ReservationManagementProps {
   token: string;
@@ -790,17 +749,17 @@ const formatSimpleDate = (dateString: string) => {
                         </div>
                       </td>
                       
-                      {/* Price Column */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(rental.price)}
+                    {/* Price Column */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatCurrency(rental.price + (rental.servicePrice || 0))}
+                      </div>
+                      {rental.additionalCharges != null && rental.additionalCharges > 0 && (
+                        <div className="text-xs text-red-500">
+                          +{formatCurrency(rental.additionalCharges)} (extra)
                         </div>
-                        {rental.additionalCharges != null && rental.additionalCharges > 0 ? (
-                          <div className="text-xs text-red-500">
-                            {formatCurrency(rental.additionalCharges)} (extra)
-                          </div>
-                        ) : null}
-                      </td>
+                      )}
+                    </td>
                       
                       {/* Status Column */}
                       <td className="px-6 py-4 whitespace-nowrap">

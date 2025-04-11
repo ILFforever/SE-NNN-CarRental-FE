@@ -33,7 +33,7 @@ export default function SelectedServicesToggle({
   return (
     <div className="border-t border-gray-200 mt-6 pt-6">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-medium">Additional Services</h3>
+        <h3 className="text-lg font-medium">Additional Services (this is user Service Summary)</h3>
         <div className="flex items-center">
           {!isExpanded && (
             <span className="mr-3 text-[#8A7D55] font-medium">

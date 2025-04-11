@@ -1,54 +1,50 @@
-// Define the Car Item interface
-interface CarItem {
-  id: string;
-  name: string;
-  images: string[];
-  description: string;
-  category: string;
-  make: string;
-  model: string;
-  year: number;
-  dailyRate: number;
-  transmission: string;
-  seats: number;
-  available: boolean;
-}
-
-// Define the Cars Json interface
-interface CarsJson {
-  count: number;
-  data: CarItem[];
-}
-
-// Define the Booking Item interface
-interface BookingItem {
-  nameLastname: string;
-  tel: string;
-  car: string;
-  bookDate: string;
-  returnDate?: string;
-}
-
-//OLD STUFF REMOVE LATER
-interface VenueItem {
+interface User {
   _id: string;
   name: string;
-  address: string;
-  district: string;
-  province: string;
-  postalcode: string;
-  tel: string;
-  picture: string;
-  dailyrate: number;
-  __v: number;
-  id: string;
+  email: string;
+  telephone_number: string;
 }
 
-interface VenueJson {
-  success: boolean;
-  count: number;
-  pagination: Object;
-  data: VenueItem[];
+interface Provider {
+  _id: string;
+  name: string;
+  email: string;
+  telephone_number?: string;
+  address?: string;
+}
+
+
+interface Car {
+  _id: string;
+  license_plate: string;
+  brand: string;
+  model: string;
+  type: string;
+  color: string;
+  manufactureDate: string;
+  available: boolean;
+  dailyRate: number;
+  tier: number;
+  provider_id: string;
+  service?: string[];
+  images?: string[];
+  image?: string; // Fallback single image property
+  rents?: Rent[];
+}
+
+interface Rent {
+  _id: string;
+  startDate: string;
+  returnDate: string;
+  actualReturnDate?: string;
+  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  price: number;
+  additionalCharges?: number;
+  notes?: string;
+  car: string | Car;
+  user: string | User;
+  createdAt: string;
+  servicePrice?: number;
 }
 
 interface BookingItem {
@@ -68,3 +64,4 @@ interface Service {
   rate: number;
   createdAt: string;
 }
+

@@ -19,22 +19,7 @@ interface UnifiedReservationDetailsProps {
 }
 
 // Define TypeScript interface for Car
-interface Car {
-  _id: string;
-  license_plate: string;
-  brand: string;
-  model: string;
-  type: string;
-  color: string;
-  manufactureDate: string;
-  available: boolean;
-  dailyRate: number;
-  tier: number;
-  provider_id: string;
-  service?: string[];
-  images?: string[];
-  image?: string; // Fallback single image property
-}
+
 
 // Define TypeScript interface for User
 interface User {
@@ -53,12 +38,14 @@ interface Rental {
   actualReturnDate?: string;
   status: "pending" | "active" | "completed" | "cancelled";
   price: number;
+  servicePrice?: number;
   additionalCharges?: number;
   notes?: string;
   car: Car | string;
   user: User | string;
   createdAt: string;
   service?: string[];
+  isRated?: boolean;
 }
 
 export default function UnifiedReservationDetails({
@@ -468,15 +455,16 @@ export default function UnifiedReservationDetails({
   };
 
   const calculateTotalPrice = () => {
-    if (!rental) return 0;
-    
-    const baseCost = rental.price || 0;
-    const additionalCharges = rental.additionalCharges || 0;
-    const lateFees = daysLate > 0 ? totalLateFee : 0;
-    const serviceCost = calculateServiceCost();
-    
-    return baseCost + additionalCharges + lateFees + serviceCost;
-  };
+  if (!rental) return 0;
+  
+  const baseCost = rental.price || 0;
+  const serviceCost = rental.servicePrice || 0;
+  const additionalCharges = rental.additionalCharges || 0;
+  const lateFees = daysLate > 0 ? totalLateFee : 0;
+  
+  return baseCost + serviceCost + additionalCharges + lateFees;
+};
+
 
   // Get status badge class
   const getStatusBadgeClass = (status: string) => {

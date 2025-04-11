@@ -3,26 +3,6 @@ import { Edit, Loader2, Save, X, Plus, Minus } from "lucide-react";
 import { API_BASE_URL } from "@/config/apiConfig";
 import dayjs from "dayjs";
 
-interface Service {
-  _id: string;
-  name: string;
-  description?: string;
-  rate: number;
-  available: boolean;
-  daily: boolean; // Whether the service is charged per day or one-time
-}
-
-interface Car {
-  _id: string;
-  license_plate: string;
-  brand: string;
-  model: string;
-  dailyRate: number;
-  tier: number;
-  rents?: any[];
-  // other fields as needed
-}
-
 interface DetailsCardProps {
   rental: any;
   userType: "customer" | "provider" | "admin";
@@ -480,6 +460,8 @@ export default function ReservationDetailsCard({
       `+$${rate} (once)`;
   };
 
+
+  
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="flex justify-between items-center mb-4">
@@ -773,32 +755,27 @@ export default function ReservationDetailsCard({
         <div className="space-y-1">
           <div className="flex justify-between items-center">
             <span className="text-gray-600 text-sm">Base Rental</span>
-            <span className="text-sm font-medium">
-              {formatCurrency(rental.price)}
-            </span>
+            <span className="text-sm font-medium">{formatCurrency(rental.price)}</span>
           </div>
-
-          {selectedServices && selectedServices.length > 0 && (
+          
+          {rental.servicePrice > 0 && (
             <div className="flex justify-between items-center">
-              <span className="text-gray-600 text-sm">Additional Services</span>
-              {isLoadingServiceNames ? (
-                <div className="flex items-center text-sm text-gray-500">
-                  <Loader2 size={12} className="mr-1 animate-spin" />
-                  Calculating...
-                </div>
-              ) : (
-                <span className="text-sm font-medium text-blue-600">
-                  {isEditing && showServiceSelector ? 
-                    // Show calculated services cost in edit mode
-                    formatCurrency(calculateServiceCostFromIds())
-                  : 
-                    // Show original service cost in view mode
-                    formatCurrency(calculateServiceCost())
-                  }
-                </span>
-              )}
+              <span className="text-gray-600 text-sm">Service Charges</span>
+              <span className="text-sm font-medium text-blue-600">
+                {formatCurrency(rental.servicePrice)}
+              </span>
             </div>
           )}
+          
+          {rental.discountAmount > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 text-sm">Loyalty Discount</span>
+              <span className="text-sm font-medium text-green-600">
+                -{formatCurrency(rental.discountAmount)}
+              </span>
+            </div>
+          )}
+          
           {rental.additionalCharges != null && rental.additionalCharges > 0 && (
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-sm">Additional Charges</span>
@@ -818,21 +795,10 @@ export default function ReservationDetailsCard({
           )}
 
           <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between items-center">
-            <span className="text-gray-800 font-semibold text-sm">
-              Total Amount
+            <span className="text-gray-800 font-semibold text-sm">Final Price</span>
+            <span className="font-bold text-lg text-[#8A7D55]">
+              {formatCurrency(rental.finalPrice || calculateTotalPrice())}
             </span>
-            {isLoadingServiceNames ? (
-              <div className="flex items-center text-gray-700 font-bold text-lg">
-                <Loader2 size={16} className="mr-2 animate-spin" />
-                Calculating...
-              </div>
-            ) : (
-              <span className="font-bold text-lg text-[#8A7D55]">
-                {isEditing && showServiceSelector ? 
-                  formatCurrency(calculateBasePrice()) : 
-                  formatCurrency(calculateTotalPrice())}
-              </span>
-            )}
           </div>
         </div>
       </div>

@@ -19,35 +19,6 @@ import ServiceSelection from "@/components/service/ServiceSelection";
 import { ChevronDown } from "lucide-react";
 
 // Define the Car interface based on your API response
-interface Car {
-  _id: string;
-  brand: string;
-  model: string;
-  type: string;
-  color?: string;
-  license_plate?: string;
-  dailyRate?: number;
-  tier?: number;
-  provider_id?: string;
-  manufactureDate?: string;
-  available?: boolean;
-  rents?: Rent[];
-}
-
-interface Rent {
-  _id: string;
-  startDate: string;
-  returnDate: string;
-  status: "pending" | "active" | "completed" | "cancelled";
-}
-
-interface Service {
-  _id: string;
-  name: string;
-  description: string;
-  rate: number;
-  available?: boolean;
-}
 
 export default function Booking() {
   useScrollToTop();
@@ -240,25 +211,34 @@ export default function Booking() {
     if (!formValid || isSubmitting) {
       return;
     }
-
+  
     // Double-check availability one more time
     await checkCarAvailability();
-
+  
     if (!isAvailable) {
       alert(
         "Car is not available for the selected dates. Please choose different dates."
       );
       return;
     }
-
+  
     if (car && nameLastname && tel && pickupDate && returnDate) {
       try {
         setIsSubmitting(true);
+    
         // Format dates for the API
         const formattedStartDate = pickupDate.format("YYYY-MM-DD");
         const formattedReturnDate = returnDate.format("YYYY-MM-DD");
-
-        // Send booking data to backend
+        
+        // Get values using existing calculation functions
+        const days = getRentalPeriod();
+        const basePrice = days * (car?.dailyRate || 0);
+        const servicePrice = calculateServicesTotalCost();
+        const subtotal = calculateSubtotal();
+        const discountAmount = calculateDiscount();
+        const finalPrice = subtotal - discountAmount;
+    
+        // Send booking data to backend with all price details
         const response = await fetch(`${API_BASE_URL}/rents`, {
           method: "POST",
           headers: {
@@ -269,11 +249,14 @@ export default function Booking() {
             startDate: formattedStartDate,
             returnDate: formattedReturnDate,
             car: car._id,
-            price: price,
-            service: selectedServices, // Added this line to include selected services
+            price: basePrice,
+            servicePrice: servicePrice,
+            discountAmount: discountAmount,
+            finalPrice: finalPrice,
+            service: selectedServices,
           }),
         });
-
+  
         if (response.ok) {
           // Booking successful, dispatch to Redux store
           const item = {
@@ -285,10 +268,10 @@ export default function Booking() {
             pickupTime: pickupTime,
             returnTime: returnTime,
           };
-
+  
           dispatch(addBooking(item));
           alert("Booking successful!");
-
+  
           // Redirect to reservations page
           router.push("/account/reservations");
         } else {
@@ -423,23 +406,24 @@ export default function Booking() {
     const tierDiscount = [0, 5, 10, 15, 20];
     return tierDiscount[tier];
   };
-
-  const getTotalCost = () => {
+  
+  // Calculate total service cost correctly handling daily vs one-time services
+  const calculateServicesTotalCost = () => {
+    if (!selectedServices.length) return 0;
+    
     const days = getRentalPeriod();
-    const dailyRate = car?.dailyRate || 0;
-
-    // Calculate service rate per day
-    const serviceRate = services
-      .filter((service) => selectedServices.includes(service._id))
-      .reduce((sum, service) => sum + service.rate, 0);
-
-    // Calculate total including services
-    const total = days * (dailyRate + serviceRate);
-
-    // Apply tier discount
-    const tierDiscount = total * (getTierDiscount(userTier) / 100);
-
-    return total - tierDiscount;
+    
+    return services
+      .filter(service => selectedServices.includes(service._id))
+      .reduce((total, service) => {
+        // Daily services are multiplied by the number of days
+        // One-time services are added just once
+        const serviceCost = service.daily 
+          ? service.rate * days
+          : service.rate;
+          
+        return total + serviceCost;
+      }, 0);
   };
 
   useEffect(() => {
@@ -476,13 +460,21 @@ export default function Booking() {
       .reduce((sum, service) => sum + service.rate, 0);
   };
 
-  const calculateSubtotal = () => {
-    const days = getRentalPeriod();
-    const dailyRate = car?.dailyRate || 0;
-    const servicesCost = calculateServicesCost();
-
-    return days * (dailyRate + servicesCost);
+  const getTotalCost = () => {
+    const subtotal = calculateSubtotal();
+    const discount = calculateDiscount();
+    
+    return subtotal - discount;
   };
+  
+  const calculateSubtotal = () => {
+  const days = getRentalPeriod();
+  const dailyRate = car?.dailyRate || 0;
+  const carCost = days * dailyRate;
+  const servicesCost = calculateServicesTotalCost();
+
+  return carCost + servicesCost;
+};
 
   const calculateDiscount = () => {
     const subtotal = calculateSubtotal();
@@ -862,7 +854,8 @@ export default function Booking() {
                   <div className="flex items-center">
                     {!servicesExpanded && (
                       <span className="mr-3 text-[#8A7D55] font-medium">
-                        ${calculateServicesCost().toFixed(2)}/day
+                        
+                       
                       </span>
                     )}
                     <button
@@ -915,92 +908,109 @@ export default function Booking() {
                             )}
                           </div>
                           <span className="text-[#8A7D55] font-medium">
-                            ${service.rate.toFixed(2)}/day
+                          {service.daily 
+                                ? `$${service.rate.toFixed(2)}/day`
+                                : `$${service.rate.toFixed(2)}`}
                           </span>
                         </div>
                       ))}
                   </div>
 
                   <div className="flex justify-between items-center mt-3 text-sm font-medium">
-                    <span className="text-gray-600">
-                      Total Additional Services:
-                    </span>
-                    <span className="text-[#8A7D55]">
-                      ${calculateServicesCost().toFixed(2)}/day
-                    </span>
+                    <span className="text-gray-600">Total Additional Services:</span>
+                    <div className="flex items-center space-x-2">
+                      {services
+                        .filter(service => selectedServices.includes(service._id))
+                        .map(service => (
+                          <span 
+                            key={service._id} 
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-[#F0F4FF] text-[#3366FF]"
+                          >
+                            {service.daily ? 'Daily' : 'One-Time'} ${service.rate.toFixed(2)}
+                          </span>
+                        ))}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Cost Breakdown */}
-            <div className="border-t border-gray-200 mt-6 pt-6">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Base Daily Rate:</span>
-                <span>${car.dailyRate?.toFixed(2) || "0.00"}</span>
-              </div>
-
-              {selectedServices.length > 0 && (
-                <>
-                  <div className="border-t border-gray-200 mt-3 pt-3">
-                    <h4 className="text-gray-800 font-medium mb-2">
-                      Additional Services:
-                    </h4>
-                    {services
-                      .filter((service) =>
-                        selectedServices.includes(service._id)
-                      )
-                      .map((service) => (
-                        <div
-                          key={service._id}
-                          className="flex justify-between items-center py-1"
-                        >
-                          <span className="text-gray-600">{service.name}</span>
-                          <span>
-                            ${service.rate.toFixed(2)} × {getRentalPeriod()}{" "}
-                            days
-                          </span>
-                        </div>
-                      ))}
-                    <div className="flex justify-between items-center mt-2 font-medium">
-                      <span>Services Subtotal:</span>
-                      <span>
-                        $
-                        {(calculateServicesCost() * getRentalPeriod()).toFixed(
-                          2
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-600">Number of Days:</span>
-                <span>{getRentalPeriod()}</span>
-              </div>
-
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-600">Subtotal:</span>
-                <span>${calculateSubtotal().toFixed(2)}</span>
-              </div>
-
-              {userTier > 0 && (
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-gray-600">
-                    Loyalty Discount ({getTierDiscount(userTier)}%):
-                  </span>
-                  <span>-${calculateDiscount().toFixed(2)}</span>
+              {/* Cost Breakdown */}
+              <div className="border-t border-gray-200 mt-6 pt-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Base Daily Rate:</span>
+                  <span>${car?.dailyRate?.toFixed(2) || "0.00"}</span>
                 </div>
-              )}
 
-              <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
-                <span>Total Cost:</span>
-                <span className="text-[#8A7D55]">
-                  {formatCurrency(getTotalCost())}
-                </span>
+                {selectedServices.length > 0 && (
+                  <>
+                    <div className="border-t border-gray-200 mt-3 pt-3">
+                      <h4 className="text-gray-800 font-medium mb-2">
+                        Additional Services:
+                      </h4>
+                      {services
+                        .filter((service) =>
+                          selectedServices.includes(service._id)
+                        )
+                        .map((service) => (
+                          <div
+                            key={service._id}
+                            className="flex justify-between items-center py-1"
+                          >
+                            <span className="text-gray-600">
+                              {service.name}
+                              <span className="ml-1 text-xs text-gray-400">
+                                ({service.daily ? "daily" : "one-time"})
+                              </span>
+                            </span>
+                            <span>
+                              {service.daily 
+                                ? `$${service.rate.toFixed(2)} × ${getRentalPeriod()} days`
+                                : `$${service.rate.toFixed(2)}`}
+                            </span>
+                          </div>
+                        ))}
+                      <div className="flex justify-between items-center mt-2 font-medium">
+                        <span>Services Subtotal:</span>
+                        <span>
+                          ${calculateServicesTotalCost().toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-600">Number of Days:</span>
+                  <span>{getRentalPeriod()}</span>
+                </div>
+
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-600">Car Rental Subtotal:</span>
+                  <span>${((car?.dailyRate || 0) * getRentalPeriod()).toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-600">Total Subtotal:</span>
+                  <span>${calculateSubtotal().toFixed(2)}</span>
+                </div>
+
+                {userTier > 0 && (
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-600">
+                      Loyalty Discount ({getTierDiscount(userTier)}%):
+                    </span>
+                    <span>-${calculateDiscount().toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
+                  <span>Total Cost:</span>
+                  <span className="text-[#8A7D55]">
+                    {formatCurrency(getTotalCost())}
+                  </span>
+                </div>
               </div>
-            </div>
           </div>
         </div>
       )}
