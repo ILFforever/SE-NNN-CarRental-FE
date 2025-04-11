@@ -33,6 +33,8 @@ interface Car {
 }
 
 interface Rent {
+  finalPrice: any;
+  isRated: any;
   _id: string;
   startDate: string;
   returnDate: string;

@@ -22,9 +22,13 @@ interface Rent {
   returnDate: string;
   status: "pending" | "active" | "completed" | "cancelled";
   price: number;
+  servicePrice?: number;
+  discountAmount?: number;
+  finalPrice?: number;
+  additionalCharges?: number;
   car: Car | string;
   createdAt: string;
-  isRated: boolean;
+  isRated?: boolean;
 }
 
 export default function MyReservationsPage() {
@@ -247,6 +251,32 @@ export default function MyReservationsPage() {
     }
   };
 
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  // Calculate the final price to display, considering all components
+  const getDisplayPrice = (reservation: Rent): number => {
+    // If finalPrice is directly available, use it
+    if (reservation.finalPrice !== undefined) {
+      return reservation.finalPrice;
+    }
+
+    // Otherwise calculate it from components
+    const basePrice = reservation.price || 0;
+    const servicePrice = reservation.servicePrice || 0;
+    const discountAmount = reservation.discountAmount || 0;
+    const additionalCharges = reservation.additionalCharges || 0;
+
+    return basePrice + servicePrice - discountAmount + additionalCharges;
+  };
+
   if (!session) {
     return (
       <div className="py-10 px-4 max-w-4xl mx-auto text-center">
@@ -343,6 +373,7 @@ export default function MyReservationsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {reservations.map((reservation) => {
                 const car = getCarDetails(reservation.car);
+                const finalPrice = getDisplayPrice(reservation);
                 return (
                   <tr key={reservation._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -368,8 +399,19 @@ export default function MyReservationsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ${reservation.price.toFixed(2)}
+                        {formatCurrency(finalPrice)}
                       </div>
+                      {/* Show discounts or additional charges if present */}
+                      {reservation.discountAmount ? (
+                        <div className="text-xs text-green-600">
+                          Includes {formatCurrency(reservation.discountAmount)} discount
+                        </div>
+                      ) : null}
+                      {reservation.additionalCharges ? (
+                        <div className="text-xs text-amber-600">
+                          Includes {formatCurrency(reservation.additionalCharges)} additional fees
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -381,10 +423,10 @@ export default function MyReservationsPage() {
                           reservation.status.slice(1)}
                       </span>
                     </td>
-                    {/* New Rating column */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    {/* Rating column */}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                       {!reservation.isRated &&
-                      reservation.status == "completed" ? (
+                      reservation.status === "completed" ? (
                         // can be rating
                         <a
                           onClick={(e) => {
@@ -393,7 +435,7 @@ export default function MyReservationsPage() {
                           }}
                           className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
                         >
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center justify-center space-x-1">
                             <span>Review Provider</span>
                             {/* Info Icon with tooltip */}
                             {car?.provider_id && (
@@ -409,9 +451,9 @@ export default function MyReservationsPage() {
                         </a>
                       ) : (
                         // can't be rating
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center justify-center space-x-1">
                           <span className="text-gray-400 font-medium">
-                            Review Provider
+                            {reservation.isRated ? "Already Reviewed" : "Review Provider"}
                           </span>
                           {/* Info Icon with tooltip */}
                           {car?.provider_id && (

@@ -49,7 +49,8 @@ export default function ReservationDetailsCard({
   const [isLoadingServices, setIsLoadingServices] = useState(false);
   const [isLoadingServiceNames, setIsLoadingServiceNames] = useState(false);
   const [showServiceSelector, setShowServiceSelector] = useState(false);
-  
+  const [price, setPrice] = useState<number>(0);
+
   // State to track car data for availability check
   const [carData, setCarData] = useState<Car | null>(null);
 
@@ -59,6 +60,19 @@ export default function ReservationDetailsCard({
     (userType === "admin" &&
       (rental.status === "pending" || rental.status === "active"));
 
+      useEffect(() => {
+        if (isEditing && rental) {
+          // Calculate the new base price
+          const newBasePrice = calculateBasePrice();
+          
+          // Calculate new service cost (if you have the necessary service data)
+          const newServiceCost = calculateServiceCostFromIds();
+          
+          // Update the price state
+          setPrice(newBasePrice + newServiceCost);
+        }
+      }, [isEditing, startDate, returnDate, selectedServices]);
+  
   // Initialize form data when rental changes
   useEffect(() => {
     if (rental) {
@@ -267,17 +281,25 @@ export default function ReservationDetailsCard({
 
     try {
       // Calculate new price based on changes
-      const newPrice = calculateBasePrice();
-      
+      const newBasePrice = calculateBasePrice();
+      const newServicePrice = calculateServiceCostFromIds();
+      const subtotal = newBasePrice + newServicePrice;
+      //TODO check if discount works correctly
+      const discountAmount = rental.discountAmount || 0;
+      const newFinalPrice = subtotal - discountAmount + (rental.additionalCharges || 0);
+
       // Create update payload
       const updateData = {
         startDate: newStartDate.toISOString(),
         returnDate: newReturnDate.toISOString(),
         service: selectedServices,
-        price: newPrice, // Send the new calculated price
-        notes: rental.notes
-          ? `${rental.notes}\n\nReservation updated by ${userType} on ${new Date().toLocaleString()}`
-          : `Reservation updated by ${userType} on ${new Date().toLocaleString()}`,
+        price: newBasePrice,
+        servicePrice: newServicePrice,
+        discountAmount: discountAmount,
+        finalPrice: newFinalPrice,
+        // notes: rental.notes
+        //   ? `${rental.notes}\n\nReservation updated by ${userType} on ${new Date().toLocaleString()}`
+        //   : `Reservation updated by ${userType} on ${new Date().toLocaleString()}`,
       };
 
       // Make API call to update reservation
@@ -363,15 +385,15 @@ export default function ReservationDetailsCard({
   const calculateServiceCostFromIds = () => {
     if (!selectedServices.length) return 0;
     
-    // Calculate rental period using the current edited dates
+    // Calculate rental period
     const days = dayjs(returnDate).diff(dayjs(startDate), 'day') + 1;
     
-    // Calculate total service cost considering if a service is daily or one-time
+    // Calculate service costs
     return selectedServices.reduce((sum, serviceId) => {
       const rate = serviceRates[serviceId] || 0;
       const isDaily = serviceDailyStatus[serviceId] || false;
       
-      // Apply rate once or for each day based on service type
+      // Apply rate based on service type
       return sum + (isDaily ? rate * days : rate);
     }, 0);
   };
@@ -383,17 +405,13 @@ export default function ReservationDetailsCard({
     // Get the daily rate from the car
     const dailyRate = typeof rental.car === 'object' ? rental.car.dailyRate || 0 : 0;
     
-    // Calculate the rental period using the current edited dates
+    // Calculate rental period
     const days = dayjs(returnDate).diff(dayjs(startDate), 'day') + 1;
     
-    // Calculate base price (daily rate * days)
-    const basePrice = days * dailyRate;
-    
-    // Add service costs -No since currently we dont actually save service cost on server
-    //const serviceCost = calculateServiceCostFromIds();
-    
-    return basePrice;
+    // Return base price
+    return days * dailyRate;
   };
+  
 
   // Get the service name by ID with loading state handling
   const getServiceName = (serviceId: string): string => {
@@ -751,18 +769,25 @@ export default function ReservationDetailsCard({
           )}
         </div>
 
-        {/* Price Column */}
-        <div className="space-y-1">
+{/* Price Column */}
+<div className="space-y-1">
           <div className="flex justify-between items-center">
             <span className="text-gray-600 text-sm">Base Rental</span>
-            <span className="text-sm font-medium">{formatCurrency(rental.price)}</span>
+            <span className="text-sm font-medium">
+              {isEditing 
+                ? formatCurrency(calculateBasePrice()) 
+                : formatCurrency(rental.price)}
+            </span>
           </div>
           
-          {rental.servicePrice > 0 && (
+          {/* Service Charges - dynamic during editing */}
+          {(isEditing ? calculateServiceCostFromIds() > 0 : rental.servicePrice > 0) && (
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-sm">Service Charges</span>
               <span className="text-sm font-medium text-blue-600">
-                {formatCurrency(rental.servicePrice)}
+                {isEditing 
+                  ? formatCurrency(calculateServiceCostFromIds())
+                  : formatCurrency(rental.servicePrice || 0)}
               </span>
             </div>
           )}
@@ -797,7 +822,9 @@ export default function ReservationDetailsCard({
           <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between items-center">
             <span className="text-gray-800 font-semibold text-sm">Final Price</span>
             <span className="font-bold text-lg text-[#8A7D55]">
-              {formatCurrency(rental.finalPrice || calculateTotalPrice())}
+              {isEditing 
+                ? formatCurrency(calculateBasePrice() + calculateServiceCostFromIds()) 
+                : formatCurrency(rental.finalPrice || calculateTotalPrice())}
             </span>
           </div>
         </div>
