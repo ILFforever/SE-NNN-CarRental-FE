@@ -267,7 +267,6 @@ export default function Booking() {
         const subtotal = calculateSubtotal();
         const discountAmount = calculateDiscount();
         const finalPrice = subtotal - discountAmount;
-    
         // Send booking data to backend with all price details
         const response = await fetch(`${API_BASE_URL}/rents`, {
           method: "POST",
@@ -298,7 +297,7 @@ export default function Booking() {
             pickupTime: pickupTime,
             returnTime: returnTime,
           };
-  
+          console.log(item)
           dispatch(addBooking(item));
           alert("Booking successful!");
   
@@ -451,7 +450,7 @@ export default function Booking() {
         const serviceCost = service.daily 
           ? service.rate * days
           : service.rate;
-          
+        //console.log(total + serviceCost)
         return total + serviceCost;
       }, 0);
   };
@@ -480,14 +479,6 @@ export default function Booking() {
       currency: "USD",
       minimumFractionDigits: 2,
     }).format(amount);
-  };
-
-  const calculateServicesCost = () => {
-    if (!services || services.length === 0) return 0;
-
-    return services
-      .filter((service) => selectedServices.includes(service._id))
-      .reduce((sum, service) => sum + service.rate, 0);
   };
 
   const getTotalCost = () => {

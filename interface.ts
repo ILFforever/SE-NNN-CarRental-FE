@@ -1,3 +1,27 @@
+// Define the Car Item interface
+interface CarItem {
+  id: string;
+  name: string;
+  images: string[];
+  description: string;
+  category: string;
+  make: string;
+  model: string;
+  year: number;
+  dailyRate: number;
+  transmission: string;
+  seats: number;
+  available: boolean;
+}
+
+// Define the Cars Json interface
+interface CarsJson {
+  count: number;
+  data: CarItem[];
+}
+
+
+
 interface User {
   _id: string;
   name: string;
