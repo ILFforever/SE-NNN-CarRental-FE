@@ -7,5 +7,8 @@ git remote set-url --add --push all https://github.com/2110503-2564/se-project-2
 git branch -u origin/main
 git remote -v
 
+npm install
+npm exec playwright install --with-deps
+
 echo Git remotes setup complete.
 pause
