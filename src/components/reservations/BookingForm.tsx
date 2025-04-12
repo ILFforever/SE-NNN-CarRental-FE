@@ -75,9 +75,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
       setReturnDate(newDate);
       return;
     }
-    
+
     // ถ้าวันที่ return น้อยกว่า pickup ให้ใช้วันที่ pickup
-    if (newDate.isBefore(pickupDate, 'day')) {
+    if (newDate.isBefore(pickupDate, "day")) {
       setReturnDate(pickupDate);
     } else {
       setReturnDate(newDate);
@@ -85,171 +85,193 @@ const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   return (
-    <div className="flex flex-col">
-      <h2 className="text-2xl font-serif font-medium mb-6">
+    <div className="flex flex-col h-full">
+      <h2 className="text-2xl font-serif font-medium mb-6 text-[#6B5B35]">
         Booking Information
       </h2>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="p-6 space-y-4 ">
+      <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+        <div className="p-6 space-y-5">
           <div>
-            <p className="text-sm font-medium text-gray-700">Full Name</p>
+            <p className="text-sm font-medium text-gray-700 mb-1.5">
+              Full Name
+            </p>
             <input
               type="text"
               value={nameLastname}
               onChange={(e) => setNameLastname(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent transition-colors duration-200 mt-1"
               required
+              placeholder="Enter your full name"
             />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-gray-700 mb-1.5">
               Contact Number
             </p>
             <input
               type="tel"
               value={tel}
               onChange={(e) => setTel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent transition-colors duration-200 mt-1"
               required
+              placeholder="Enter your phone number"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                Pickup Date
-              </p>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="date"
-                  value={pickupDate ? pickupDate.format("YYYY-MM-DD") : ""}
-                  onChange={(e) => {
-                    const newDate = e.target.value ? dayjs(e.target.value) : null;
-                    setPickupDate(newDate);
-                    
-                    // ถ้าวันที่ pickup มากกว่าวันที่ return ให้ปรับ return ด้วย
-                    if (newDate && returnDate && newDate.isAfter(returnDate, 'day')) {
-                      setReturnDate(newDate);
-                    }
-                  }}
-                  min={dayjs().format("YYYY-MM-DD")} // ไม่ให้เลือกวันที่ผ่านมาแล้ว
-                  className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                />
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                Pickup Time
-              </p>
-              <select
-                value={pickupTime}
-                onChange={(e) => setPickupTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-              >
-                {timeOptions.map((time) => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          {/* Date/time fields with improved styling */}
+<div className="grid grid-cols-2 gap-4">
+  <div>
+    <p className="text-sm font-medium text-gray-700 mb-1.5">
+      Pickup Date
+    </p>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4 text-gray-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      </div>
+      <input
+        type="date"
+        value={pickupDate ? pickupDate.format("YYYY-MM-DD") : ""}
+        onChange={(e) => {
+          const newDate = e.target.value ? dayjs(e.target.value) : null;
+          setPickupDate(newDate);
+          
+          // Logic to adjust return date if needed
+          if (newDate && returnDate && newDate.isAfter(returnDate, 'day')) {
+            setReturnDate(newDate);
+          }
+        }}
+        min={dayjs().format("YYYY-MM-DD")}
+        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent transition-colors duration-200 text-sm"
+      />
+    </div>
+  </div>
+  <div>
+    <p className="text-sm font-medium text-gray-700 mb-1.5">
+      Pickup Time
+    </p>
+    <select
+      value={pickupTime}
+      onChange={(e) => setPickupTime(e.target.value)}
+      className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent transition-colors duration-200 text-sm"
+    >
+      {timeOptions.map((time) => (
+        <option key={time} value={time}>
+          {time}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                Return Date
-              </p>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="date"
-                  value={returnDate ? returnDate.format("YYYY-MM-DD") : ""}
-                  onChange={(e) => {
-                    const newDate = e.target.value ? dayjs(e.target.value) : null;
-                    handleReturnDateChange(newDate);
-                  }}
-                  min={
-                    pickupDate ? pickupDate.format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
-                  }
-                  className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                />
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                Return Time
-              </p>
-              <select
-                value={returnTime}
-                onChange={(e) => setReturnTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-              >
-                {timeOptions.map((time) => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+<div className="grid grid-cols-2 gap-4 mt-4">
+  <div>
+    <p className="text-sm font-medium text-gray-700 mb-1.5">
+      Return Date
+    </p>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4 text-gray-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      </div>
+      <input
+        type="date"
+        value={returnDate ? returnDate.format("YYYY-MM-DD") : ""}
+        onChange={(e) => {
+          const newDate = e.target.value ? dayjs(e.target.value) : null;
+          handleReturnDateChange(newDate);
+        }}
+        min={
+          pickupDate ? pickupDate.format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
+        }
+        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent transition-colors duration-200 text-sm"
+      />
+    </div>
+  </div>
+  <div>
+    <p className="text-sm font-medium text-gray-700 mb-1.5">
+      Return Time
+    </p>
+    <select
+      value={returnTime}
+      onChange={(e) => setReturnTime(e.target.value)}
+      className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent transition-colors duration-200 text-sm"
+    >
+      {timeOptions.map((time) => (
+        <option key={time} value={time}>
+          {time}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 
-          {/* แสดงจำนวนวันเช่า (ไม่จำเป็นแต่อาจจะมีประโยชน์สำหรับผู้ใช้) */}
-          {pickupDateTime && returnDateTime && (
-            <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded-md">
-              {(() => {
-                // คำนวณจำนวนวันเช่าโดยใช้ logic ตามที่กำหนด
-                const days = returnDateTime.diff(pickupDateTime, "day");
-                let rentalDays = days;
-                
-                if (days === 0) {
-                  return <p>Rental duration: 1 day</p>;
-                } else {
-                  const pickupHour = pickupDateTime.hour();
-                  const pickupMinute = pickupDateTime.minute();
-                  const returnHour = returnDateTime.hour();
-                  const returnMinute = returnDateTime.minute();
-                  
-                  if (returnHour > pickupHour || (returnHour === pickupHour && returnMinute > pickupMinute)) {
-                    rentalDays = days + 1;
-                  }
-                  
-                  return <p>Rental duration: {rentalDays} {rentalDays === 1 ? 'day' : 'days'}</p>;
-                }
-              })()}
-            </div>
-          )}
+{/* Rental duration display */}
+{pickupDateTime && returnDateTime && (
+  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md mt-4 border border-gray-200">
+    {(() => {
+      // Calculate rental days using the defined logic
+      const days = returnDateTime.diff(pickupDateTime, "day");
+      let rentalDays = days;
+      
+      if (days === 0) {
+        return (
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#8A7D55]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>Rental duration: <span className="font-medium">1 day</span></p>
+          </div>
+        );
+      } else {
+        const pickupHour = pickupDateTime.hour();
+        const pickupMinute = pickupDateTime.minute();
+        const returnHour = returnDateTime.hour();
+        const returnMinute = returnDateTime.minute();
+        
+        if (
+          returnHour > pickupHour ||
+          (returnHour === pickupHour && returnMinute > pickupMinute)
+        ) {
+          rentalDays = days + 1;
+        }
+        
+        return (
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#8A7D55]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>Rental duration: <span className="font-medium">{rentalDays} {rentalDays === 1 ? 'day' : 'days'}</span></p>
+          </div>
+        );
+      }
+    })()}
+  </div>
+)}
 
           {/* Availability message */}
           {availabilityMessage && (
@@ -280,10 +302,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         } bottom-0 bg-white shadow-md rounded-lg overflow-hidden`}
       >
         {providerId && token && (
-          <ProviderDetail
-            providerId={providerId}
-            token={token}
-          />
+          <ProviderDetail providerId={providerId} token={token} />
         )}
       </div>
     </div>

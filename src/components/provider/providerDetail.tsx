@@ -129,7 +129,7 @@ const ProviderDetails: React.FC<ProviderDetailsProps> = ({
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md w-full mt-4">
+    <div className="p-6 bg-white rounded-lg shadow-md w-full">
       {/* Provider Name & Verified Badge */}
       <div className="flex items-center space-x-2 mb-5">
         <h2 className="text-xl font-bold text-gray-800">{providerData.name}</h2>

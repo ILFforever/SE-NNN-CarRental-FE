@@ -365,15 +365,15 @@ export default function Booking() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto py-10 px-4">
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-medium mb-3 font-serif">
-          Make Your Reservation
-        </h1>
-        <p className="text-gray-600 max-w-3xl mx-auto">
-          Complete the details below to reserve your premium vehicle
-        </p>
-      </div>
+    <main className="max-w-6xl mx-auto py-10 px-4 min-h-screen">
+  <div className="text-center mb-12">
+    <h1 className="text-3xl font-medium mb-3 font-serif text-[#6B5B35]">
+      Make Your Reservation
+    </h1>
+    <p className="text-gray-600 max-w-3xl mx-auto">
+      Complete the details below to reserve your premium vehicle
+    </p>
+  </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         {/* Car Details */}

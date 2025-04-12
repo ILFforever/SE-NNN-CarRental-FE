@@ -146,7 +146,7 @@ export default function CarImageGallery({ car, showFavoriteButton = true }: Imag
   return (
     <div className="relative">
       {/* Main image with button overlay - NO ZOOM FUNCTIONALITY HERE */}
-      <div className="relative h-64 rounded-lg overflow-hidden bg-gray-100">
+      <div className="relative h-64 overflow-hidden bg-gray-100">
         {/* Favorite heart button */}
         {showFavoriteButton && car._id && (
           <FavoriteHeartButton

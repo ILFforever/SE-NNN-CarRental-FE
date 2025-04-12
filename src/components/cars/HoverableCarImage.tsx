@@ -124,7 +124,7 @@ export default function HoverableCarImage({
   // Determine what content to render
   const content = (
     <div 
-      className={`group relative rounded-lg overflow-hidden bg-gray-100 ${height} ${className}`}
+      className={`group relative overflow-hidden bg-gray-100 ${height} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
