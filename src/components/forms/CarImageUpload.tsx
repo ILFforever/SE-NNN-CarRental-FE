@@ -15,8 +15,6 @@ interface CarImageUploadProps {
   existingImages?: ExistingImage[];
   onExistingImageRemove?: (imageId: string) => void;
   onExistingImagesReorder?: (newOrder: string[]) => void;
-  // New prop to report overall order back to parent
-  onOrderChange?: (order: { type: 'existing' | 'new', id: string }[]) => void;
 }
 
 export default function CarImageUpload({ 
@@ -24,8 +22,7 @@ export default function CarImageUpload({
   maxImages = 5,
   existingImages = [],
   onExistingImageRemove,
-  onExistingImagesReorder,
-  onOrderChange  // New prop
+  onExistingImagesReorder
 }: CarImageUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -33,34 +30,11 @@ export default function CarImageUpload({
   const [draggedExistingIndex, setDraggedExistingIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [dropExistingIndex, setDropExistingIndex] = useState<number | null>(null);
-  // New state to track the combined order of all images
-  const [combinedOrder, setCombinedOrder] = useState<{ type: 'existing' | 'new', id: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Total image count for validation
   const totalImageCount = selectedFiles.length + existingImages.length;
   const remainingSlots = maxImages - selectedFiles.length - existingImages.length;
-
-  // Update combined order whenever the image collections change
-  useEffect(() => {
-    // First, add all existing images to the order
-    const newOrder: { type: 'existing' | 'new', id: string }[] = 
-      existingImages.map(img => ({ type: 'existing', id: img.id }));
-    
-    // Then, add all new images to the order
-    selectedFiles.forEach((file, index) => {
-      // Use file name + size as a unique identifier
-      const fileId = `new-${file.name}-${file.size}-${index}`;
-      newOrder.push({ type: 'new', id: fileId });
-    });
-    
-    setCombinedOrder(newOrder);
-    
-    // Report the order back to parent if callback provided
-    if (onOrderChange) {
-      onOrderChange(newOrder);
-    }
-  }, [existingImages, selectedFiles, onOrderChange]);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,25 +132,6 @@ export default function CarImageUpload({
       [newExistingOrder[index - 1], newExistingOrder[index]];
     
     onExistingImagesReorder(newExistingOrder);
-
-    // Also update the combined order
-    const newCombinedOrder = [...combinedOrder];
-    // First find the indices in combined order
-    const currentIndex = newCombinedOrder.findIndex(item => 
-      item.type === 'existing' && item.id === existingImages[index].id);
-    const prevIndex = newCombinedOrder.findIndex(item => 
-      item.type === 'existing' && item.id === existingImages[index - 1].id);
-    
-    // Swap them in the combined order if found
-    if (currentIndex >= 0 && prevIndex >= 0) {
-      [newCombinedOrder[currentIndex], newCombinedOrder[prevIndex]] = 
-        [newCombinedOrder[prevIndex], newCombinedOrder[currentIndex]];
-      
-      setCombinedOrder(newCombinedOrder);
-      if (onOrderChange) {
-        onOrderChange(newCombinedOrder);
-      }
-    }
   };
 
   // Move an existing image down in the order
@@ -190,25 +145,6 @@ export default function CarImageUpload({
       [newExistingOrder[index + 1], newExistingOrder[index]];
     
     onExistingImagesReorder(newExistingOrder);
-
-    // Also update the combined order
-    const newCombinedOrder = [...combinedOrder];
-    // First find the indices in combined order
-    const currentIndex = newCombinedOrder.findIndex(item => 
-      item.type === 'existing' && item.id === existingImages[index].id);
-    const nextIndex = newCombinedOrder.findIndex(item => 
-      item.type === 'existing' && item.id === existingImages[index + 1].id);
-    
-    // Swap them in the combined order if found
-    if (currentIndex >= 0 && nextIndex >= 0) {
-      [newCombinedOrder[currentIndex], newCombinedOrder[nextIndex]] = 
-        [newCombinedOrder[nextIndex], newCombinedOrder[currentIndex]];
-      
-      setCombinedOrder(newCombinedOrder);
-      if (onOrderChange) {
-        onOrderChange(newCombinedOrder);
-      }
-    }
   };
 
   // Drag and drop handlers for new images
@@ -245,32 +181,6 @@ export default function CarImageUpload({
       setSelectedFiles(newFiles);
       setPreviews(newPreviews);
       onImagesChange(newFiles);
-      
-      // Update combined order for drag between new images
-      const newCombinedOrder = [...combinedOrder];
-      // Find the dragged item
-      const draggedItemIndex = newCombinedOrder.findIndex(
-        (item, idx) => item.type === 'new' && 
-        getIndexInTypeGroup(newCombinedOrder, 'new', idx) === draggedIndex
-      );
-      
-      // Find the drop location
-      const dropItemIndex = newCombinedOrder.findIndex(
-        (item, idx) => item.type === 'new' && 
-        getIndexInTypeGroup(newCombinedOrder, 'new', idx) === dropIndex
-      );
-      
-      if (draggedItemIndex >= 0 && dropItemIndex >= 0) {
-        // Remove the dragged item
-        const [draggedItem] = newCombinedOrder.splice(draggedItemIndex, 1);
-        // Insert at the drop location
-        newCombinedOrder.splice(dropItemIndex, 0, draggedItem);
-        
-        setCombinedOrder(newCombinedOrder);
-        if (onOrderChange) {
-          onOrderChange(newCombinedOrder);
-        }
-      }
     }
     // Handle drag between existing images
     else if (draggedExistingIndex !== null && dropExistingIndex !== null && 
@@ -284,32 +194,6 @@ export default function CarImageUpload({
       newExistingOrder.splice(dropExistingIndex, 0, draggedId);
       
       onExistingImagesReorder(newExistingOrder);
-      
-      // Update combined order for drag between existing images
-      const newCombinedOrder = [...combinedOrder];
-      // Find the dragged item
-      const draggedItemIndex = newCombinedOrder.findIndex(
-        (item, idx) => item.type === 'existing' && 
-        getIndexInTypeGroup(newCombinedOrder, 'existing', idx) === draggedExistingIndex
-      );
-      
-      // Find the drop location
-      const dropItemIndex = newCombinedOrder.findIndex(
-        (item, idx) => item.type === 'existing' && 
-        getIndexInTypeGroup(newCombinedOrder, 'existing', idx) === dropExistingIndex
-      );
-      
-      if (draggedItemIndex >= 0 && dropItemIndex >= 0) {
-        // Remove the dragged item
-        const [draggedItem] = newCombinedOrder.splice(draggedItemIndex, 1);
-        // Insert at the drop location
-        newCombinedOrder.splice(dropItemIndex, 0, draggedItem);
-        
-        setCombinedOrder(newCombinedOrder);
-        if (onOrderChange) {
-          onOrderChange(newCombinedOrder);
-        }
-      }
     }
     
     // Reset drag state
@@ -317,34 +201,6 @@ export default function CarImageUpload({
     setDraggedExistingIndex(null);
     setDropIndex(null);
     setDropExistingIndex(null);
-  };
-
-  // Helper function to get index within a specific type group
-  const getIndexInTypeGroup = (order: { type: 'existing' | 'new', id: string }[], type: 'existing' | 'new', currentIndex: number) => {
-    let count = 0;
-    for (let i = 0; i < currentIndex; i++) {
-      if (order[i].type === type) count++;
-    }
-    return count;
-  };
-
-  // Helper to determine if an image is the main image
-  const isMainImage = (type: 'existing' | 'new', index: number) => {
-    if (combinedOrder.length === 0) {
-      // Fallback to old logic if combined order is empty
-      return (type === 'existing' && index === 0 && selectedFiles.length === 0) ||
-             (type === 'new' && index === 0 && existingImages.length === 0);
-    }
-    
-    // The first item in combined order is the main image
-    const firstItem = combinedOrder[0];
-    if (type === 'existing') {
-      return firstItem.type === 'existing' && firstItem.id === existingImages[index]?.id;
-    } else {
-      // For new images, we need to find the file by index
-      const newFileId = `new-${selectedFiles[index]?.name}-${selectedFiles[index]?.size}-${index}`;
-      return firstItem.type === 'new' && firstItem.id.includes(newFileId.split('-')[1]); // Simple check
-    }
   };
 
   return (
@@ -409,7 +265,7 @@ export default function CarImageUpload({
                   key={`existing-${image.id}`}
                   className={`
                     relative p-1 rounded-md 
-                    ${isMainImage('existing', index) ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
+                    ${index === 0 && selectedFiles.length === 0 ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
                     ${draggedExistingIndex === index ? 'opacity-50' : 'opacity-100'}
                     ${dropExistingIndex === index ? 'bg-gray-100' : 'bg-white'}
                   `}
@@ -449,7 +305,7 @@ export default function CarImageUpload({
                       </button>
                     </div>
                     
-                    {isMainImage('existing', index) && (
+                    {index === 0 && selectedFiles.length === 0 && (
                       <span className="text-xs font-medium text-[#8A7D55] bg-[#f8f5f0] px-2 py-0.5 rounded-md">
                         Main Photo
                       </span>
@@ -473,7 +329,7 @@ export default function CarImageUpload({
                   key={`new-${index}`}
                   className={`
                     relative p-1 rounded-md 
-                    ${isMainImage('new', index) ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
+                    ${index === 0 && existingImages.length === 0 ? 'ring-2 ring-[#8A7D55]' : 'ring-1 ring-gray-300'} 
                     ${draggedIndex === index ? 'opacity-50' : 'opacity-100'}
                     ${dropIndex === index ? 'bg-gray-100' : 'bg-white'}
                   `}
@@ -513,7 +369,7 @@ export default function CarImageUpload({
                       </button>
                     </div>
                     
-                    {isMainImage('new', index) && (
+                    {index === 0 && existingImages.length === 0 && (
                       <span className="text-xs font-medium text-[#8A7D55] bg-[#f8f5f0] px-2 py-0.5 rounded-md">
                         Main Photo
                       </span>

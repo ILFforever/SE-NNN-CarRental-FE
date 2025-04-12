@@ -145,9 +145,6 @@ export default function CarForm({
   const [isLoadingServices, setIsLoadingServices] = useState(true);
   const [serviceError, setServiceError] = useState<string | null>(null);
 
-  //Image Orders
-  const [imageOrder, setImageOrder] = useState<{ type: 'existing' | 'new', id: string }[]>([]);
-
   // Car types options
   const carTypes = ['sedan', 'suv', 'hatchback', 'convertible', 'truck', 'van', 'other'];
   
@@ -176,19 +173,6 @@ export default function CarForm({
 
   const [formData, setFormData] = useState<CarFormData>(initialFormData);
 
-  const handleImageOrderChange = (order: { type: 'existing' | 'new', id: string }[]) => {
-    setImageOrder(order);
-    
-    // Optional: Log for debugging
-    console.log('Image order updated:', order);
-    
-    // You can now use this order information to arrange images before submission
-  };
-  
-  const onExistingImagesReorder = (newOrder: string[]) => {
-    setExistingImages(newOrder);
-    // You may need additional logic depending on how you're tracking existing images
-  };
   // Handle selected images change
   const handleImagesChange = (files: File[]) => {
     setSelectedImages(files);
@@ -433,53 +417,10 @@ export default function CarForm({
         }
       });
       
-      // Use the image order to arrange files
-    if (imageOrder.length > 0) {
-      // Get new images in the right order
-      const orderedFiles: File[] = [];
-      
-      imageOrder.forEach(item => {
-        if (item.type === 'new') {
-          // Match the new file by extracting identifiable parts from the ID
-          // This is a simplistic approach - you might need more robust matching
-          const filenamePart = item.id.split('-')[1]; // Extract filename part
-          
-          const matchingFile = selectedImages.find(file => 
-            item.id.includes(file.name) || file.name.includes(filenamePart)
-          );
-          
-          if (matchingFile) {
-            orderedFiles.push(matchingFile);
-          }
-        }
-      });
-      
-      // Only add each file once (avoid duplicates)
-      const addedFileNames = new Set<string>();
-
-      // Add files in the right order
-      orderedFiles.forEach(file => {
-        const fileKey = `${file.name}-${file.size}`;
-        if (!addedFileNames.has(fileKey)) {
-          formDataToSend.append('images', file);
-          addedFileNames.add(fileKey);
-        }
-      });
-
-       // Add any remaining files that weren't in the order
-       selectedImages.forEach(file => {
-        const fileKey = `${file.name}-${file.size}`;
-        if (!addedFileNames.has(fileKey)) {
-          formDataToSend.append('images', file);
-          addedFileNames.add(fileKey);
-        }
-      });
-    } else {
-      // Fallback to the old approach if no order is specified
+      // Add images to form data
       selectedImages.forEach(file => {
         formDataToSend.append('images', file);
       });
-    }
       
       // Add list of images to remove if updating
       if (carId && imagesToRemove.length > 0) {
@@ -855,18 +796,11 @@ export default function CarForm({
         {/* Car Image Upload Section */}
         <div className="col-span-1 md:col-span-3 mb-6">
           <CarImageUpload 
-             onImagesChange={handleImagesChange}
-             maxImages={5}
-             existingImages={existingImages.map(image => ({
-               url: image.startsWith('http') ? image : `https://blob.ngixx.me/images/${image}`,
-               id: image
-             }))}
-             onExistingImageRemove={handleRemoveExistingImage}
-             onExistingImagesReorder={onExistingImagesReorder}
-             onOrderChange={handleImageOrderChange}
+            onImagesChange={handleImagesChange}
+            maxImages={5}
           />
           
-          {/* Display existing images if editing
+          {/* Display existing images if editing */}
           {existingImages.length > 0 && (
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-700 mb-2">Current Images</h3>
@@ -892,7 +826,7 @@ export default function CarForm({
                 ))}
               </div>
             </div>
-          )} */}
+          )}
         </div>
         
         {/* Service Selection */}
