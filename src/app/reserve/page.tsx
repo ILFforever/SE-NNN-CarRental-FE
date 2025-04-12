@@ -129,67 +129,65 @@ export default function Booking() {
     setFormValid(isValid);
   }, [nameLastname, tel, pickupDate, returnDate, isAvailable]);
 
-  // Function to check availability - memoized with useCallback
   const checkCarAvailability = useCallback(async () => {
     if (!car?._id || !pickupDate || !returnDate || !session?.user?.token) {
       return; // Don't check if we don't have all the required data
     }
-
+  
     // Prevent checking if pickup date is after return date
     if (pickupDate.isAfter(returnDate)) {
       setIsAvailable(false);
       setAvailabilityMessage("Pickup date cannot be after return date");
       return;
     }
-
+  
     setIsCheckingAvailability(true);
     setAvailabilityMessage("Checking availability...");
-
+  
     try {
-      // Fetch car details (including rents)
-      const response = await fetch(`${API_BASE_URL}/cars/${car._id}`, {
-        headers: { Authorization: `Bearer ${session.user.token}` },
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch car details");
-
-      const carData = await response.json();
-
-      // Check for availability based on the rents array
-      if (!carData.success || !carData.data) {
-        throw new Error("Invalid car data received");
-      }
-
-      const rents = carData.data.rents || [];
-
-      // Check for overlaps in the booking dates
-      const conflicts = rents.filter(
-        (rent: { startDate: string; returnDate: string; status: string }) => {
-          // Only check active and pending bookings
-          if (rent.status !== "active" && rent.status !== "pending") {
-            return false;
-          }
-
-          const rentStartDate = dayjs(rent.startDate);
-          const rentEndDate = dayjs(rent.returnDate);
-
-          // If the rental period overlaps with the requested booking, return true
-          return (
-            pickupDate.isBefore(rentEndDate) &&
-            returnDate.isAfter(rentStartDate)
-          );
+      // ใช้ API endpoint ที่สร้างไว้แล้วเพื่อตรวจสอบความพร้อมใช้งาน
+      const formattedStartDate = pickupDate.format("YYYY-MM-DD");
+      const formattedReturnDate = returnDate.format("YYYY-MM-DD");
+      
+      const response = await fetch(
+        `${API_BASE_URL}/cars/check-availability/${car._id}?startDate=${formattedStartDate}&returnDate=${formattedReturnDate}`,
+        {
+          headers: { Authorization: `Bearer ${session.user.token}` },
         }
       );
-
-      const available = conflicts.length === 0;
+  
+      if (!response.ok) throw new Error("Failed to check car availability");
+  
+      const availabilityData = await response.json();
+  
+      if (!availabilityData.success) {
+        throw new Error(availabilityData.message || "Failed to check availability");
+      }
+  
+      console.log("availabilityData.data", availabilityData.data)
+      const available = availabilityData.data.available;
+      const conflicts = availabilityData.data.conflicts || [];
+  
       setIsAvailable(available);
-
+  
       if (available) {
         setAvailabilityMessage("Car is available for selected dates!");
       } else {
-        setAvailabilityMessage(
-          "Car is not available for the selected dates. Please choose different dates."
-        );
+        // แสดงข้อความทับซ้อนที่มีรายละเอียดมากขึ้น
+        if (conflicts.length > 0) {
+          console.log("uiop", conflicts)
+          setAvailabilityMessage(
+            `Car is not available for the selected dates. There ${
+              conflicts.length === 1 ? "is" : "are"
+            } ${conflicts.length} existing ${
+              conflicts.length === 1 ? "booking" : "bookings"
+            } during this period.`
+          );
+        } else {
+          setAvailabilityMessage(
+            "Car is not available for the selected dates. Please choose different dates."
+          );
+        }
       }
     } catch (error) {
       console.error("Error checking car availability:", error);
@@ -199,6 +197,7 @@ export default function Booking() {
       setIsCheckingAvailability(false);
     }
   }, [car?._id, pickupDate, returnDate, session?.user?.token]);
+
   // Add this effect to fetch services data when the component mounts
   useEffect(() => {
     const fetchServices = async () => {
@@ -230,88 +229,116 @@ export default function Booking() {
 
   // Check availability whenever dates change
   useEffect(() => {
-    if (pickupDate && returnDate && car) {
+    const shouldCheckAvailability = 
+      pickupDate !== null && 
+      returnDate !== null && 
+      car !== null;
+    
+    if (shouldCheckAvailability) {
       checkCarAvailability();
     }
   }, [pickupDate, returnDate, car, checkCarAvailability]);
 
   const makeBooking = async () => {
-    if (!formValid || isSubmitting) {
+    if (!formValid || isSubmitting || !car || !pickupDate || !returnDate || !session?.user?.token) {
       return;
     }
   
-    // Double-check availability one more time
-    await checkCarAvailability();
-  
-    if (!isAvailable) {
-      alert(
-        "Car is not available for the selected dates. Please choose different dates."
-      );
-      return;
-    }
-  
-    if (car && nameLastname && tel && pickupDate && returnDate) {
-      try {
-        setIsSubmitting(true);
-    
-        // Format dates for the API
-        const formattedStartDate = pickupDate.format("YYYY-MM-DD");
-        const formattedReturnDate = returnDate.format("YYYY-MM-DD");
-        
-        // Get values using existing calculation functions
-        const days = getRentalPeriod();
-        const basePrice = days * (car?.dailyRate || 0);
-        const servicePrice = calculateServicesTotalCost();
-        const subtotal = calculateSubtotal();
-        const discountAmount = calculateDiscount();
-        const finalPrice = subtotal - discountAmount;
-        // Send booking data to backend with all price details
-        const response = await fetch(`${API_BASE_URL}/rents`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session?.user?.token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            startDate: formattedStartDate,
-            returnDate: formattedReturnDate,
-            car: car._id,
-            price: basePrice,
-            servicePrice: servicePrice,
-            discountAmount: discountAmount,
-            finalPrice: finalPrice,
-            service: selectedServices,
-          }),
-        });
-  
-        if (response.ok) {
-          // Booking successful, dispatch to Redux store
-          const item = {
-            nameLastname: nameLastname,
-            tel: tel,
-            car: car._id,
-            bookDate: pickupDate.format("YYYY/MM/DD"),
-            returnDate: returnDate.format("YYYY/MM/DD"),
-            pickupTime: pickupTime,
-            returnTime: returnTime,
-          };
-          console.log(item)
-          dispatch(addBooking(item));
-          alert("Booking successful!");
-  
-          // Redirect to reservations page
-          router.push("/account/reservations");
-        } else {
-          const errorData = await response.json();
-          console.error("Booking failed:", errorData);
-          alert(`Booking failed: ${errorData.message || "Please try again."}`);
+    setIsSubmitting(true);
+    try {
+      // Double-check availability one more time before booking
+      // Format dates for the API
+      const formattedStartDate = pickupDate.format("YYYY-MM-DD");
+      const formattedReturnDate = returnDate.format("YYYY-MM-DD");
+      
+      // ใช้ API endpoint เพื่อตรวจสอบความพร้อมใช้งานอีกครั้งก่อนการจอง
+      const availabilityResponse = await fetch(
+        `${API_BASE_URL}/cars/check-availability/${car._id}?startDate=${formattedStartDate}&returnDate=${formattedReturnDate}`,
+        {
+          headers: { Authorization: `Bearer ${session.user.token}` },
         }
-      } catch (error) {
-        console.error("Error booking:", error);
-        alert("An error occurred. Please try again.");
-      } finally {
-        setIsSubmitting(false);
+      );
+
+      if (!availabilityResponse.ok) {
+        throw new Error("Failed to check car availability");
       }
+
+      const availabilityData = await availabilityResponse.json();
+
+      if (!availabilityData.success) {
+        throw new Error(
+          availabilityData.message || "Failed to check availability"
+        );
+      }
+
+      const isStillAvailable = availabilityData.data.available;
+
+      if (!isStillAvailable) {
+        alert(
+          "Car is no longer available for the selected dates. Another booking may have been made. Please choose different dates."
+        );
+        setIsAvailable(false);
+        setAvailabilityMessage(
+          "Car is not available for the selected dates. Please choose different dates."
+        );
+        return;
+      }
+
+      // Car is available, proceed with booking
+      // Get values using existing calculation functions
+      const days = getRentalPeriod();
+      const basePrice = days * (car?.dailyRate || 0);
+      const servicePrice = calculateServicesTotalCost();
+      const subtotal = calculateSubtotal();
+      const discountAmount = calculateDiscount();
+      const finalPrice = subtotal - discountAmount;
+
+      // Send booking data to backend with all price details
+      const response = await fetch(`${API_BASE_URL}/rents`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.user?.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          startDate: formattedStartDate,
+          returnDate: formattedReturnDate,
+          car: car._id,
+          price: basePrice,
+          servicePrice: servicePrice,
+          discountAmount: discountAmount,
+          finalPrice: finalPrice,
+          service: selectedServices,
+        }),
+      });
+
+      if (response.ok) {
+        // Booking successful, dispatch to Redux store
+        const item = {
+          nameLastname: nameLastname,
+          tel: tel,
+          car: car._id,
+          bookDate: pickupDate.format("YYYY/MM/DD"),
+          returnDate: returnDate.format("YYYY/MM/DD"),
+          pickupTime: pickupTime,
+          returnTime: returnTime,
+        };
+        console.log(item);
+        dispatch(addBooking(item));
+        alert("Booking successful!");
+
+        // Redirect to reservations page
+        router.push("/account/reservations");
+      } else {
+        const errorData = await response.json();
+        console.error("Booking failed:", errorData);
+        alert(`Booking failed: ${errorData.message || "Please try again."}`);
+      }
+    } catch (error) {
+      console.error("Error booking:", error);
+      alert("An error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -433,21 +460,19 @@ export default function Booking() {
     const tierDiscount = [0, 5, 10, 15, 20];
     return tierDiscount[tier];
   };
-  
+
   // Calculate total service cost correctly handling daily vs one-time services
   const calculateServicesTotalCost = () => {
     if (!selectedServices.length) return 0;
-    
+
     const days = getRentalPeriod();
-    
+
     return services
-      .filter(service => selectedServices.includes(service._id))
+      .filter((service) => selectedServices.includes(service._id))
       .reduce((total, service) => {
         // Daily services are multiplied by the number of days
         // One-time services are added just once
-        const serviceCost = service.daily 
-          ? service.rate * days
-          : service.rate;
+        const serviceCost = service.daily ? service.rate * days : service.rate;
         //console.log(total + serviceCost)
         return total + serviceCost;
       }, 0);
@@ -482,18 +507,18 @@ export default function Booking() {
   const getTotalCost = () => {
     const subtotal = calculateSubtotal();
     const discount = calculateDiscount();
-    
+
     return subtotal - discount;
   };
-  
-  const calculateSubtotal = () => {
-  const days = getRentalPeriod();
-  const dailyRate = car?.dailyRate || 0;
-  const carCost = days * dailyRate;
-  const servicesCost = calculateServicesTotalCost();
 
-  return carCost + servicesCost;
-};
+  const calculateSubtotal = () => {
+    const days = getRentalPeriod();
+    const dailyRate = car?.dailyRate || 0;
+    const carCost = days * dailyRate;
+    const servicesCost = calculateServicesTotalCost();
+
+    return carCost + servicesCost;
+  };
 
   const calculateDiscount = () => {
     const subtotal = calculateSubtotal();
@@ -872,10 +897,7 @@ export default function Booking() {
                   <h3 className="text-lg font-medium">Additional Services</h3>
                   <div className="flex items-center">
                     {!servicesExpanded && (
-                      <span className="mr-3 text-[#8A7D55] font-medium">
-                        
-                       
-                      </span>
+                      <span className="mr-3 text-[#8A7D55] font-medium"></span>
                     )}
                     <button
                       onClick={() => setServicesExpanded(!servicesExpanded)}
@@ -927,25 +949,30 @@ export default function Booking() {
                             )}
                           </div>
                           <span className="text-[#8A7D55] font-medium">
-                          {service.daily 
-                                ? `$${service.rate.toFixed(2)}/day`
-                                : `$${service.rate.toFixed(2)}`}
+                            {service.daily
+                              ? `$${service.rate.toFixed(2)}/day`
+                              : `$${service.rate.toFixed(2)}`}
                           </span>
                         </div>
                       ))}
                   </div>
 
                   <div className="flex justify-between items-center mt-3 text-sm font-medium">
-                    <span className="text-gray-600">Total Additional Services:</span>
+                    <span className="text-gray-600">
+                      Total Additional Services:
+                    </span>
                     <div className="flex items-center space-x-2">
                       {services
-                        .filter(service => selectedServices.includes(service._id))
-                        .map(service => (
-                          <span 
-                            key={service._id} 
+                        .filter((service) =>
+                          selectedServices.includes(service._id)
+                        )
+                        .map((service) => (
+                          <span
+                            key={service._id}
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-[#F0F4FF] text-[#3366FF]"
                           >
-                            {service.daily ? 'Daily' : 'One-Time'} ${service.rate.toFixed(2)}
+                            {service.daily ? "Daily" : "One-Time"} $
+                            {service.rate.toFixed(2)}
                           </span>
                         ))}
                     </div>
@@ -954,12 +981,12 @@ export default function Booking() {
               </div>
             )}
 
-              {/* Cost Breakdown */}
-              <div className="border-t border-gray-200 mt-6 pt-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Base Daily Rate:</span>
-                  <span>${car?.dailyRate?.toFixed(2) || "0.00"}</span>
-                </div>
+            {/* Cost Breakdown */}
+            <div className="border-t border-gray-200 mt-6 pt-6">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Base Daily Rate:</span>
+                <span>${car?.dailyRate?.toFixed(2) || "0.00"}</span>
+              </div>
 
               {selectedServices.length > 0 && (
                 <>
@@ -1014,37 +1041,39 @@ export default function Booking() {
                 </>
               )}
 
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-gray-600">Number of Days:</span>
-                  <span>{getRentalPeriod()}</span>
-                </div>
-
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-gray-600">Car Rental Subtotal:</span>
-                  <span>${((car?.dailyRate || 0) * getRentalPeriod()).toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-gray-600">Total Subtotal:</span>
-                  <span>${calculateSubtotal().toFixed(2)}</span>
-                </div>
-
-                {userTier > 0 && (
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-gray-600">
-                      Loyalty Discount ({getTierDiscount(userTier)}%):
-                    </span>
-                    <span>-${calculateDiscount().toFixed(2)}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
-                  <span>Total Cost:</span>
-                  <span className="text-[#8A7D55]">
-                    {formatCurrency(getTotalCost())}
-                  </span>
-                </div>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-gray-600">Number of Days:</span>
+                <span>{getRentalPeriod()}</span>
               </div>
+
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-gray-600">Car Rental Subtotal:</span>
+                <span>
+                  ${((car?.dailyRate || 0) * getRentalPeriod()).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-gray-600">Total Subtotal:</span>
+                <span>${calculateSubtotal().toFixed(2)}</span>
+              </div>
+
+              {userTier > 0 && (
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-600">
+                    Loyalty Discount ({getTierDiscount(userTier)}%):
+                  </span>
+                  <span>-${calculateDiscount().toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
+                <span>Total Cost:</span>
+                <span className="text-[#8A7D55]">
+                  {formatCurrency(getTotalCost())}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}
