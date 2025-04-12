@@ -18,35 +18,8 @@ interface UnifiedReservationDetailsProps {
   backUrl?: string;
 }
 
-// Define TypeScript interface for Car
+//Moved Type Definitions to interface 
 
-
-// Define TypeScript interface for User
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  telephone_number: string;
-  role?: string;
-}
-
-// Define TypeScript interface for Rental
-interface Rental {
-  _id: string;
-  startDate: string;
-  returnDate: string;
-  actualReturnDate?: string;
-  status: "pending" | "active" | "completed" | "cancelled";
-  price: number;
-  servicePrice?: number;
-  additionalCharges?: number;
-  notes?: string;
-  car: Car | string;
-  user: User | string;
-  createdAt: string;
-  service?: string[];
-  isRated?: boolean;
-}
 
 export default function UnifiedReservationDetails({
   reservationId,
@@ -57,18 +30,19 @@ export default function UnifiedReservationDetails({
   const { data: session, status } = useSession();
 
   // State for rental data and loading
-  const [rental, setRental] = useState<Rental | null>(null);
+  const [rental, setRental] = useState<Rent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const [services, setServices] = useState<Service[]>([]);
+  const [userTier, setUserTier] = useState(0);
 
   // State for editing notes
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState("");
 
-  const handleRentalUpdate = (updatedRental: Rental) => {
+  const handleRentalUpdate = (updatedRental: Rent) => {
     setRental(updatedRental);
     setSuccess('Reservation updated successfully');
   };
@@ -104,6 +78,31 @@ export default function UnifiedReservationDetails({
       console.error('Error fetching services:', err);
     }
   };
+
+  //Fetch Cur User
+  useEffect(() => {
+    const fetchUserTier = async () => {
+      if (session?.user?.token) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/curuser`, {
+            headers: {
+              Authorization: `Bearer ${session.user.token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+  
+          if (response.ok) {
+            const userData = await response.json();
+            setUserTier(userData.data.tier || 0);
+          }
+        } catch (error) {
+          console.error('Error fetching user tier:', error);
+        }
+      }
+    };
+  
+    fetchUserTier();
+  }, [session?.user?.token]);
 
   //Fetch Services
   useEffect(() => {
@@ -405,7 +404,7 @@ export default function UnifiedReservationDetails({
   };
 
   // Calculate late days and fees
-  const calculateLateFees = (rentalData: Rental) => {
+  const calculateLateFees = (rentalData: Rent) => {
     if (!rentalData.actualReturnDate)
       return { daysLate: 0, lateFeePerDay: 0, totalLateFee: 0 };
   
@@ -872,6 +871,7 @@ export default function UnifiedReservationDetails({
               calculateTotalPrice={calculateTotalPrice}
               daysLate={daysLate}
               totalLateFee={totalLateFee}
+              userTier={userTier}
             />
           )}
           {/* Rental Services */}

@@ -20,13 +20,12 @@ interface CarsJson {
   data: CarItem[];
 }
 
-
-
 interface User {
   _id: string;
   name: string;
   email: string;
   telephone_number: string;
+  tier?: number;
 }
 
 interface Provider {
@@ -57,20 +56,22 @@ interface Car {
 }
 
 interface Rent {
-  finalPrice: any;
-  isRated: any;
   _id: string;
   startDate: string;
   returnDate: string;
   actualReturnDate?: string;
   status: 'pending' | 'active' | 'completed' | 'cancelled';
   price: number;
+  servicePrice?: number;
   additionalCharges?: number;
   notes?: string;
   car: string | Car;
   user: string | User;
   createdAt: string;
-  servicePrice?: number;
+  service?: string[];
+  isRated?: boolean;
+  finalPrice?: number;
+  discountAmount?: number;
 }
 
 interface BookingItem {
