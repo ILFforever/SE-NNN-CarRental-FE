@@ -1,4 +1,5 @@
 export const API_BASE_URL = 'https://se-nnn-carrental-be.fly.dev/api/v1';
+//export const API_BASE_URL = 'https://localhost:5003/api/v1';
 
 // Auth endpoints
 export const AUTH_ENDPOINTS = {

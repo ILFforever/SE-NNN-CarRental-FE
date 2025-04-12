@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/config/apiConfig';
-import Link from 'next/link';
-import { Check, ChevronDown, Loader2, X } from 'lucide-react';
-import CarImageUpload from './CarImageUpload';
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/config/apiConfig";
+import Link from "next/link";
+import { Check, ChevronDown, Loader2, X } from "lucide-react";
+import CarImageUpload from "./CarImageUpload";
 
 // Service interface
 interface Service {
@@ -64,49 +64,57 @@ const ServiceList: React.FC<ServiceListProps> = ({
   rateLabel,
   selectedServices,
   toggleService,
-  formatCurrency
+  formatCurrency,
 }) => {
   if (serviceList.length === 0) return null;
-  
+
   return (
     <div className="mb-6">
       <h3 className="text-lg font-medium text-[#8A7D55] mb-3">{title}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {serviceList.map(service => (
-          <div 
+        {serviceList.map((service) => (
+          <div
             key={service._id}
             className={`
               p-3 rounded-md border transition-all cursor-pointer
-              ${selectedServices.includes(service._id) 
-                ? 'border-[#8A7D55] bg-[#f8f5f0]' 
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
+              ${
+                selectedServices.includes(service._id)
+                  ? "border-[#8A7D55] bg-[#f8f5f0]"
+                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+              }
             `}
             onClick={() => toggleService(service._id)}
           >
             <div className="flex items-center">
-              <div 
+              <div
                 className={`
                   w-5 h-5 rounded border flex items-center justify-center mr-3
-                  ${selectedServices.includes(service._id) 
-                    ? 'bg-[#8A7D55] border-[#8A7D55]' 
-                    : 'border-gray-300 bg-white'}
+                  ${
+                    selectedServices.includes(service._id)
+                      ? "bg-[#8A7D55] border-[#8A7D55]"
+                      : "border-gray-300 bg-white"
+                  }
                 `}
               >
                 {selectedServices.includes(service._id) && (
                   <Check className="w-3.5 h-3.5 text-white" />
                 )}
               </div>
-              
+
               <div className="flex-grow">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium text-gray-800">{service.name}</h4>
                   <span className="text-sm font-semibold text-[#8A7D55]">
                     {formatCurrency(service.rate)}
-                    <span className="text-xs text-gray-500 ml-1">{rateLabel}</span>
+                    <span className="text-xs text-gray-500 ml-1">
+                      {rateLabel}
+                    </span>
                   </span>
                 </div>
                 {service.description && (
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{service.description}</p>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {service.description}
+                  </p>
                 )}
               </div>
             </div>
@@ -123,52 +131,71 @@ export default function CarForm({
   isAdmin = false,
   providerId,
   onSuccess,
-  backUrl = '/provider/manageCars',
-  title = 'Add New Car'
+  backUrl = "/provider/manageCars",
+  title = "Add New Car",
 }: CarFormProps) {
   const router = useRouter();
-  
+
   // States
   const [isLoading, setIsLoading] = useState(!!carId);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
-  
+
   // Image states
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
-  
+
   // Service states
   const [services, setServices] = useState<Service[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(true);
   const [serviceError, setServiceError] = useState<string | null>(null);
 
   // Car types options
-  const carTypes = ['sedan', 'suv', 'hatchback', 'convertible', 'truck', 'van', 'other'];
-  
+  const carTypes = [
+    "sedan",
+    "suv",
+    "hatchback",
+    "convertible",
+    "truck",
+    "van",
+    "other",
+  ];
+
   // Tiers options (0-4)
   const tiers = [0, 1, 2, 3, 4];
 
   // Colors options
   const carColors = [
-    'Black', 'White', 'Silver', 'Gray', 'Blue', 'Red', 
-    'Green', 'Yellow', 'Orange', 'Purple', 'Brown', 'Gold', 'Other'
+    "Black",
+    "White",
+    "Silver",
+    "Gray",
+    "Blue",
+    "Red",
+    "Green",
+    "Yellow",
+    "Orange",
+    "Purple",
+    "Brown",
+    "Gold",
+    "Other",
   ];
 
   // Initial form data
   const initialFormData: CarFormData = {
-    license_plate: '',
-    brand: '',
-    model: '',
-    type: 'sedan',
-    color: '',
-    manufactureDate: new Date().toISOString().split('T')[0],
+    license_plate: "",
+    brand: "",
+    model: "",
+    type: "sedan",
+    color: "",
+    manufactureDate: new Date().toISOString().split("T")[0],
     dailyRate: 0,
     tier: 0,
     service: [],
-    provider_id: providerId || '',
+    provider_id: providerId || "",
   };
 
   const [formData, setFormData] = useState<CarFormData>(initialFormData);
@@ -186,23 +213,23 @@ export default function CarForm({
       try {
         const response = await fetch(`${API_BASE_URL}/Car_Provider`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch car providers');
+          throw new Error("Failed to fetch car providers");
         }
 
         const data = await response.json();
-        
+
         if (data.success && Array.isArray(data.data)) {
           setProviders(data.data);
         }
       } catch (err) {
-        console.error('Error fetching providers:', err);
-        setError('Could not load provider list. Some features may be limited.');
+        console.error("Error fetching providers:", err);
+        setError("Could not load provider list. Some features may be limited.");
       }
     };
 
@@ -216,29 +243,33 @@ export default function CarForm({
     const fetchServices = async () => {
       try {
         setIsLoadingServices(true);
-        
+
         const response = await fetch(`${API_BASE_URL}/services`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch services');
+          throw new Error("Failed to fetch services");
         }
 
         const data = await response.json();
-        
+
         if (data.success && Array.isArray(data.data)) {
           // Only show available services
-          setServices(data.data.filter((service: Service) => service.available !== false));
+          setServices(
+            data.data.filter((service: Service) => service.available !== false)
+          );
         } else {
           setServices([]);
         }
       } catch (err) {
-        console.error('Error fetching services:', err);
-        setServiceError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        console.error("Error fetching services:", err);
+        setServiceError(
+          err instanceof Error ? err.message : "An unexpected error occurred"
+        );
       } finally {
         setIsLoadingServices(false);
       }
@@ -263,13 +294,13 @@ export default function CarForm({
       try {
         const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch car data');
+          throw new Error("Failed to fetch car data");
         }
 
         const data = await response.json();
@@ -278,12 +309,12 @@ export default function CarForm({
           // Format the date from ISO to YYYY-MM-DD for input
           const manufactureDate = new Date(data.data.manufactureDate)
             .toISOString()
-            .split('T')[0];
+            .split("T")[0];
 
           if (data.data.images && Array.isArray(data.data.images)) {
             setExistingImages(data.data.images);
           }
-          
+
           setFormData({
             license_plate: data.data.license_plate,
             brand: data.data.brand,
@@ -294,14 +325,16 @@ export default function CarForm({
             dailyRate: data.data.dailyRate,
             tier: data.data.tier,
             service: data.data.service || [],
-            provider_id: data.data.provider_id
+            provider_id: data.data.provider_id,
           });
         } else {
-          throw new Error('Invalid data format');
+          throw new Error("Invalid data format");
         }
       } catch (err) {
-        console.error('Error fetching car:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error("Error fetching car:", err);
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -311,73 +344,81 @@ export default function CarForm({
   }, [carId, token]);
 
   // Handle input change for form fields
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
-    
+
     // Special handling for numeric values
-    if (name === 'dailyRate' || name === 'tier') {
-      setFormData(prev => ({ 
-        ...prev, 
-        [name]: name === 'tier' ? parseInt(value) : parseFloat(value) 
+    if (name === "dailyRate" || name === "tier") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: name === "tier" ? parseInt(value) : parseFloat(value),
       }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   // Toggle service selection
   const toggleService = (serviceId: string) => {
     const isSelected = formData.service.includes(serviceId);
-    
+
     if (isSelected) {
       // Remove service
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        service: prev.service.filter(id => id !== serviceId)
+        service: prev.service.filter((id) => id !== serviceId),
       }));
     } else {
       // Add service
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        service: [...prev.service, serviceId]
+        service: [...prev.service, serviceId],
       }));
     }
   };
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
   // Mark existing image for removal
   const handleRemoveExistingImage = (imageUrl: string) => {
-    setImagesToRemove(prev => [...prev, imageUrl]);
-    setExistingImages(prev => prev.filter(img => img !== imageUrl));
+    setImagesToRemove((prev) => [...prev, imageUrl]);
+    setExistingImages((prev) => prev.filter((img) => img !== imageUrl));
   };
 
   // Form validation
   const validateForm = () => {
-    if (!formData.license_plate || 
-        !formData.brand || 
-        !formData.model || 
-        !formData.type || 
-        !formData.color || 
-        !formData.manufactureDate || 
-        formData.dailyRate <= 0 ||
-        !formData.provider_id) {
-      setError('All fields are required. Daily rate must be greater than 0.');
+    if (
+      !formData.license_plate ||
+      !formData.brand ||
+      !formData.model ||
+      !formData.type ||
+      !formData.color ||
+      !formData.manufactureDate ||
+      formData.dailyRate <= 0 ||
+      !formData.provider_id
+    ) {
+      setError("All fields are required. Daily rate must be greater than 0.");
       return false;
     }
 
     // Validate license plate format
     const licensePlateRegex = /^[A-Za-z0-9 -]{2,20}$/;
     if (!licensePlateRegex.test(formData.license_plate)) {
-      setError('License plate format is invalid. It should be 2-20 alphanumeric characters, spaces, or hyphens.');
+      setError(
+        "License plate format is invalid. It should be 2-20 alphanumeric characters, spaces, or hyphens."
+      );
       return false;
     }
 
@@ -387,9 +428,9 @@ export default function CarForm({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!token) {
-      setError('Missing authentication token');
+      setError("Missing authentication token");
       return;
     }
 
@@ -404,53 +445,63 @@ export default function CarForm({
     try {
       // Create form data for file upload
       const formDataToSend = new FormData();
-      
+
       // Add all fields to form data
-      Object.keys(formData).forEach(key => {
-        if (key === 'service') {
+      Object.keys(formData).forEach((key) => {
+        if (key === "service") {
           // Handle services array
-          formData.service.forEach(serviceId => {
-            formDataToSend.append('service', serviceId);
+          formData.service.forEach((serviceId) => {
+            formDataToSend.append("service", serviceId);
           });
         } else {
-          formDataToSend.append(key, formData[key as keyof CarFormData].toString());
+          formDataToSend.append(
+            key,
+            formData[key as keyof CarFormData].toString()
+          );
         }
       });
-      
+
       // Add images to form data
-      selectedImages.forEach(file => {
-        formDataToSend.append('images', file);
+      selectedImages.forEach((file) => {
+        formDataToSend.append("images", file);
       });
-      
+
       // Add list of images to remove if updating
       if (carId && imagesToRemove.length > 0) {
-        formDataToSend.append('removeImage', JSON.stringify(imagesToRemove));
+        formDataToSend.append("removeImage", JSON.stringify(imagesToRemove));
       }
 
       // Determine if we're creating a new car or updating an existing one
-      const url = carId 
-        ? `${API_BASE_URL}/cars/${carId}` 
+      const url = carId
+        ? `${API_BASE_URL}/cars/${carId}`
         : `${API_BASE_URL}/cars`;
-      
-      const method = carId ? 'PUT' : 'POST';
+
+      const method = carId ? "PUT" : "POST";
       console.log("Files to upload:", selectedImages);
-      console.log("Form data being submitted:", Object.fromEntries(formDataToSend));
+      console.log(
+        "Form data being submitted:",
+        Object.fromEntries(formDataToSend)
+      );
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
           // Don't set Content-Type - it will be set automatically with the boundary
         },
-        body: formDataToSend
+        body: formDataToSend,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.msg || `Failed to ${carId ? 'update' : 'create'} car`);
+        throw new Error(
+          errorData.message ||
+            errorData.msg ||
+            `Failed to ${carId ? "update" : "create"} car`
+        );
       }
 
-      setSuccess(`Car ${carId ? 'updated' : 'created'} successfully`);
-      
+      setSuccess(`Car ${carId ? "updated" : "created"} successfully`);
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
@@ -461,8 +512,10 @@ export default function CarForm({
         }, 1500);
       }
     } catch (err) {
-      console.error(`Error ${carId ? 'updating' : 'creating'} car:`, err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      console.error(`Error ${carId ? "updating" : "creating"} car:`, err);
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -471,12 +524,18 @@ export default function CarForm({
   // Get tier name based on tier number
   const getTierName = (tier: number): string => {
     switch (tier) {
-      case 0: return 'Bronze';
-      case 1: return 'Silver';
-      case 2: return 'Gold';
-      case 3: return 'Platinum';
-      case 4: return 'Diamond';
-      default: return `Tier ${tier}`;
+      case 0:
+        return "Bronze";
+      case 1:
+        return "Silver";
+      case 2:
+        return "Gold";
+      case 3:
+        return "Platinum";
+      case 4:
+        return "Diamond";
+      default:
+        return `Tier ${tier}`;
     }
   };
 
@@ -508,51 +567,66 @@ export default function CarForm({
     }
 
     // Separate daily services from one-time services
-    const dailyServices = services.filter(service => service.daily);
-    const oneTimeServices = services.filter(service => !service.daily);
+    const dailyServices = services.filter((service) => service.daily);
+    const oneTimeServices = services.filter((service) => !service.daily);
 
     return (
       <div>
         {/* All services in one list */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {services.map(service => {
+          {services.map((service) => {
             const isSelected = formData.service.includes(service._id);
-            const badgeColor = service.daily 
-              ? (isSelected ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700')
-              : (isSelected ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700');
-            
+            const badgeColor = service.daily
+              ? isSelected
+                ? "bg-blue-500 text-white"
+                : "bg-blue-100 text-blue-700"
+              : isSelected
+              ? "bg-purple-500 text-white"
+              : "bg-purple-100 text-purple-700";
+
             return (
-              <div 
+              <div
                 key={service._id}
                 className={`
                   p-3 rounded-md border transition-all cursor-pointer
-                  ${isSelected 
-                    ? 'border-[#8A7D55] bg-[#f8f5f0]' 
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
+                  ${
+                    isSelected
+                      ? "border-[#8A7D55] bg-[#f8f5f0]"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }
                 `}
                 onClick={() => toggleService(service._id)}
               >
                 <div className="flex items-center">
-                  <div 
+                  <div
                     className={`
                       w-5 h-5 rounded border flex items-center justify-center mr-3
-                      ${isSelected ? 'bg-[#8A7D55] border-[#8A7D55]' : 'border-gray-300 bg-white'}
+                      ${
+                        isSelected
+                          ? "bg-[#8A7D55] border-[#8A7D55]"
+                          : "border-gray-300 bg-white"
+                      }
                     `}
                   >
-                    {isSelected && (
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    )}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
                   </div>
-                  
+
                   <div className="flex-grow">
                     <div className="flex justify-between items-center">
-                      <h4 className="font-medium text-gray-800">{service.name}</h4>
-                      <span className={`text-sm font-semibold ${badgeColor} px-2 py-1 rounded-full`}>
-                        {service.daily ? 'Daily: ' : 'One-time: '}${service.rate.toFixed(2)}
+                      <h4 className="font-medium text-gray-800">
+                        {service.name}
+                      </h4>
+                      <span
+                        className={`text-sm font-semibold ${badgeColor} px-2 py-1 rounded-full`}
+                      >
+                        {service.daily ? "Daily: " : "One-time: "}$
+                        {service.rate.toFixed(2)}
                       </span>
                     </div>
                     {service.description && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{service.description}</p>
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                        {service.description}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -560,29 +634,32 @@ export default function CarForm({
             );
           })}
         </div>
-        
+
         {/* Selected Services Summary */}
         {formData.service.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Selected Services</h3>
+            <h3 className="text-lg font-medium text-gray-700 mb-2">
+              Selected Services
+            </h3>
             <div className="flex flex-wrap gap-2">
               {services
-                .filter(service => formData.service.includes(service._id))
-                .map(service => {
-                  const tagColor = service.daily 
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                    : 'bg-purple-50 text-purple-700 border border-purple-200';
-                  
+                .filter((service) => formData.service.includes(service._id))
+                .map((service) => {
+                  const tagColor = service.daily
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "bg-purple-50 text-purple-700 border border-purple-200";
+
                   return (
-                    <div 
+                    <div
                       key={`selected-${service._id}`}
                       className={`inline-flex items-center ${tagColor} px-3 py-1.5 rounded-full text-sm font-medium group`}
                     >
                       <span className="truncate max-w-xs">{service.name}</span>
                       <span className="mx-1 text-xs font-bold">
-                        ({service.daily ? 'Daily' : 'One-time'}: ${service.rate.toFixed(2)})
+                        ({service.daily ? "Daily" : "One-time"}: $
+                        {service.rate.toFixed(2)})
                       </span>
-                      <button 
+                      <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -601,7 +678,7 @@ export default function CarForm({
         )}
       </div>
     );
-  }
+  };
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -612,14 +689,14 @@ export default function CarForm({
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-medium mb-4">{carId ? 'Edit Car' : title}</h2>
-      
+      <h2 className="text-xl font-medium mb-4">{carId ? "Edit Car" : title}</h2>
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
           {error}
         </div>
       )}
-      
+
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
           {success}
@@ -643,7 +720,7 @@ export default function CarForm({
               placeholder="e.g., ABC-123"
             />
           </div>
-          
+
           {/* Brand */}
           <div>
             <label htmlFor="brand" className="block text-gray-700 mb-1">
@@ -659,7 +736,7 @@ export default function CarForm({
               placeholder="e.g., Mercedes, BMW"
             />
           </div>
-          
+
           {/* Model */}
           <div>
             <label htmlFor="model" className="block text-gray-700 mb-1">
@@ -675,7 +752,7 @@ export default function CarForm({
               placeholder="e.g., C-Class, 5 Series"
             />
           </div>
-          
+
           {/* Type */}
           <div>
             <label htmlFor="type" className="block text-gray-700 mb-1">
@@ -688,14 +765,14 @@ export default function CarForm({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             >
-              {carTypes.map(type => (
+              {carTypes.map((type) => (
                 <option key={type} value={type}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </option>
               ))}
             </select>
           </div>
-          
+
           {/* Color */}
           <div>
             <label htmlFor="color" className="block text-gray-700 mb-1">
@@ -709,17 +786,20 @@ export default function CarForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             >
               <option value="">Select Color</option>
-              {carColors.map(color => (
+              {carColors.map((color) => (
                 <option key={color} value={color}>
                   {color}
                 </option>
               ))}
             </select>
           </div>
-          
+
           {/* Manufacture Date */}
           <div>
-            <label htmlFor="manufactureDate" className="block text-gray-700 mb-1">
+            <label
+              htmlFor="manufactureDate"
+              className="block text-gray-700 mb-1"
+            >
               Manufacture Date *
             </label>
             <input
@@ -731,7 +811,7 @@ export default function CarForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             />
           </div>
-          
+
           {/* Daily Rate */}
           <div>
             <label htmlFor="dailyRate" className="block text-gray-700 mb-1">
@@ -748,7 +828,7 @@ export default function CarForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             />
           </div>
-          
+
           {/* Tier */}
           <div>
             <label htmlFor="tier" className="block text-gray-700 mb-1">
@@ -761,7 +841,7 @@ export default function CarForm({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             >
-              {tiers.map(tier => (
+              {tiers.map((tier) => (
                 <option key={tier} value={tier}>
                   {getTierName(tier)} (Tier {tier})
                 </option>
@@ -783,7 +863,7 @@ export default function CarForm({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
               >
                 <option value="">Select Provider</option>
-                {providers.map(provider => (
+                {providers.map((provider) => (
                   <option key={provider._id} value={provider._id}>
                     {provider.name}
                   </option>
@@ -795,20 +875,46 @@ export default function CarForm({
 
         {/* Car Image Upload Section */}
         <div className="col-span-1 md:col-span-3 mb-6">
-          <CarImageUpload 
+          <CarImageUpload
+            token={token}
+            carId={carId}
             onImagesChange={handleImagesChange}
-            maxImages={5}
+            existingImages={existingImages.map((image) => ({
+              url: image.startsWith("http")
+                ? image
+                : `https://blob.ngixx.me/images/${image}`,
+              id: image,
+            }))}
+            onExistingImageRemove={handleRemoveExistingImage}
+            onExistingImagesReorder={(newOrder) => {
+              // Update the order of existing images
+              setExistingImages((prev) =>
+                newOrder.map(
+                  (orderItem) =>
+                    prev.find((img) => img === orderItem) || orderItem
+                )
+              );
+            }}
           />
-          
+
           {/* Display existing images if editing */}
           {existingImages.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Current Images</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
+                Current Images
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {existingImages.map((image, index) => (
-                  <div key={index} className="relative border rounded-md overflow-hidden">
+                  <div
+                    key={index}
+                    className="relative border rounded-md overflow-hidden"
+                  >
                     <img
-                      src={image.startsWith('http') ? image : `https://blob.ngixx.me/images/${image}`}
+                      src={
+                        image.startsWith("http")
+                          ? image
+                          : `https://blob.ngixx.me/images/${image}`
+                      }
                       alt={`Car image ${index + 1}`}
                       className="w-full h-32 object-cover"
                     />
@@ -818,8 +924,19 @@ export default function CarForm({
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                     >
                       <span className="sr-only">Remove</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -828,7 +945,7 @@ export default function CarForm({
             </div>
           )}
         </div>
-        
+
         {/* Service Selection */}
         <div className="col-span-1 md:col-span-3 mt-2 mb-6">
           <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
@@ -836,13 +953,14 @@ export default function CarForm({
               Additional Services
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Select the additional services you want to offer with this car. 
-              These services will be available for customers to add during booking.
+              Select the additional services you want to offer with this car.
+              These services will be available for customers to add during
+              booking.
             </p>
             {renderServiceSelection()}
           </div>
         </div>
-        
+
         <div className="flex justify-end space-x-4">
           <Link
             href={backUrl}
@@ -861,9 +979,9 @@ export default function CarForm({
                 Saving...
               </>
             ) : carId ? (
-              'Save Changes'
+              "Save Changes"
             ) : (
-              'Add Car'
+              "Add Car"
             )}
           </button>
         </div>

@@ -1,13 +1,13 @@
 // src/components/forms/CarEditForm.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/config/apiConfig';
-import Link from 'next/link';
-import { Check, ChevronDown, Loader2 } from 'lucide-react';
-import CarImageUpload from './CarImageUpload';
-import ServiceSelection from '../service/ServiceSelection';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/config/apiConfig";
+import Link from "next/link";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
+import CarImageUpload from "./CarImageUpload";
+import ServiceSelection from "../service/ServiceSelection";
 
 // Service interface
 interface Service {
@@ -48,53 +48,71 @@ interface CarEditFormProps {
   backUrl?: string;
 }
 
-
 export default function CarEditForm({
   carId,
   token,
   isAdmin = false,
   providerId,
   onSuccess,
-  backUrl = '/provider/manageCars',
+  backUrl = "/provider/manageCars",
 }: CarEditFormProps) {
   const router = useRouter();
-  
+
   // States
   const [isLoading, setIsLoading] = useState(!!carId);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
-  
+
   // Image states
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
 
   // Car types options
-  const carTypes = ['sedan', 'suv', 'hatchback', 'convertible', 'truck', 'van', 'other'];
-  
+  const carTypes = [
+    "sedan",
+    "suv",
+    "hatchback",
+    "convertible",
+    "truck",
+    "van",
+    "other",
+  ];
+
   // Tiers options (0-4)
   const tiers = [0, 1, 2, 3, 4];
 
   // Colors options
   const carColors = [
-    'Black', 'White', 'Silver', 'Gray', 'Blue', 'Red', 
-    'Green', 'Yellow', 'Orange', 'Purple', 'Brown', 'Gold', 'Other'
+    "Black",
+    "White",
+    "Silver",
+    "Gray",
+    "Blue",
+    "Red",
+    "Green",
+    "Yellow",
+    "Orange",
+    "Purple",
+    "Brown",
+    "Gold",
+    "Other",
   ];
 
   // Initial form data
   const initialFormData: CarFormData = {
-    license_plate: '',
-    brand: '',
-    model: '',
-    type: 'sedan',
-    color: '',
-    manufactureDate: new Date().toISOString().split('T')[0],
+    license_plate: "",
+    brand: "",
+    model: "",
+    type: "sedan",
+    color: "",
+    manufactureDate: new Date().toISOString().split("T")[0],
     dailyRate: 0,
     tier: 0,
     service: [],
-    provider_id: providerId || '',
+    provider_id: providerId || "",
   };
 
   const [formData, setFormData] = useState<CarFormData>(initialFormData);
@@ -106,9 +124,9 @@ export default function CarEditForm({
 
   // Handle service selection change
   const handleServicesChange = (selectedServiceIds: string[]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      service: selectedServiceIds
+      service: selectedServiceIds,
     }));
   };
 
@@ -120,23 +138,23 @@ export default function CarEditForm({
       try {
         const response = await fetch(`${API_BASE_URL}/Car_Provider`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch car providers');
+          throw new Error("Failed to fetch car providers");
         }
 
         const data = await response.json();
-        
+
         if (data.success && Array.isArray(data.data)) {
           setProviders(data.data);
         }
       } catch (err) {
-        console.error('Error fetching providers:', err);
-        setError('Could not load provider list. Some features may be limited.');
+        console.error("Error fetching providers:", err);
+        setError("Could not load provider list. Some features may be limited.");
       }
     };
 
@@ -159,13 +177,13 @@ export default function CarEditForm({
       try {
         const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch car data');
+          throw new Error("Failed to fetch car data");
         }
 
         const data = await response.json();
@@ -174,12 +192,12 @@ export default function CarEditForm({
           // Format the date from ISO to YYYY-MM-DD for input
           const manufactureDate = new Date(data.data.manufactureDate)
             .toISOString()
-            .split('T')[0];
+            .split("T")[0];
 
           if (data.data.images && Array.isArray(data.data.images)) {
             setExistingImages(data.data.images);
           }
-          
+
           setFormData({
             license_plate: data.data.license_plate,
             brand: data.data.brand,
@@ -190,14 +208,16 @@ export default function CarEditForm({
             dailyRate: data.data.dailyRate,
             tier: data.data.tier,
             service: data.data.service || [],
-            provider_id: data.data.provider_id
+            provider_id: data.data.provider_id,
           });
         } else {
-          throw new Error('Invalid data format');
+          throw new Error("Invalid data format");
         }
       } catch (err) {
-        console.error('Error fetching car:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error("Error fetching car:", err);
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -207,44 +227,52 @@ export default function CarEditForm({
   }, [carId, token]);
 
   // Handle input change for form fields
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
-    
+
     // Special handling for numeric values
-    if (name === 'dailyRate' || name === 'tier') {
-      setFormData(prev => ({ 
-        ...prev, 
-        [name]: name === 'tier' ? parseInt(value) : parseFloat(value) 
+    if (name === "dailyRate" || name === "tier") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: name === "tier" ? parseInt(value) : parseFloat(value),
       }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   // Mark existing image for removal
   const handleRemoveExistingImage = (imageUrl: string) => {
-    setImagesToRemove(prev => [...prev, imageUrl]);
-    setExistingImages(prev => prev.filter(img => img !== imageUrl));
+    setImagesToRemove((prev) => [...prev, imageUrl]);
+    setExistingImages((prev) => prev.filter((img) => img !== imageUrl));
   };
 
   // Form validation
   const validateForm = () => {
-    if (!formData.license_plate || 
-        !formData.brand || 
-        !formData.model || 
-        !formData.type || 
-        !formData.color || 
-        !formData.manufactureDate || 
-        formData.dailyRate <= 0 ||
-        !formData.provider_id) {
-      setError('All fields are required. Daily rate must be greater than 0.');
+    if (
+      !formData.license_plate ||
+      !formData.brand ||
+      !formData.model ||
+      !formData.type ||
+      !formData.color ||
+      !formData.manufactureDate ||
+      formData.dailyRate <= 0 ||
+      !formData.provider_id
+    ) {
+      setError("All fields are required. Daily rate must be greater than 0.");
       return false;
     }
 
     // Validate license plate format
     const licensePlateRegex = /^[A-Za-z0-9 -]{2,20}$/;
     if (!licensePlateRegex.test(formData.license_plate)) {
-      setError('License plate format is invalid. It should be 2-20 alphanumeric characters, spaces, or hyphens.');
+      setError(
+        "License plate format is invalid. It should be 2-20 alphanumeric characters, spaces, or hyphens."
+      );
       return false;
     }
 
@@ -254,9 +282,9 @@ export default function CarEditForm({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!token) {
-      setError('Missing authentication token');
+      setError("Missing authentication token");
       return;
     }
 
@@ -271,52 +299,59 @@ export default function CarEditForm({
     try {
       // Create form data for file upload
       const formDataToSend = new FormData();
-      
+
       // Add all fields to form data
-      Object.keys(formData).forEach(key => {
-        if (key === 'service') {
+      Object.keys(formData).forEach((key) => {
+        if (key === "service") {
           // Handle services array
-          formData.service.forEach(serviceId => {
-            formDataToSend.append('service', serviceId);
+          formData.service.forEach((serviceId) => {
+            formDataToSend.append("service", serviceId);
           });
         } else {
-          formDataToSend.append(key, formData[key as keyof CarFormData].toString());
+          formDataToSend.append(
+            key,
+            formData[key as keyof CarFormData].toString()
+          );
         }
       });
-      
+
       // Add images to form data
-      selectedImages.forEach(file => {
-        formDataToSend.append('images', file);
+      selectedImages.forEach((file) => {
+        formDataToSend.append("images", file);
       });
-      
+
       // Add list of images to remove if updating
       if (carId && imagesToRemove.length > 0) {
-        formDataToSend.append('removeImage', JSON.stringify(imagesToRemove));
+        formDataToSend.append("removeImage", JSON.stringify(imagesToRemove));
       }
 
       // Determine if we're creating a new car or updating an existing one
-      const url = carId 
-        ? `${API_BASE_URL}/cars/${carId}` 
+      const url = carId
+        ? `${API_BASE_URL}/cars/${carId}`
         : `${API_BASE_URL}/cars`;
-      
-      const method = carId ? 'PUT' : 'POST';
-      
+
+      const method = carId ? "PUT" : "POST";
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
           // Don't set Content-Type - it will be set automatically with the boundary
         },
-        body: formDataToSend
+        body: formDataToSend,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.msg || `Failed to ${carId ? 'update' : 'create'} car`);
+        throw new Error(
+          errorData.message ||
+            errorData.msg ||
+            `Failed to ${carId ? "update" : "create"} car`
+        );
       }
 
-      setSuccess(`Car ${carId ? 'updated' : 'created'} successfully`);
-      
+      setSuccess(`Car ${carId ? "updated" : "created"} successfully`);
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
@@ -327,8 +362,10 @@ export default function CarEditForm({
         }, 1500);
       }
     } catch (err) {
-      console.error(`Error ${carId ? 'updating' : 'creating'} car:`, err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      console.error(`Error ${carId ? "updating" : "creating"} car:`, err);
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -337,12 +374,18 @@ export default function CarEditForm({
   // Get tier name based on tier number
   const getTierName = (tier: number): string => {
     switch (tier) {
-      case 0: return 'Bronze';
-      case 1: return 'Silver';
-      case 2: return 'Gold';
-      case 3: return 'Platinum';
-      case 4: return 'Diamond';
-      default: return `Tier ${tier}`;
+      case 0:
+        return "Bronze";
+      case 1:
+        return "Silver";
+      case 2:
+        return "Gold";
+      case 3:
+        return "Platinum";
+      case 4:
+        return "Diamond";
+      default:
+        return `Tier ${tier}`;
     }
   };
 
@@ -356,14 +399,16 @@ export default function CarEditForm({
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-medium mb-4">{carId ? 'Edit Car' : 'Add New Car'}</h2>
-      
+      <h2 className="text-xl font-medium mb-4">
+        {carId ? "Edit Car" : "Add New Car"}
+      </h2>
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
           {error}
         </div>
       )}
-      
+
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
           {success}
@@ -387,7 +432,7 @@ export default function CarEditForm({
               placeholder="e.g., ABC-123"
             />
           </div>
-          
+
           {/* Brand */}
           <div>
             <label htmlFor="brand" className="block text-gray-700 mb-1">
@@ -403,7 +448,7 @@ export default function CarEditForm({
               placeholder="e.g., Mercedes, BMW"
             />
           </div>
-          
+
           {/* Model */}
           <div>
             <label htmlFor="model" className="block text-gray-700 mb-1">
@@ -419,7 +464,7 @@ export default function CarEditForm({
               placeholder="e.g., C-Class, 5 Series"
             />
           </div>
-          
+
           {/* Type */}
           <div>
             <label htmlFor="type" className="block text-gray-700 mb-1">
@@ -432,14 +477,14 @@ export default function CarEditForm({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             >
-              {carTypes.map(type => (
+              {carTypes.map((type) => (
                 <option key={type} value={type}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </option>
               ))}
             </select>
           </div>
-          
+
           {/* Color */}
           <div>
             <label htmlFor="color" className="block text-gray-700 mb-1">
@@ -453,17 +498,20 @@ export default function CarEditForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             >
               <option value="">Select Color</option>
-              {carColors.map(color => (
+              {carColors.map((color) => (
                 <option key={color} value={color}>
                   {color}
                 </option>
               ))}
             </select>
           </div>
-          
+
           {/* Manufacture Date */}
           <div>
-            <label htmlFor="manufactureDate" className="block text-gray-700 mb-1">
+            <label
+              htmlFor="manufactureDate"
+              className="block text-gray-700 mb-1"
+            >
               Manufacture Date *
             </label>
             <input
@@ -475,7 +523,7 @@ export default function CarEditForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             />
           </div>
-          
+
           {/* Daily Rate */}
           <div>
             <label htmlFor="dailyRate" className="block text-gray-700 mb-1">
@@ -492,7 +540,7 @@ export default function CarEditForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             />
           </div>
-          
+
           {/* Tier */}
           <div>
             <label htmlFor="tier" className="block text-gray-700 mb-1">
@@ -505,7 +553,7 @@ export default function CarEditForm({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
             >
-              {tiers.map(tier => (
+              {tiers.map((tier) => (
                 <option key={tier} value={tier}>
                   {getTierName(tier)} (Tier {tier})
                 </option>
@@ -527,7 +575,7 @@ export default function CarEditForm({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
               >
                 <option value="">Select Provider</option>
-                {providers.map(provider => (
+                {providers.map((provider) => (
                   <option key={provider._id} value={provider._id}>
                     {provider.name}
                   </option>
@@ -538,25 +586,35 @@ export default function CarEditForm({
         </div>
 
         {/* Car Image Upload Section */}
-          <div className="col-span-1 md:col-span-3 mb-6">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Car Images</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              You can upload up to 5 images. The first image will be displayed as the main image.
-            </p>
-            <CarImageUpload 
-              onImagesChange={handleImagesChange}
-              existingImages={existingImages.map(image => ({
-                url: image.startsWith('http') ? image : `https://blob.ngixx.me/images/${image}`,
-                id: image
-              }))}
-              onExistingImageRemove={handleRemoveExistingImage}
-              onExistingImagesReorder={(newOrder) => {
-                // Update the order of existing images
-                setExistingImages(newOrder);
-              }}
-            />
-          </div>
-        
+        <div className="col-span-1 md:col-span-3 mb-6">
+          <h3 className="text-lg font-medium text-gray-700 mb-2">Car Images</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            You can upload up to 5 images. The first image will be displayed as
+            the main image.
+          </p>
+          <CarImageUpload
+            token={token}
+            carId={carId}
+            onImagesChange={handleImagesChange}
+            existingImages={existingImages.map((image) => ({
+              url: image.startsWith("http")
+                ? image
+                : `https://blob.ngixx.me/images/${image}`,
+              id: image,
+            }))}
+            onExistingImageRemove={handleRemoveExistingImage}
+            onExistingImagesReorder={(newOrder) => {
+              // Update the order of existing images
+              setExistingImages((prev) =>
+                newOrder.map(
+                  (orderItem) =>
+                    prev.find((img) => img === orderItem) || orderItem
+                )
+              );
+            }}
+          />
+        </div>
+
         {/* Service Selection Component */}
         <div className="col-span-1 md:col-span-3 mt-2 mb-6">
           <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
@@ -564,11 +622,12 @@ export default function CarEditForm({
               Additional Services
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Select the additional services you want to offer with this car. 
-              These services will be available for customers to add during booking.
+              Select the additional services you want to offer with this car.
+              These services will be available for customers to add during
+              booking.
             </p>
             {token && (
-              <ServiceSelection 
+              <ServiceSelection
                 token={token}
                 selectedServices={formData.service}
                 onServicesChange={handleServicesChange}
@@ -576,7 +635,7 @@ export default function CarEditForm({
             )}
           </div>
         </div>
-        
+
         <div className="flex justify-end space-x-4">
           <Link
             href={backUrl}
@@ -595,9 +654,9 @@ export default function CarEditForm({
                 Saving...
               </>
             ) : carId ? (
-              'Save Changes'
+              "Save Changes"
             ) : (
-              'Add Car'
+              "Add Car"
             )}
           </button>
         </div>
