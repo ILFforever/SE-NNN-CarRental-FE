@@ -18,9 +18,6 @@ interface UnifiedReservationDetailsProps {
   backUrl?: string;
 }
 
-//Moved Type Definitions to interface 
-
-
 export default function UnifiedReservationDetails({
   reservationId,
   userType,

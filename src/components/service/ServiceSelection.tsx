@@ -2,16 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { API_BASE_URL } from "@/config/apiConfig";
 import { getAllServices } from '@/libs/getAllServices';
 
-// Define the Service interface
-interface Service {
-  _id: string;
-  name: string;
-  description?: string;
-  rate: number;
-  available: boolean;
-  daily: boolean; // Whether the service is charged per day or one-time
-}
-
 // Define the getServicesByCarId function
 export async function getServicesByCarId(
   token: string,

@@ -17,48 +17,6 @@ interface ApiResponse<T> {
   data: T;
 }
 
-interface UserData {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  favorite_cars: string[];
-  telephone_number?: string;
-  tier?: number;
-  total_spend?: number;
-}
-
-interface Provider {
-  _id: string;
-  name: string;
-  address?: string;
-  email: string;
-  telephone_number?: string;
-  verified?: boolean;
-}
-
-interface Car {
-  id: string;
-  _id?: string;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  dailyRate?: number;
-  type: string;
-  color?: string;
-  seats?: number;
-  providerName: string;
-  manufactureDate: string;
-  provider_id?: string;
-  provider?: Provider;
-  image?: string;
-  tier?: number;
-  available?: boolean;
-  verified?: boolean;
-  license_plate?: string;
-}
-
 interface FavoriteAction {
   carID: string;
   userId?: string;
@@ -123,7 +81,7 @@ export default function FavoriteCars(): React.ReactNode {
         throw new Error("Failed to fetch user data");
       }
 
-      const userData: ApiResponse<UserData> = await userRes.json();
+      const userData: ApiResponse<User> = await userRes.json();
 
       if (!userData.success || !userData.data.favorite_cars) {
         setFavoriteCars([]);
@@ -290,14 +248,15 @@ export default function FavoriteCars(): React.ReactNode {
                       <span className="font-medium text-[#8A7D55] ml-1">
                         {car.providerName}
                       </span>
-                      {car.verified && (
+                      
+                      {/* {car.verified && (
                         <span className="ml-2 relative group inline-block">
                           <CheckCircle className="text-green-500 w-4 h-4" />
                           <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
                             Verified
                           </span>
                         </span>
-                      )}
+                      )} */}
                     </div>
                   </div>
                   <div className="text-right">

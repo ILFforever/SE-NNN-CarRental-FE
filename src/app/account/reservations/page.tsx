@@ -8,29 +8,6 @@ import { useScrollToTop } from "@/hooks/useScrollToTop";
 import RatingPopup from "@/components/reservations/RatingPopup";
 import { Info } from "lucide-react";
 
-interface Car {
-  _id: string;
-  brand: string;
-  model: string;
-  license_plate: string;
-  provider_id: string;
-}
-
-interface Rent {
-  _id: string;
-  startDate: string;
-  returnDate: string;
-  status: "pending" | "active" | "completed" | "cancelled";
-  price: number;
-  servicePrice?: number;
-  discountAmount?: number;
-  finalPrice?: number;
-  additionalCharges?: number;
-  car: Car | string;
-  createdAt: string;
-  isRated?: boolean;
-}
-
 export default function MyReservationsPage() {
   useScrollToTop();
   const { data: session } = useSession();

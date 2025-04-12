@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-interface Service {
-  _id: string;
-  name: string;
-  description?: string;
-  rate: number;
-}
 
 interface SelectedServicesProps {
   selectedServices: string[];

@@ -2,14 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { Star, ChevronDown, Info } from 'lucide-react';
 
-interface Service {
-  _id: string;
-  name: string;
-  description: string;
-  rate: number;
-  available?: boolean;
-}
-
 interface RentalServicesProps {
   token: string;
   serviceIds: string[];

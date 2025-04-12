@@ -21,6 +21,7 @@ interface CarsJson {
 }
 
 interface User {
+  favorite_cars: any;
   _id: string;
   name: string;
   email: string;
@@ -31,17 +32,22 @@ interface User {
 interface Provider {
   _id: string;
   name: string;
+  address?: string;
   email: string;
   telephone_number?: string;
-  address?: string;
+  verified?: boolean;
 }
 
-
 interface Car {
+  providerName: string;
+  price: number;
+  seats: React.JSX.Element;
+  id: string;
   _id: string;
   license_plate: string;
   brand: string;
   model: string;
+  year: number;
   type: string;
   color: string;
   manufactureDate: string;
