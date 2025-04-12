@@ -18,6 +18,8 @@ interface Car {
   available?: boolean;
   image?: string;
   images?: string[];
+  imageOrder?: string[];
+
 }
 
 interface ImageGalleryProps {
@@ -53,8 +55,15 @@ export default function CarImageGallery({ car, showFavoriteButton = true }: Imag
 
   // Extract and prepare images array using the same logic as HoverableCarImage
   const displayImages = useMemo(() => {
-    // Handle cases where we receive an images array from API
+    // First, check if we have an imageOrder array to prioritize
+    if (car.imageOrder && Array.isArray(car.imageOrder) && car.imageOrder.length > 0) {
+      console.log('Using imageOrder for displaying images:', car.imageOrder);
+      return car.imageOrder.map(img => processImagePath(img));
+    }
+    
+    // If no imageOrder, fallback to the standard images array
     if (car.images && Array.isArray(car.images) && car.images.length > 0) {
+      console.log('Using images array for displaying images:', car.images);
       return car.images.map(img => processImagePath(img));
     }
     

@@ -39,6 +39,8 @@ interface Provider {
 }
 
 interface Car {
+  [x: string]: any;
+  imageOrder: boolean;
   providerName: string;
   price: number;
   seats: React.JSX.Element;

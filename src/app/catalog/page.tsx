@@ -5,12 +5,8 @@ import { ChevronDown, Search, Calendar } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/config/apiConfig";
-import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle,Star } from "lucide-react";
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
-import { redirect } from 'next/navigation';
 import HoverableCarImage from "@/components/cars/HoverableCarImage";
 import FavoriteHeartButton, { FavoriteCarsProvider } from "@/components/util/FavoriteHeartButton";
 
@@ -39,29 +35,6 @@ interface Rent {
   startDate: string;
   returnDate: string;
   status: "pending" | "active" | "completed" | "cancelled";
-}
-
-interface Car {
-  id: string;
-  _id?: string;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  type: string;
-  color?: string;
-  seats?: number;
-  providerId: string;
-  verified?: boolean;
-  provider: string;
-  image?: string;
-  images?: string[];
-  rents?: Rent[];
-  available?: boolean;
-  license_plate?: string;
-  manufactureDate?: string;
-  dailyRate?: number;
-  tier?: number;
 }
 
 interface ProvidersMap {
@@ -1301,9 +1274,10 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
+                  {/* CarType */}
+                  {/* <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
                     {car.type.charAt(0).toUpperCase() + car.type.slice(1)}
-                  </span>
+                  </span> */}
                   {car.seats && (
                     <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
                       {car.seats} seats
