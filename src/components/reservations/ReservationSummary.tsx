@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { ChevronDown, Car, Calendar, Tag, Info, Check } from "lucide-react";
 import {
   getTierName,
@@ -16,8 +16,8 @@ import {
 
 interface ReservationSummaryProps {
   car: Car;
-  pickupDate: Dayjs | null;
-  returnDate: Dayjs | null;
+  pickupDate: dayjs.Dayjs | null;
+  returnDate: dayjs.Dayjs | null;
   pickupTime: string;
   returnTime: string;
   userTier: number;
