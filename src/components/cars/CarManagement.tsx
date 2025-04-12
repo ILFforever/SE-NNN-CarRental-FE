@@ -9,22 +9,6 @@ import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, X, RefreshCw } from 'luc
 import CarForm from '@/components/forms/CarForm';
 import CarServicesDropdown from '@/components/service/CarServicesDropdown';
 
-// Type definitions
-interface Car {
-  _id: string;
-  license_plate: string;
-  brand: string;
-  model: string;
-  type: string;
-  color: string;
-  manufactureDate: string;
-  available: boolean;
-  dailyRate: number;
-  tier: number;
-  provider_id: string;
-  service?: string[];
-  createdAt?: string;
-}
 
 interface CarProvider {
   _id: string;
@@ -240,9 +224,13 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
 
   // Handle edit car function
   const handleEditCar = (carId: string) => {
+    const car = cars.find(car => car._id === carId);
+    if (!car) return;
+  
+    const imageOrder = car.images ? car.images.join(',') : '';
     const path = userType === 'admin' 
-      ? `/admin/manageCars/edit?carId=${carId}`
-      : `/provider/manageCars/edit?carId=${carId}`;
+      ? `/admin/manageCars/edit?carId=${carId}&imageOrder=${encodeURIComponent(imageOrder)}`
+      : `/provider/manageCars/edit?carId=${carId}&imageOrder=${encodeURIComponent(imageOrder)}`;
     
     router.push(path);
   };
