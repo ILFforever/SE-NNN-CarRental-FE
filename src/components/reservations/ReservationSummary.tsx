@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Dayjs } from "dayjs";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Car, Calendar, Tag, Info, Check } from "lucide-react";
 import {
   getTierName,
   formatCurrency,
@@ -16,8 +16,8 @@ import {
 
 interface ReservationSummaryProps {
   car: Car;
-  pickupDate: Dayjs | null;  // นี่คือ pickupDateTime แล้ว
-  returnDate: Dayjs | null;  // นี่คือ returnDateTime แล้ว
+  pickupDate: Dayjs | null;
+  returnDate: Dayjs | null;
   pickupTime: string;
   returnTime: string;
   userTier: number;
@@ -41,292 +41,294 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   isSubmitting,
   onSubmit,
 }) => {
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
 
-  // คำนวณจำนวนวันเช่าโดยคำนึงถึงวันที่และเวลา
+  // คำนวณจำนวนวันเช่า
   const rentalDays = getRentalPeriod(pickupDate, returnDate);
+  
+  // คำนวณค่าใช้จ่ายทั้งหมด
+  const totalCost = getTotalCost(
+    pickupDate,
+    returnDate,
+    car?.dailyRate || 0,
+    selectedServices,
+    services,
+    userTier
+  );
+
+  // คำนวณส่วนลด
+  const discount = calculateDiscount(
+    pickupDate,
+    returnDate,
+    car?.dailyRate || 0,
+    selectedServices,
+    services,
+    userTier
+  );
+  
+  // คำนวณบริการเสริมทั้งหมด
+  const servicesCost = calculateServicesTotalCost(
+    selectedServices,
+    services,
+    pickupDate,
+    returnDate
+  );
+  
+  // กรองบริการที่เลือก
+  const selectedServiceItems = services.filter((service) => 
+    selectedServices.includes(service._id)
+  );
 
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-      <div className="bg-[#8A7D55] text-white px-6 py-4">
-        <h2 className="text-xl font-serif font-medium">
-          Reservation Summary
-        </h2>
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8 transition-all">
+      <div className="bg-[#8A7D55] text-white px-6 py-4 flex justify-between items-center">
+        <h2 className="text-xl font-serif font-medium">Reservation Summary</h2>
+        <span className="text-lg font-medium">{formatCurrency(totalCost)}</span>
       </div>
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-lg font-medium mb-3">Vehicle</h3>
-            <p className="text-gray-700">
-              <span className="text-gray-500">Make/Model:</span> {car.brand}{" "}
-              {car.model}
-            </p>
-            <p className="text-gray-700">
-              <span className="text-gray-500">License:</span>{" "}
-              {car.license_plate || "N/A"}
-            </p>
-            <p className="text-gray-700">
-              <span className="text-gray-500">Daily Rate:</span> $
-              {car.dailyRate?.toFixed(2) || "0.00"}
-            </p>
-            {car.tier !== undefined && (
-              <p className="text-gray-700">
-                <span className="text-gray-500">Vehicle Tier:</span>{" "}
-                {getTierName(car.tier)}
-              </p>
-            )}
+      
+      {/* ส่วนแสดงข้อมูลสำคัญที่เห็นได้ทันที */}
+      <div className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="flex items-center space-x-2">
+            <Car size={20} className="text-[#8A7D55]" />
+            <p className="font-medium text-gray-800">{car.brand} {car.model}</p>
           </div>
-
-          <div>
-            <h3 className="text-lg font-medium mb-3">Rental Period</h3>
-            <p className="text-gray-700">
-              <span className="text-gray-500">Pickup:</span>{" "}
-              {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
-            </p>
-            <p className="text-gray-700">
-              <span className="text-gray-500">Return:</span>{" "}
-              {returnDate?.format("MMM D, YYYY")} at {returnTime}
-            </p>
-            <p className="text-gray-700">
-              <span className="text-gray-500">Duration:</span>{" "}
+          <div className="flex items-center space-x-2">
+            <Calendar size={20} className="text-[#8A7D55]" />
+            <p className="text-gray-800">
               {rentalDays} {rentalDays === 1 ? "day" : "days"}
             </p>
-            {pickupDate && returnDate && (
-              <p className="text-xs text-gray-500 mt-1">
-                Duration includes precise pickup and return time calculations
-              </p>
-            )}
           </div>
         </div>
-
-        {/* Selected Services Section */}
-        {selectedServices.length > 0 && services.length > 0 && (
-          <div className="border-t border-gray-200 mt-6 pt-6">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-medium">Additional Services</h3>
-              <div className="flex items-center">
-                {!servicesExpanded && (
-                  <span className="mr-3 text-[#8A7D55] font-medium"></span>
+        
+        {/* ปุ่มแสดงรายละเอียดการเช่ารถ */}
+        <div className="border-t border-gray-100 pt-2">
+          <button
+            onClick={() => setDetailsExpanded(!detailsExpanded)}
+            className="w-full flex justify-between items-center py-3 text-gray-700 hover:text-[#8A7D55] transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              <Info size={18} />
+              <span className="font-medium">Rental Details</span>
+            </div>
+            <ChevronDown
+              size={18}
+              className={`transition-transform duration-300 ${
+                detailsExpanded ? "transform rotate-180" : ""
+              }`}
+            />
+          </button>
+          
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              detailsExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="p-3 bg-gray-50 rounded-md space-y-4 mt-2">
+              {/* รายละเอียดรถ */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 uppercase mb-2">Vehicle</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Make/Model:</span>
+                  </div>
+                  <div className="text-right">
+                    {car.brand} {car.model}
+                  </div>
+                  
+                  <div>
+                    <span className="text-gray-500">License:</span>
+                  </div>
+                  <div className="text-right">
+                    {car.license_plate || "N/A"}
+                  </div>
+                  
+                  <div>
+                    <span className="text-gray-500">Daily Rate:</span>
+                  </div>
+                  <div className="text-right">
+                    ${car.dailyRate?.toFixed(2) || "0.00"}
+                  </div>
+                  
+                  {car.tier !== undefined && (
+                    <>
+                      <div>
+                        <span className="text-gray-500">Vehicle Tier:</span>
+                      </div>
+                      <div className="text-right">
+                        {getTierName(car.tier)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* รายละเอียดการเช่า */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 uppercase mb-2">Rental Period</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Pickup:</span>
+                  </div>
+                  <div className="text-right">
+                    {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
+                  </div>
+                  
+                  <div>
+                    <span className="text-gray-500">Return:</span>
+                  </div>
+                  <div className="text-right">
+                    {returnDate?.format("MMM D, YYYY")} at {returnTime}
+                  </div>
+                  
+                  <div>
+                    <span className="text-gray-500">Duration:</span>
+                  </div>
+                  <div className="text-right">
+                    {rentalDays} {rentalDays === 1 ? "day" : "days"}
+                  </div>
+                </div>
+                
+                {pickupDate && returnDate && (
+                  <p className="text-xs text-gray-500 mt-2 italic">
+                    Duration includes precise pickup and return time calculations
+                  </p>
                 )}
-                <button
-                  onClick={() => setServicesExpanded(!servicesExpanded)}
-                  className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                  aria-label={
-                    servicesExpanded
-                      ? "Collapse services"
-                      : "Expand services"
-                  }
-                >
-                  <ChevronDown
-                    size={18}
-                    className={`transition-transform duration-300 ${
-                      servicesExpanded ? "transform rotate-180" : ""
-                    }`}
-                  />
-                </button>
               </div>
             </div>
-
+          </div>
+        </div>
+        
+        {/* ส่วนบริการเสริม (แสดงเฉพาะเมื่อมีการเลือกบริการ) */}
+        {selectedServices.length > 0 && services.length > 0 && (
+          <div className="border-t border-gray-100 pt-2">
+            <button
+              onClick={() => setServicesExpanded(!servicesExpanded)}
+              className="w-full flex justify-between items-center py-3 text-gray-700 hover:text-[#8A7D55] transition-colors"
+            >
+              <div className="flex items-center space-x-2">
+                <Tag size={18} />
+                <span className="font-medium">Additional Services</span>
+                <span className="bg-[#F0F4FF] text-[#3366FF] text-xs px-2 py-1 rounded-full">
+                  {selectedServices.length}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-3 text-[#8A7D55] font-medium">
+                  ${servicesCost.toFixed(2)}
+                </span>
+                <ChevronDown
+                  size={18}
+                  className={`transition-transform duration-300 ${
+                    servicesExpanded ? "transform rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </button>
+            
             <div
-              className={`transition-all duration-300 overflow-hidden ${
-                servicesExpanded ? "max-h-[400px]" : "max-h-0"
+              className={`overflow-hidden transition-all duration-300 ${
+                servicesExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              <div className="space-y-2 pr-2">
-                {services
-                  .filter((service) =>
-                    selectedServices.includes(service._id)
-                  )
-                  .map((service) => (
-                    <div
-                      key={service._id}
-                      className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
-                    >
-                      <div>
-                        <span className="font-medium text-gray-800">
-                          {service.name}
-                        </span>
+              <div className="p-3 bg-gray-50 rounded-md space-y-2 mt-2">
+                {selectedServiceItems.map((service) => {
+                  const cost = service.daily
+                    ? service.rate * rentalDays
+                    : service.rate;
+                  
+                  return (
+                    <div key={service._id} className="flex justify-between items-start py-2 border-b border-gray-100 last:border-0">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-1">
+                          <Check size={16} className="text-green-500" />
+                          <span className="font-medium text-gray-800">
+                            {service.name}
+                          </span>
+                        </div>
+                        
                         {service.description && (
-                          <p className="text-xs text-gray-500 mt-1 max-w-md">
-                            {service.description.length > 100
-                              ? `${service.description.substring(
-                                  0,
-                                  100
-                                )}...`
+                          <p className="text-xs text-gray-500 mt-1 pl-5">
+                            {service.description.length > 80
+                              ? `${service.description.substring(0, 80)}...`
                               : service.description}
                           </p>
                         )}
                       </div>
-                      <span className="text-[#8A7D55] font-medium">
-                        {service.daily
-                          ? `$${service.rate.toFixed(2)}/day`
-                          : `$${service.rate.toFixed(2)}`}
-                      </span>
+                      
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-[#8A7D55] font-medium">
+                          ${cost.toFixed(2)}
+                        </span>
+                        <div className="text-xs text-gray-500">
+                          {service.daily ? `$${service.rate.toFixed(2)}/day × ${rentalDays}` : "One-time fee"}
+                        </div>
+                      </div>
                     </div>
-                  ))}
-              </div>
-
-              <div className="flex justify-between items-center mt-3 text-sm font-medium">
-                <span className="text-gray-600">
-                  Total Additional Services:
-                </span>
-                <div className="flex items-center space-x-2">
-                  {services
-                    .filter((service) =>
-                      selectedServices.includes(service._id)
-                    )
-                    .map((service) => (
-                      <span
-                        key={service._id}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-[#F0F4FF] text-[#3366FF]"
-                      >
-                        {service.daily ? "Daily" : "One-Time"} $
-                        {service.rate.toFixed(2)}
-                      </span>
-                    ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
-
-        {/* Cost Breakdown */}
-        <div className="border-t border-gray-200 mt-6 pt-6">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Base Daily Rate:</span>
-            <span>${car?.dailyRate?.toFixed(2) || "0.00"}</span>
-          </div>
-
-          {selectedServices.length > 0 && (
-            <>
-              <div className="border-t border-gray-200 mt-3 pt-3">
-                <h4 className="text-gray-800 font-medium mb-2">
-                  Additional Services:
-                </h4>
-                {services
-                  .filter((service) =>
-                    selectedServices.includes(service._id)
-                  )
-                  .map((service) => {
-                    const cost = service.daily
-                      ? service.rate * rentalDays
-                      : service.rate;
-                    return (
-                      <div
-                        key={service._id}
-                        className="flex justify-between items-center py-1"
-                      >
-                        <span className="text-gray-600">
-                          {service.name}
-                        </span>
-                        <span>
-                          ${service.rate.toFixed(2)}
-                          {service.daily
-                            ? ` × ${rentalDays} days`
-                            : ""}{" "}
-                          = ${cost.toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                <div className="flex justify-between items-center mt-2 font-medium">
-                  <span>Services Subtotal:</span>
-                  <span>
-                    $
-                    {calculateServicesTotalCost(
-                      selectedServices,
-                      services,
-                      pickupDate,
-                      returnDate
-                    ).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-gray-600">Number of Days:</span>
-            <span>{rentalDays}</span>
-          </div>
-
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-gray-600">Car Rental Subtotal:</span>
-            <span>
-              ${((car?.dailyRate || 0) * rentalDays).toFixed(2)}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-gray-600">Total Subtotal:</span>
-            <span>${calculateSubtotal(
-              pickupDate,
-              returnDate,
-              car?.dailyRate || 0,
-              selectedServices,
-              services
-            ).toFixed(2)}</span>
-          </div>
-
-          {userTier > 0 && (
-            <div className="flex justify-between items-center mt-2 text-green-600">
-              <span className="text-green-600">
-                Loyalty Discount ({getTierDiscount(userTier)}%):
-              </span>
-              <span>-${calculateDiscount(
-                pickupDate,
-                returnDate,
-                car?.dailyRate || 0,
-                selectedServices,
-                services,
-                userTier
-              ).toFixed(2)}</span>
+        
+        {/* ส่วนสรุปค่าใช้จ่าย - แสดงแบบ compact */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* แสดงเฉพาะรายการสำคัญ */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Car Rental ({rentalDays} {rentalDays === 1 ? "day" : "days"}):</span>
+              <span>${((car?.dailyRate || 0) * rentalDays).toFixed(2)}</span>
             </div>
-          )}
-
-          <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
-            <span>Total Cost:</span>
-            <span className="text-[#8A7D55]">
-              {formatCurrency(
-                getTotalCost(
-                  pickupDate,
-                  returnDate,
-                  car?.dailyRate || 0,
-                  selectedServices,
-                  services,
-                  userTier
-                )
-              )}
-            </span>
+            
+            {selectedServices.length > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Additional Services:</span>
+                <span>${servicesCost.toFixed(2)}</span>
+              </div>
+            )}
+            
+            {userTier > 0 && (
+              <div className="flex justify-between items-center text-sm text-green-600">
+                <span>Loyalty Discount ({getTierDiscount(userTier)}%):</span>
+                <span>-${discount.toFixed(2)}</span>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200 text-lg font-medium">
+              <span>Total:</span>
+              <span className="text-[#8A7D55]">{formatCurrency(totalCost)}</span>
+            </div>
           </div>
         </div>
       </div>
       
-      {/* Submit Button */}
-      <div className="text-center p-6 pt-0">
+      {/* ปุ่มยืนยันการจอง */}
+      <div className="px-6 py-4 bg-gray-50">
         <button
           onClick={onSubmit}
           disabled={!formValid || isSubmitting}
-          className={`px-8 py-3 text-white rounded-md font-medium transition-all duration-200 ${
+          className={`w-full py-3 text-white rounded-md font-medium transition-all duration-200 flex justify-center items-center ${
             formValid && !isSubmitting
-              ? "bg-[#8A7D55] hover:bg-[#766b48] shadow-md hover:shadow-lg"
+              ? "bg-[#8A7D55] hover:bg-[#766b48] shadow hover:shadow-md"
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
+            <>
               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
               Processing...
-            </span>
+            </>
           ) : (
             "Confirm Reservation"
           )}
         </button>
         
-        {/* คำอธิบายสั้นๆ เกี่ยวกับการคำนวณวันที่กับเวลา */}
+        {/* คำอธิบายการคำนวณ */}
         {pickupDate && returnDate && (
-          <div className="mt-2 text-xs text-gray-500">
-            <p>* Rental cost calculated based on exact pickup and return times.</p>
+          <div className="mt-2 text-xs text-gray-500 text-center">
+            <p>* Rental cost calculated based on exact pickup and return times</p>
           </div>
         )}
       </div>

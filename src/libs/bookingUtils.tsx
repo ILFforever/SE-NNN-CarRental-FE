@@ -24,34 +24,28 @@ export const getTierDiscount = (tier: number) => {
 // Calculate rental period with precise time consideration
 export const getRentalPeriod = (pickupDateTime: Dayjs | null, returnDateTime: Dayjs | null) => {
   if (!pickupDateTime || !returnDateTime) return 0;
-
-  // ถ้าเป็นวันเดียวกันแต่ต่างเวลา ให้คิดเป็น 1 วัน
-  // ถ้ามีจำนวนวันที่แตกต่างกัน ให้ใช้จำนวนวันนั้น
-  // ตัวอย่างเช่น:
-  // - รับรถ 10:00 คืนรถ 18:00 วันเดียวกัน = 1 วัน
-  // - รับรถวันที่ 1 เวลา 10:00 คืนรถวันที่ 2 เวลา 9:00 = 1 วัน
-  // - รับรถวันที่ 1 เวลา 10:00 คืนรถวันที่ 2 เวลา 11:00 = 2 วัน (เกินเวลารับรถ)
-  
-  // คำนวณจำนวนวัน (ไม่รวมเวลา)
-  const days = returnDateTime.diff(pickupDateTime, "day");
   
   // ถ้าเป็นวันเดียวกัน คิดเป็น 1 วัน
-  if (days === 0) {
+  if (returnDateTime.isSame(pickupDateTime, 'day')) {
     return 1;
   }
+  
+  // คำนวณความต่างของวัน
+  const days = returnDateTime.diff(pickupDateTime, "day");
   
   // เช็คว่าเวลาคืนรถในวันสุดท้ายมากกว่าเวลารับรถในวันแรกหรือไม่
   const pickupHour = pickupDateTime.hour();
   const pickupMinute = pickupDateTime.minute();
   const returnHour = returnDateTime.hour();
   const returnMinute = returnDateTime.minute();
+  console.log("day", days)
   
-  // ถ้าเวลาคืนมากกว่าเวลารับ ให้บวกอีก 1 วัน
+  // ถ้าเวลาคืนมากกว่าหรือเท่ากับเวลารับ ให้ใช้ค่าความต่างของวัน + 1
   if (returnHour > pickupHour || (returnHour === pickupHour && returnMinute > pickupMinute)) {
     return days + 1;
   }
   
-  // กรณีเวลาคืนน้อยกว่าหรือเท่ากับเวลารับ
+  // กรณีเวลาคืนน้อยกว่าเวลารับ
   return days;
 };
 
