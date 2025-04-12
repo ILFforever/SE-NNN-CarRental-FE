@@ -4,23 +4,6 @@ import { X, ChevronLeft, ChevronRight, Expand } from 'lucide-react';
 import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
 
 // Using the existing Car interface from your reserve page
-interface Car {
-  _id: string;
-  brand: string;
-  model: string;
-  type?: string;
-  color?: string;
-  license_plate?: string;
-  dailyRate?: number;
-  tier?: number;
-  provider_id?: string;
-  manufactureDate?: string;
-  available?: boolean;
-  image?: string;
-  images?: string[];
-  imageOrder?: string[];
-
-}
 
 interface ImageGalleryProps {
   car: Car;

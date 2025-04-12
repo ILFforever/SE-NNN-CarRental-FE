@@ -30,10 +30,10 @@ interface User {
 }
 
 interface Provider {
-  _id: string;
+  _id?: string;
   name: string;
   address?: string;
-  email: string;
+  email?: string;
   telephone_number?: string;
   verified?: boolean;
 }

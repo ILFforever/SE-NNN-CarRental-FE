@@ -2,90 +2,40 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { addBooking } from "@/redux/features/bookSlice";
 import { useSession } from "next-auth/react";
 import getUserProfile from "@/libs/getUserProfile";
 import { API_BASE_URL } from "@/config/apiConfig";
-import Link from "next/link";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-import ProviderDetail from "@/components/provider/providerDetail";
-import CarImageGallery from "@/components/cars/CarImageGallery";
-import ServiceSelection from "@/components/service/ServiceSelection";
-import { ChevronDown } from "lucide-react";
 
-// Define the Car interface based on your API response
-interface Car {
-  _id: string;
-  brand: string;
-  model: string;
-  type: string;
-  color?: string;
-  license_plate?: string;
-  dailyRate?: number;
-  tier?: number;
-  provider_id?: string;
-  manufactureDate?: string;
-  available?: boolean;
-  rents?: Rent[];
-}
+// Import components
+import LoadingState from "@/components/ui/LoadingState";
+import ErrorState from "@/components/ui/ErrorState";
+import CarDetails from "@/components/cars/CarDetails";
+import BookingForm from "@/components/reservations/BookingForm";
+import ReservationSummary from "@/components/reservations/ReservationSummary";
 
-interface Rent {
-  _id: string;
-  startDate: string;
-  returnDate: string;
-  status: "pending" | "active" | "completed" | "cancelled";
-}
-
-interface Service {
-  daily: any;
-  _id: string;
-  name: string;
-  description: string;
-  rate: number;
-  available?: boolean;
-}
+// Import utils and services
+import { getTotalCost, createDateTimeObject } from "@/libs/bookingUtils";
+import { checkCarAvailability } from "@/libs/carAvailability";
+import { makeBooking } from "@/libs/bookingService";
 
 export default function Booking() {
   useScrollToTop();
   const router = useRouter();
   const { data: session } = useSession();
+  
   useEffect(() => {
     if (session?.user?.userType === "provider") {
       router.back(); // Go back to previous page
     }
   }, [session, router]);
+  
   const searchParams = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
-
-  const timeOptions = [
-    "8:00 AM",
-    "8:30 AM",
-    "9:00 AM",
-    "9:30 AM",
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "12:00 PM",
-    "12:30 PM",
-    "1:00 PM",
-    "1:30 PM",
-    "2:00 PM",
-    "2:30 PM",
-    "3:00 PM",
-    "3:30 PM",
-    "4:00 PM",
-    "4:30 PM",
-    "5:00 PM",
-    "5:30 PM",
-    "6:00 PM",
-    "6:30 PM",
-    "7:00 PM",
-    "7:30 PM",
-  ];
 
   const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,26 +44,29 @@ export default function Booking() {
     name: string;
     telephone_number: string | undefined;
   } | null>(null);
-  const [provider, setProvider] = useState<{
-    name: string;
-    verified: boolean;
-  } | null>(null);
+  const [provider, setProvider] = useState<Provider | null>(null);
 
   const [nameLastname, setNameLastname] = useState<string>("");
   const [tel, setTel] = useState<string>("");
   const [userTier, setUserTier] = useState<number>(0);
   const [price, setPrice] = useState<number>(0);
-  const [pickupDate, setPickupDate] = useState<Dayjs | null>(null);
-  const [returnDate, setReturnDate] = useState<Dayjs | null>(null);
+  
+  // Date and time states
+  const [pickupDate, setPickupDate] = useState<dayjs.Dayjs | null>(null);
+  const [returnDate, setReturnDate] = useState<dayjs.Dayjs | null>(null);
   const [pickupTime, setPickupTime] = useState<string>("10:00 AM");
   const [returnTime, setReturnTime] = useState<string>("10:00 AM");
+  
+  // DateTime objects that combine date and time
+  const [pickupDateTime, setPickupDateTime] = useState<dayjs.Dayjs | null>(null);
+  const [returnDateTime, setReturnDateTime] = useState<dayjs.Dayjs | null>(null);
+  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [servicesExpanded, setServicesExpanded] = useState(false);
-  // New states for availability checking
+  
+  // States for availability checking
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
-  const [isCheckingAvailability, setIsCheckingAvailability] =
-    useState<boolean>(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   const [formValid, setFormValid] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -123,80 +76,48 @@ export default function Booking() {
     const isValid =
       nameLastname.trim() !== "" &&
       tel.trim() !== "" &&
-      pickupDate !== null &&
-      returnDate !== null &&
+      pickupDateTime !== null &&
+      returnDateTime !== null &&
       isAvailable;
     setFormValid(isValid);
-  }, [nameLastname, tel, pickupDate, returnDate, isAvailable]);
+  }, [nameLastname, tel, pickupDateTime, returnDateTime, isAvailable]);
 
-  const checkCarAvailability = useCallback(async () => {
-    if (!car?._id || !pickupDate || !returnDate || !session?.user?.token) {
+  // Callback for checking car availability
+  const handleCheckCarAvailability = useCallback(async () => {
+    if (!car?._id || !pickupDateTime || !returnDateTime || !session?.user?.token) {
       return; // Don't check if we don't have all the required data
     }
-  
-    // Prevent checking if pickup date is after return date
-    if (pickupDate.isAfter(returnDate)) {
-      setIsAvailable(false);
-      setAvailabilityMessage("Pickup date cannot be after return date");
-      return;
-    }
-  
+    
     setIsCheckingAvailability(true);
     setAvailabilityMessage("Checking availability...");
-  
+    
     try {
-      // ใช้ API endpoint ที่สร้างไว้แล้วเพื่อตรวจสอบความพร้อมใช้งาน
-      const formattedStartDate = pickupDate.format("YYYY-MM-DD");
-      const formattedReturnDate = returnDate.format("YYYY-MM-DD");
-      
-      const response = await fetch(
-        `${API_BASE_URL}/cars/check-availability/${car._id}?startDate=${formattedStartDate}&returnDate=${formattedReturnDate}`,
-        {
-          headers: { Authorization: `Bearer ${session.user.token}` },
-        }
+      // ใช้ pickup/return DateTime ในการเช็คความพร้อมใช้งาน
+      const result = await checkCarAvailability(
+        car._id,
+        pickupDateTime,
+        returnDateTime,
+        session.user.token
       );
-  
-      if (!response.ok) throw new Error("Failed to check car availability");
-  
-      const availabilityData = await response.json();
-  
-      if (!availabilityData.success) {
-        throw new Error(availabilityData.message || "Failed to check availability");
-      }
-  
-      console.log("availabilityData.data", availabilityData.data)
-      const available = availabilityData.data.available;
-      const conflicts = availabilityData.data.conflicts || [];
-  
-      setIsAvailable(available);
-  
-      if (available) {
-        setAvailabilityMessage("Car is available for selected dates!");
-      } else {
-        // แสดงข้อความทับซ้อนที่มีรายละเอียดมากขึ้น
-        if (conflicts.length > 0) {
-          console.log("uiop", conflicts)
-          setAvailabilityMessage(
-            `Car is not available for the selected dates. There ${
-              conflicts.length === 1 ? "is" : "are"
-            } ${conflicts.length} existing ${
-              conflicts.length === 1 ? "booking" : "bookings"
-            } during this period.`
-          );
-        } else {
-          setAvailabilityMessage(
-            "Car is not available for the selected dates. Please choose different dates."
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Error checking car availability:", error);
-      setIsAvailable(false);
-      setAvailabilityMessage("Error checking availability. Please try again.");
+      
+      setIsAvailable(result.isAvailable);
+      setAvailabilityMessage(result.availabilityMessage);
     } finally {
       setIsCheckingAvailability(false);
     }
-  }, [car?._id, pickupDate, returnDate, session?.user?.token]);
+  }, [car?._id, pickupDateTime, returnDateTime, session?.user?.token]);
+
+  // Check availability whenever dates or times change
+  useEffect(() => {
+    const shouldCheckAvailability = 
+      pickupDateTime !== null && 
+      returnDateTime !== null && 
+      car !== null;
+    
+    if (shouldCheckAvailability) {
+      handleCheckCarAvailability();
+    }
+  }, [pickupDateTime, returnDateTime, car, handleCheckCarAvailability]);
 
   // Add this effect to fetch services data when the component mounts
   useEffect(() => {
@@ -227,102 +148,42 @@ export default function Booking() {
     fetchServices();
   }, [session?.user?.token]);
 
-  // Check availability whenever dates change
-  useEffect(() => {
-    const shouldCheckAvailability = 
-      pickupDate !== null && 
-      returnDate !== null && 
-      car !== null;
-    
-    if (shouldCheckAvailability) {
-      checkCarAvailability();
-    }
-  }, [pickupDate, returnDate, car, checkCarAvailability]);
-
-  const makeBooking = async () => {
-    if (!formValid || isSubmitting || !car || !pickupDate || !returnDate || !session?.user?.token) {
+  // Handle booking submission
+  const handleMakeBooking = async () => {
+    if (!formValid || isSubmitting || !car || !pickupDateTime || !returnDateTime || !session?.user?.token) {
       return;
     }
   
     setIsSubmitting(true);
     try {
-      // Double-check availability one more time before booking
-      // Format dates for the API
-      const formattedStartDate = pickupDate.format("YYYY-MM-DD");
-      const formattedReturnDate = returnDate.format("YYYY-MM-DD");
-      
-      // ใช้ API endpoint เพื่อตรวจสอบความพร้อมใช้งานอีกครั้งก่อนการจอง
-      const availabilityResponse = await fetch(
-        `${API_BASE_URL}/cars/check-availability/${car._id}?startDate=${formattedStartDate}&returnDate=${formattedReturnDate}`,
-        {
-          headers: { Authorization: `Bearer ${session.user.token}` },
-        }
+      // ใช้ datetime objects ในการสร้างการจอง
+      const result = await makeBooking(
+        car._id,
+        pickupDateTime,
+        returnDateTime,
+        selectedServices,
+        services,
+        userTier,
+        car.dailyRate || 0,
+        session.user.token
       );
 
-      if (!availabilityResponse.ok) {
-        throw new Error("Failed to check car availability");
-      }
-
-      const availabilityData = await availabilityResponse.json();
-
-      if (!availabilityData.success) {
-        throw new Error(
-          availabilityData.message || "Failed to check availability"
-        );
-      }
-
-      const isStillAvailable = availabilityData.data.available;
-
-      if (!isStillAvailable) {
-        alert(
-          "Car is no longer available for the selected dates. Another booking may have been made. Please choose different dates."
-        );
-        setIsAvailable(false);
-        setAvailabilityMessage(
-          "Car is not available for the selected dates. Please choose different dates."
-        );
-        return;
-      }
-
-      // Car is available, proceed with booking
-      // Get values using existing calculation functions
-      const days = getRentalPeriod();
-      const basePrice = days * (car?.dailyRate || 0);
-      const servicePrice = calculateServicesTotalCost();
-      const subtotal = calculateSubtotal();
-      const discountAmount = calculateDiscount();
-      const finalPrice = subtotal - discountAmount;
-
-      // Send booking data to backend with all price details
-      const response = await fetch(`${API_BASE_URL}/rents`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session?.user?.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          startDate: formattedStartDate,
-          returnDate: formattedReturnDate,
-          car: car._id,
-          price: basePrice,
-          servicePrice: servicePrice,
-          discountAmount: discountAmount,
-          finalPrice: finalPrice,
-          service: selectedServices,
-        }),
-      });
-
-      if (response.ok) {
+      if (result.success) {
         // Booking successful, dispatch to Redux store
         const item = {
           nameLastname: nameLastname,
           tel: tel,
           car: car._id,
-          bookDate: pickupDate.format("YYYY/MM/DD"),
-          returnDate: returnDate.format("YYYY/MM/DD"),
+          // บันทึกทั้งวันที่และเวลาในรูปแบบ ISO string
+          bookDateTime: pickupDateTime.toISOString(),
+          returnDateTime: returnDateTime.toISOString(),
+          // ยังคงเก็บเฉพาะวันที่และเวลาแยกกันไว้ด้วยสำหรับการแสดงผล
+          bookDate: pickupDateTime.format("YYYY/MM/DD"),
+          returnDate: returnDateTime.format("YYYY/MM/DD"),
           pickupTime: pickupTime,
           returnTime: returnTime,
         };
+        
         console.log(item);
         dispatch(addBooking(item));
         alert("Booking successful!");
@@ -330,9 +191,11 @@ export default function Booking() {
         // Redirect to reservations page
         router.push("/account/reservations");
       } else {
-        const errorData = await response.json();
-        console.error("Booking failed:", errorData);
-        alert(`Booking failed: ${errorData.message || "Please try again."}`);
+        alert(result.message);
+        if (result.message.includes("not available")) {
+          setIsAvailable(false);
+          setAvailabilityMessage(result.message);
+        }
       }
     } catch (error) {
       console.error("Error booking:", error);
@@ -376,7 +239,7 @@ export default function Booking() {
 
         const carData = await carResponse.json();
 
-        //check car for fetch
+        // Check car for fetch
         if (carData.success && carData.data) {
           setCar(carData.data);
 
@@ -446,90 +309,49 @@ export default function Booking() {
     fetchData();
   }, [searchParams, session]);
 
-  // Calculate rental period and total cost
-  const getRentalPeriod = () => {
-    if (!pickupDate || !returnDate) return 0;
-
-    // Calculate the difference in days, adding 1 because rental period includes the pickup day
-    const days = returnDate.diff(pickupDate, "day") + 1;
-    return Math.max(1, days); // Ensure minimum 1 day
-  };
-
-  // Tier discount
-  const getTierDiscount = (tier: number) => {
-    const tierDiscount = [0, 5, 10, 15, 20];
-    return tierDiscount[tier];
-  };
-
-  // Calculate total service cost correctly handling daily vs one-time services
-  const calculateServicesTotalCost = () => {
-    if (!selectedServices.length) return 0;
-
-    const days = getRentalPeriod();
-
-    return services
-      .filter((service) => selectedServices.includes(service._id))
-      .reduce((total, service) => {
-        // Daily services are multiplied by the number of days
-        // One-time services are added just once
-        const serviceCost = service.daily ? service.rate * days : service.rate;
-        //console.log(total + serviceCost)
-        return total + serviceCost;
-      }, 0);
-  };
+  // อัพเดท pickupDateTime และ returnDateTime เมื่อ pickupDate/returnDate หรือ pickupTime/returnTime เปลี่ยน
+  useEffect(() => {
+    if (pickupDate && pickupTime) {
+      const dateTimeObj = createDateTimeObject(pickupDate, pickupTime);
+      setPickupDateTime(dateTimeObj);
+    }
+  }, [pickupDate, pickupTime]);
 
   useEffect(() => {
-    setPrice(getTotalCost());
+    if (returnDate && returnTime) {
+      const dateTimeObj = createDateTimeObject(returnDate, returnTime);
+      setReturnDateTime(dateTimeObj);
+    }
+  }, [returnDate, returnTime]);
+
+  // Update price when relevant fields change
+  useEffect(() => {
+    if (car?.dailyRate && pickupDateTime && returnDateTime) {
+      // ใช้ DateTime objects ในการคำนวณราคา
+      setPrice(
+        getTotalCost(
+          pickupDateTime,
+          returnDateTime,
+          car.dailyRate,
+          selectedServices,
+          services,
+          userTier
+        )
+      );
+    }
   }, [
-    pickupDate,
-    returnDate,
+    pickupDateTime,
+    returnDateTime,
     car?.dailyRate,
     userTier,
     selectedServices,
     services,
   ]);
 
-  // Tier name mapping
-  const getTierName = (tier: number) => {
-    const tierNames = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
-    return tierNames[tier] || `Tier ${tier}`;
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const getTotalCost = () => {
-    const subtotal = calculateSubtotal();
-    const discount = calculateDiscount();
-
-    return subtotal - discount;
-  };
-
-  const calculateSubtotal = () => {
-    const days = getRentalPeriod();
-    const dailyRate = car?.dailyRate || 0;
-    const carCost = days * dailyRate;
-    const servicesCost = calculateServicesTotalCost();
-
-    return carCost + servicesCost;
-  };
-
-  const calculateDiscount = () => {
-    const subtotal = calculateSubtotal();
-    return subtotal * (getTierDiscount(userTier) / 100);
-  };
-
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto py-10 px-4 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55] mx-auto"></div>
-        <p className="mt-4">Loading car details...</p>
+        <LoadingState />
       </main>
     );
   }
@@ -537,19 +359,7 @@ export default function Booking() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto py-10 px-4 text-center">
-        <div className="bg-red-100 text-red-800 p-4 rounded-lg">
-          <p>{error}</p>
-          {!session && (
-            <div className="mt-4">
-              <Link
-                href="/signin?callbackUrl=/catalog"
-                className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
-              >
-                Sign In
-              </Link>
-            </div>
-          )}
-        </div>
+        <ErrorState error={error} isLoggedIn={!!session} />
       </main>
     );
   }
@@ -564,541 +374,61 @@ export default function Booking() {
           Complete the details below to reserve your premium vehicle
         </p>
       </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         {/* Car Details */}
         {car && (
-          <div>
-            <h2 className="text-2xl font-serif font-medium mb-6">
-              Vehicle Details
-            </h2>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <CarImageGallery car={car} />
-              <div className="p-6 space-y-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-[#8A7D55] font-serif">
-                    {car.brand} {car.model}
-                  </h3>
-                  <p className="text-gray-600">
-                    {car.type} {car.color ? `| ${car.color}` : ""}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">License Plate</p>
-                    <p className="font-medium">{car.license_plate || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Daily Rate</p>
-                    <p className="font-medium">
-                      ${car.dailyRate?.toFixed(2) || "0.00"}/day
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Manufacture Date</p>
-                    <p className="font-medium">
-                      {car.manufactureDate
-                        ? new Date(car.manufactureDate).toLocaleDateString()
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Tier</p>
-                    <p className="font-medium">
-                      {car.tier !== undefined ? getTierName(car.tier) : "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500">Status</p>
-                  <span
-                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      isAvailable
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {isAvailable
-                      ? "Available"
-                      : "Not Available for Selected Dates"}
-                  </span>
-                </div>
-
-                {/* Vehicle features */}
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">Features</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                      Air Conditioning
-                    </span>
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                      Bluetooth
-                    </span>
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                      Navigation
-                    </span>
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                      Leather Seats
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {car && session?.user?.token && (
-              <div className="mt-6">
-                <h2 className="text-2xl font-serif font-medium mb-4">
-                  Additional Services
-                </h2>
-                <div className="bg-white shadow-md rounded-lg overflow-hidden p-6">
-                  <ServiceSelection
-                    token={session.user.token}
-                    carId={car?._id}
-                    selectedServices={selectedServices}
-                    onServicesChange={setSelectedServices}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          <CarDetails
+            car={car}
+            isAvailable={isAvailable}
+            session={session}
+            selectedServices={selectedServices}
+            setSelectedServices={setSelectedServices}
+          />
         )}
 
-        {/* Booking Form / Booking Information*/}
-        <div className="flex flex-col">
-          <h2 className="text-2xl font-serif font-medium mb-6">
-            Booking Information
-          </h2>
-          <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <div className="p-6 space-y-4 ">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Full Name</p>
-                <input
-                  type="text"
-                  value={nameLastname}
-                  onChange={(e) => setNameLastname(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
-                  required
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  Contact Number
-                </p>
-                <input
-                  type="tel"
-                  value={tel}
-                  onChange={(e) => setTel(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] mt-1"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Pickup Date
-                  </p>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3 w-3 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      type="date"
-                      value={pickupDate ? pickupDate.format("YYYY-MM-DD") : ""}
-                      onChange={(e) =>
-                        setPickupDate(
-                          e.target.value ? dayjs(e.target.value) : null
-                        )
-                      }
-                      className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Pickup Time
-                  </p>
-                  <select
-                    value={pickupTime}
-                    onChange={(e) => setPickupTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  >
-                    {timeOptions.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Return Date
-                  </p>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3 w-3 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      type="date"
-                      value={returnDate ? returnDate.format("YYYY-MM-DD") : ""}
-                      onChange={(e) =>
-                        setReturnDate(
-                          e.target.value ? dayjs(e.target.value) : null
-                        )
-                      }
-                      min={
-                        pickupDate ? pickupDate.format("YYYY-MM-DD") : undefined
-                      }
-                      className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Return Time
-                  </p>
-                  <select
-                    value={returnTime}
-                    onChange={(e) => setReturnTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  >
-                    {timeOptions.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Availability message */}
-              {availabilityMessage && (
-                <div
-                  className={`p-3 rounded-md text-sm ${
-                    isAvailable
-                      ? "bg-green-50 text-green-700"
-                      : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  {isCheckingAvailability ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-current mr-2"></div>
-                      {availabilityMessage}
-                    </div>
-                  ) : (
-                    availabilityMessage
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Provider Details */}
-          <div
-            className={` ${
-              isAvailable ? "mt-4" : "mt-8"
-            } bottom-0 bg-white shadow-md rounded-lg overflow-hidden`}
-          >
-            {provider && car?.provider_id && (
-              <ProviderDetail
-                providerId={car?.provider_id}
-                token={session?.user?.token}
-              />
-            )}
-          </div>
-        </div>
+        {/* Booking Form */}
+        <BookingForm
+          nameLastname={nameLastname}
+          setNameLastname={setNameLastname}
+          tel={tel}
+          setTel={setTel}
+          pickupDate={pickupDate}
+          setPickupDate={setPickupDate}
+          returnDate={returnDate}
+          setReturnDate={setReturnDate}
+          pickupTime={pickupTime}
+          setPickupTime={setPickupTime}
+          returnTime={returnTime}
+          setReturnTime={setReturnTime}
+          isAvailable={isAvailable}
+          isCheckingAvailability={isCheckingAvailability}
+          availabilityMessage={availabilityMessage}
+          providerId={car?.provider_id}
+          token={session?.user?.token}
+          pickupDateTime={pickupDateTime}
+          setPickupDateTime={setPickupDateTime}
+          returnDateTime={returnDateTime}
+          setReturnDateTime={setReturnDateTime}
+        />
       </div>
 
       {/* Reservation Summary */}
-      {car && pickupDate && returnDate && (
-        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-          <div className="bg-[#8A7D55] text-white px-6 py-4">
-            <h2 className="text-xl font-serif font-medium">
-              Reservation Summary
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-medium mb-3">Vehicle</h3>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Make/Model:</span> {car.brand}{" "}
-                  {car.model}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">License:</span>{" "}
-                  {car.license_plate || "N/A"}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Daily Rate:</span> $
-                  {car.dailyRate?.toFixed(2) || "0.00"}
-                </p>
-                {car.tier !== undefined && (
-                  <p className="text-gray-700">
-                    <span className="text-gray-500">Vehicle Tier:</span>{" "}
-                    {getTierName(car.tier)}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-medium mb-3">Rental Period</h3>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Pickup:</span>{" "}
-                  {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Return:</span>{" "}
-                  {returnDate?.format("MMM D, YYYY")} at {returnTime}
-                </p>
-                <p className="text-gray-700">
-                  <span className="text-gray-500">Duration:</span>{" "}
-                  {getRentalPeriod()} days
-                </p>
-              </div>
-            </div>
-
-            {/* Selected Services Section */}
-            {selectedServices.length > 0 && services.length > 0 && (
-              <div className="border-t border-gray-200 mt-6 pt-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-medium">Additional Services</h3>
-                  <div className="flex items-center">
-                    {!servicesExpanded && (
-                      <span className="mr-3 text-[#8A7D55] font-medium"></span>
-                    )}
-                    <button
-                      onClick={() => setServicesExpanded(!servicesExpanded)}
-                      className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                      aria-label={
-                        servicesExpanded
-                          ? "Collapse services"
-                          : "Expand services"
-                      }
-                    >
-                      <ChevronDown
-                        size={18}
-                        className={`transition-transform duration-300 ${
-                          servicesExpanded ? "transform rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  className={`transition-all duration-300 overflow-hidden ${
-                    servicesExpanded ? "max-h-[400px]" : "max-h-0"
-                  }`}
-                >
-                  <div className="space-y-2 pr-2">
-                    {services
-                      .filter((service) =>
-                        selectedServices.includes(service._id)
-                      )
-                      .map((service) => (
-                        <div
-                          key={service._id}
-                          className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
-                        >
-                          <div>
-                            <span className="font-medium text-gray-800">
-                              {service.name}
-                            </span>
-                            {service.description && (
-                              <p className="text-xs text-gray-500 mt-1 max-w-md">
-                                {service.description.length > 100
-                                  ? `${service.description.substring(
-                                      0,
-                                      100
-                                    )}...`
-                                  : service.description}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-[#8A7D55] font-medium">
-                            {service.daily
-                              ? `$${service.rate.toFixed(2)}/day`
-                              : `$${service.rate.toFixed(2)}`}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-
-                  <div className="flex justify-between items-center mt-3 text-sm font-medium">
-                    <span className="text-gray-600">
-                      Total Additional Services:
-                    </span>
-                    <div className="flex items-center space-x-2">
-                      {services
-                        .filter((service) =>
-                          selectedServices.includes(service._id)
-                        )
-                        .map((service) => (
-                          <span
-                            key={service._id}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-[#F0F4FF] text-[#3366FF]"
-                          >
-                            {service.daily ? "Daily" : "One-Time"} $
-                            {service.rate.toFixed(2)}
-                          </span>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Cost Breakdown */}
-            <div className="border-t border-gray-200 mt-6 pt-6">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Base Daily Rate:</span>
-                <span>${car?.dailyRate?.toFixed(2) || "0.00"}</span>
-              </div>
-
-              {selectedServices.length > 0 && (
-                <>
-                  <div className="border-t border-gray-200 mt-3 pt-3">
-                    <h4 className="text-gray-800 font-medium mb-2">
-                      Additional Services:
-                    </h4>
-                    {services
-                      .filter((service) =>
-                        selectedServices.includes(service._id)
-                      )
-                      .map((service) => {
-                        const cost = service.daily
-                          ? service.rate * getRentalPeriod()
-                          : service.rate;
-                        return (
-                          <div
-                            key={service._id}
-                            className="flex justify-between items-center py-1"
-                          >
-                            <span className="text-gray-600">
-                              {service.name}
-                            </span>
-                            <span>
-                              ${service.rate.toFixed(2)}
-                              {service.daily
-                                ? ` × ${getRentalPeriod()} days`
-                                : ""}{" "}
-                              = ${cost.toFixed(2)}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    <div className="flex justify-between items-center mt-2 font-medium">
-                      <span>Services Subtotal:</span>
-                      <span>
-                        $
-                        {services
-                          .filter((service) =>
-                            selectedServices.includes(service._id)
-                          )
-                          .reduce((total, service) => {
-                            const cost = service.daily
-                              ? service.rate * getRentalPeriod()
-                              : service.rate;
-                            return total + cost;
-                          }, 0)
-                          .toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-600">Number of Days:</span>
-                <span>{getRentalPeriod()}</span>
-              </div>
-
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-600">Car Rental Subtotal:</span>
-                <span>
-                  ${((car?.dailyRate || 0) * getRentalPeriod()).toFixed(2)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-600">Total Subtotal:</span>
-                <span>${calculateSubtotal().toFixed(2)}</span>
-              </div>
-
-              {userTier > 0 && (
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-gray-600">
-                    Loyalty Discount ({getTierDiscount(userTier)}%):
-                  </span>
-                  <span>-${calculateDiscount().toFixed(2)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center mt-4 border-t border-gray-200 pt-3 text-lg font-medium">
-                <span>Total Cost:</span>
-                <span className="text-[#8A7D55]">
-                  {formatCurrency(getTotalCost())}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {car && pickupDateTime && returnDateTime && (
+        <ReservationSummary
+          car={car}
+          pickupDate={pickupDateTime}
+          returnDate={returnDateTime}
+          pickupTime={pickupTime}
+          returnTime={returnTime}
+          userTier={userTier}
+          selectedServices={selectedServices}
+          services={services}
+          formValid={formValid}
+          isSubmitting={isSubmitting}
+          onSubmit={handleMakeBooking}
+        />
       )}
-
-      {/* Submit Button */}
-      <div className="text-center">
-        <button
-          onClick={makeBooking}
-          disabled={!formValid || isSubmitting}
-          className={`px-8 py-3 text-white rounded-md font-medium transition-all duration-200 ${
-            formValid && !isSubmitting
-              ? "bg-[#8A7D55] hover:bg-[#766b48] shadow-md hover:shadow-lg"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-              Processing...
-            </span>
-          ) : (
-            "Confirm Reservation"
-          )}
-        </button>
-      </div>
     </main>
   );
 }
