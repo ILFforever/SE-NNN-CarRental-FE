@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import CarEditForm from '@/components/forms/CarEditForm';
+import CarForm from '@/components/forms/CarForm';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 
 
@@ -47,7 +47,7 @@ export default function AdminEditCarPage() {
       </div>
 
       {session?.user?.token ? (
-        <CarEditForm 
+        <CarForm 
           carId={carId || undefined}
           token={session.user.token}
           isAdmin={true}

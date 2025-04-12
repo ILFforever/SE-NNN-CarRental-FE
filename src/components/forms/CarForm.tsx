@@ -305,16 +305,34 @@ export default function CarForm({
 
         const data = await response.json();
 
+        console.log("Full Car Data:", data);
+        console.log("Images:", data.data.images);
+        console.log("Image Order:", data.data.imageOrder);
+
         if (data.success && data.data) {
           // Format the date from ISO to YYYY-MM-DD for input
           const manufactureDate = new Date(data.data.manufactureDate)
             .toISOString()
             .split("T")[0];
 
+          console.log("Detailed Image Information:", {
+            rawImages: data.data.images,
+            rawImageOrder: data.data.imageOrder,
+            manufactureDate: manufactureDate,
+          });
+          
           if (data.data.images && Array.isArray(data.data.images)) {
+            // Log when setting existing images
+            console.log("Setting Existing Images:", data.data.images);
             setExistingImages(data.data.images);
           }
+          // Use imageOrder if available, otherwise fallback to images
+          const imagesToSet =
+            data.data.imageOrder && data.data.imageOrder.length > 0
+              ? data.data.imageOrder
+              : data.data.images || [];
 
+          setExistingImages(imagesToSet);
           setFormData({
             license_plate: data.data.license_plate,
             brand: data.data.brand,
@@ -896,54 +914,6 @@ export default function CarForm({
               );
             }}
           />
-
-          {/* Display existing images if editing */}
-          {existingImages.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                Current Images
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {existingImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className="relative border rounded-md overflow-hidden"
-                  >
-                    <img
-                      src={
-                        image.startsWith("http")
-                          ? image
-                          : `https://blob.ngixx.me/images/${image}`
-                      }
-                      alt={`Car image ${index + 1}`}
-                      className="w-full h-32 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(image)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    >
-                      <span className="sr-only">Remove</span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Service Selection */}
