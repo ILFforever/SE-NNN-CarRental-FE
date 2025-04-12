@@ -389,7 +389,7 @@ export default function CatalogPage() {
               rents: car.rents || [],
               available: car.available ?? true,
               // Handle images array properly
-              images: car.images && Array.isArray(car.images) ? car.images : [],
+              images: car.imageOrder && Array.isArray(car.imageOrder) ? car.imageOrder : [],
               // Keep single image for backward compatibility
               image: car.image || "/img/banner.jpg",
               license_plate: car.license_plate,
