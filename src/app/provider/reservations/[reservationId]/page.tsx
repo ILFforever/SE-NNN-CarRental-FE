@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
 import { redirect } from 'next/navigation';
-import UnifiedReservationDetails from '@/components/reservations/ReservasionDetails';
+import UnifiedReservationDetails from '@/components/reservations/ReservationDetails';
 
 export const metadata: Metadata = {
   title: 'Reservation Details | Provider Dashboard',
