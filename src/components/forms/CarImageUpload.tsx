@@ -51,7 +51,7 @@ export default function CarImageUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log("Initial existingImages:", existingImages);
+    //console.log("Initial existingImages:", existingImages);
 
     // If existingImages is empty, do nothing
     if (existingImages.length === 0) return;
@@ -68,14 +68,14 @@ export default function CarImageUpload({
       id: typeof img === "string" ? img : img.id,
     }));
 
-    console.log("Reordered Images:", reorderedImages);
+    //console.log("Reordered Images:", reorderedImages);
 
     setOrderedExistingImages(reorderedImages);
   }, [existingImages]);
 
   // Log ordered images when they change
   useEffect(() => {
-    console.log("Ordered Existing Images:", orderedExistingImages);
+    //console.log("Ordered Existing Images:", orderedExistingImages);
   }, [orderedExistingImages]);
 
   // Total image count for validation
@@ -137,11 +137,11 @@ export default function CarImageUpload({
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Failed to save image order:", errorData);
+        //console.error("Failed to save image order:", errorData);
         throw new Error(errorData.message || "Failed to save image order");
       }
     } catch (error) {
-      console.error("Error saving image order:", error);
+      //console.error("Error saving image order:", error);
       // Optionally show a toast or error message to the user
     }
   };

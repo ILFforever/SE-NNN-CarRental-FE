@@ -306,8 +306,8 @@ export default function CarForm({
         const data = await response.json();
 
         console.log("Full Car Data:", data);
-        console.log("Images:", data.data.images);
-        console.log("Image Order:", data.data.imageOrder);
+       // console.log("Images:", data.data.images);
+        //console.log("Image Order:", data.data.imageOrder);
 
         if (data.success && data.data) {
           // Format the date from ISO to YYYY-MM-DD for input
@@ -315,15 +315,15 @@ export default function CarForm({
             .toISOString()
             .split("T")[0];
 
-          console.log("Detailed Image Information:", {
-            rawImages: data.data.images,
-            rawImageOrder: data.data.imageOrder,
-            manufactureDate: manufactureDate,
-          });
+          // console.log("Detailed Image Information:", {
+          //   rawImages: data.data.images,
+          //   rawImageOrder: data.data.imageOrder,
+          //   manufactureDate: manufactureDate,
+          // });
           
           if (data.data.images && Array.isArray(data.data.images)) {
             // Log when setting existing images
-            console.log("Setting Existing Images:", data.data.images);
+            //console.log("Setting Existing Images:", data.data.images);
             setExistingImages(data.data.images);
           }
           // Use imageOrder if available, otherwise fallback to images
@@ -495,11 +495,11 @@ export default function CarForm({
         : `${API_BASE_URL}/cars`;
 
       const method = carId ? "PUT" : "POST";
-      console.log("Files to upload:", selectedImages);
-      console.log(
-        "Form data being submitted:",
-        Object.fromEntries(formDataToSend)
-      );
+      // console.log("Files to upload:", selectedImages);
+      // console.log(
+      //   "Form data being submitted:",
+      //   Object.fromEntries(formDataToSend)
+      // );
       const response = await fetch(url, {
         method,
         headers: {

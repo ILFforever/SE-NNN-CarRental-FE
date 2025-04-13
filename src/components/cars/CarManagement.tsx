@@ -1,14 +1,23 @@
 //this is shared between admin and provider -Hammy
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '@/config/apiConfig';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, X, RefreshCw } from 'lucide-react';
-import CarForm from '@/components/forms/CarForm';
-import CarServicesDropdown from '@/components/service/CarServicesDropdown';
-
+import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/config/apiConfig";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Trash2,
+  Plus,
+  X,
+  RefreshCw,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import CarForm from "@/components/forms/CarForm";
+import CarServicesDropdown from "@/components/service/CarServicesDropdown";
 
 interface CarProvider {
   _id: string;
@@ -22,23 +31,27 @@ interface Pagination {
 
 interface UnifiedCarManagementProps {
   token: string;
-  userType: 'admin' | 'provider';
+  userType: "admin" | "provider";
   providerId?: string; // Only needed for providers
 }
 
-export default function UnifiedCarManagement({ token, userType, providerId }: UnifiedCarManagementProps) {
+export default function UnifiedCarManagement({
+  token,
+  userType,
+  providerId,
+}: UnifiedCarManagementProps) {
   const router = useRouter();
-  
+
   // State management
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [carProviders, setCarProviders] = useState<CarProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [providerMap, setProviderMap] = useState<{[key: string]: string}>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [providerMap, setProviderMap] = useState<{ [key: string]: string }>({});
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,22 +61,24 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
 
   // Get tier name based on number
   const getTierName = (tier: number) => {
-    const tierNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+    const tierNames = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
     return tierNames[tier] || `Tier ${tier}`;
   };
-  
+
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
 
     // Filter cars based on license plate, brand, model, or provider (for admin)
-    const filtered = cars.filter(car => 
-      car.license_plate.toLowerCase().includes(query) || 
-      car.brand.toLowerCase().includes(query) || 
-      car.model.toLowerCase().includes(query) ||
-      (userType === 'admin' && providerMap[car.provider_id] && 
-       providerMap[car.provider_id].toLowerCase().includes(query))
+    const filtered = cars.filter(
+      (car) =>
+        car.license_plate.toLowerCase().includes(query) ||
+        car.brand.toLowerCase().includes(query) ||
+        car.model.toLowerCase().includes(query) ||
+        (userType === "admin" &&
+          providerMap[car.provider_id] &&
+          providerMap[car.provider_id].toLowerCase().includes(query))
     );
 
     setFilteredCars(filtered);
@@ -71,35 +86,35 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
 
   // Fetch car providers (admin only)
   const fetchCarProviders = async () => {
-    if (userType !== 'admin') return;
-    
+    if (userType !== "admin") return;
+
     try {
       const response = await fetch(`${API_BASE_URL}/Car_Provider`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch car providers');
+        throw new Error("Failed to fetch car providers");
       }
 
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setCarProviders(data.data);
-        
+
         // Create a map of provider IDs to names for quick lookup
-        const providerMapping: {[key: string]: string} = {};
+        const providerMapping: { [key: string]: string } = {};
         data.data.forEach((provider: CarProvider) => {
           providerMapping[provider._id] = provider.name;
         });
         setProviderMap(providerMapping);
       }
     } catch (error) {
-      console.error('Error fetching car providers:', error);
-      setError('Could not load car providers. Please try again later.');
+      console.error("Error fetching car providers:", error);
+      setError("Could not load car providers. Please try again later.");
     }
   };
 
@@ -112,28 +127,29 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
   // Fetch cars based on user type
   const fetchCars = async (page = 1) => {
     setIsLoading(true);
-    setError('');
+    setError("");
     setIsRefreshing(true);
-    
+
     try {
       // Different API endpoint based on user type
-      const endpoint = userType === 'admin'
-        ? `${API_BASE_URL}/cars?page=${page}&limit=25`
-        : `${API_BASE_URL}/cars?page=${page}&limit=25&providerId=${providerId}`;
-      
+      const endpoint =
+        userType === "admin"
+          ? `${API_BASE_URL}/cars?page=${page}&limit=25`
+          : `${API_BASE_URL}/cars?page=${page}&limit=25&providerId=${providerId}`;
+
       const response = await fetch(endpoint, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch cars: ${response.status}`);
       }
-  
+
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         setCars(data.data);
         setFilteredCars(data.data);
@@ -141,11 +157,11 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
         setPagination(data.pagination || {});
         setTotalItems(data.totalCount || 0);
       } else {
-        throw new Error('Unexpected response format from server');
+        throw new Error("Unexpected response format from server");
       }
     } catch (error) {
-      console.error('Error fetching cars:', error);
-      setError('Could not load cars. Please try again later.');
+      console.error("Error fetching cars:", error);
+      setError("Could not load cars. Please try again later.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -169,53 +185,59 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
   useEffect(() => {
     if (token) {
       const loadData = async () => {
-        if (userType === 'admin') {
+        if (userType === "admin") {
           await fetchCarProviders();
         }
         await fetchCars();
       };
-      
+
       loadData();
     } else {
-      setError('No authentication token available. Please log in again.');
+      setError("No authentication token available. Please log in again.");
     }
   }, [token, userType, providerId]);
 
   // Handle car deletion
   const handleDeleteCar = async (carId: string) => {
-    if (!confirm('Are you sure you want to delete this car? This action cannot be undone. Any active rentals will be canceled.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this car? This action cannot be undone. Any active rentals will be canceled."
+      )
+    ) {
       return;
     }
 
     setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`${API_BASE_URL}/cars/${carId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || data.msg || 'Failed to delete car');
+        throw new Error(data.message || data.msg || "Failed to delete car");
       }
 
-      setSuccess('Car deleted successfully');
-      
+      setSuccess("Car deleted successfully");
+
       // Update the cars list
-      setCars(prevCars => prevCars.filter(car => car._id !== carId));
-      setFilteredCars(prevCars => prevCars.filter(car => car._id !== carId));
+      setCars((prevCars) => prevCars.filter((car) => car._id !== carId));
+      setFilteredCars((prevCars) =>
+        prevCars.filter((car) => car._id !== carId)
+      );
     } catch (error) {
-      console.error('Error deleting car:', error);
+      console.error("Error deleting car:", error);
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('An unexpected error occurred');
+        setError("An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -224,20 +246,99 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
 
   // Handle edit car function
   const handleEditCar = (carId: string) => {
-    const car = cars.find(car => car._id === carId);
+    const car = cars.find((car) => car._id === carId);
     if (!car) return;
-  
-    const imageOrder = car.images ? car.images.join(',') : '';
-    const path = userType === 'admin' 
-      ? `/admin/manageCars/edit?carId=${carId}&imageOrder=${encodeURIComponent(imageOrder)}`
-      : `/provider/manageCars/edit?carId=${carId}&imageOrder=${encodeURIComponent(imageOrder)}`;
-    
+
+    const imageOrder = car.images ? car.images.join(",") : "";
+    const path =
+      userType === "admin"
+        ? `/admin/manageCars/edit?carId=${carId}&imageOrder=${encodeURIComponent(
+            imageOrder
+          )}`
+        : `/provider/manageCars/edit?carId=${carId}&imageOrder=${encodeURIComponent(
+            imageOrder
+          )}`;
+
     router.push(path);
   };
 
   // Format date for display
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleToggleAvailability = async (
+    carId: string,
+    currentStatus: boolean
+  ) => {
+    // Don't allow toggling if car is rented (has active rentals)
+    if (!currentStatus) {
+      const isConfirmed = confirm(
+        "Are you sure you want to mark this car as available?"
+      );
+      if (!isConfirmed) return;
+    } else {
+      const isConfirmed = confirm(
+        "Are you sure you want to mark this car as unavailable? This will prevent new bookings."
+      );
+      if (!isConfirmed) return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/cars/${carId}/availability`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(
+          data.error || data.message || "Failed to update car availability"
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the car in the local state
+        setCars((prevCars) =>
+          prevCars.map((car) =>
+            car._id === carId ? { ...car, available: !car.available } : car
+          )
+        );
+
+        setFilteredCars((prevCars) =>
+          prevCars.map((car) =>
+            car._id === carId ? { ...car, available: !car.available } : car
+          )
+        );
+
+        setSuccess(
+          `Car is now ${
+            !currentStatus ? "available" : "unavailable"
+          } for booking`
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling car availability:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -249,7 +350,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
           <p>{error}</p>
         </div>
       )}
-      
+
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
           {success}
@@ -261,15 +362,27 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
         {/* Search Input with Icon */}
         <div className="flex-grow relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
           <input
             type="text"
-            placeholder={userType === 'admin' 
-              ? "Search cars by license plate, brand, model, or provider" 
-              : "Search cars by license plate, brand, or model"
+            placeholder={
+              userType === "admin"
+                ? "Search cars by license plate, brand, model, or provider"
+                : "Search cars by license plate, brand, or model"
             }
             value={searchQuery}
             onChange={handleSearchChange}
@@ -284,7 +397,11 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
           className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
           title="Refresh cars list"
         >
-          <RefreshCw className={`h-5 w-5 text-gray-500 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-5 w-5 text-gray-500 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+          />
         </button>
 
         {/* Add Car Button with Icon */}
@@ -309,12 +426,16 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
       {/* Create Car Form */}
       {showCreateForm && (
         <div className="mb-8">
-          <CarForm 
+          <CarForm
             token={token}
-            providerId={userType === 'provider' ? providerId : undefined}
-            isAdmin={userType === 'admin'}
+            providerId={userType === "provider" ? providerId : undefined}
+            isAdmin={userType === "admin"}
             onSuccess={handleCarActionSuccess}
-            backUrl={userType === 'admin' ? '/admin/manageCars' : '/provider/manageCars'}
+            backUrl={
+              userType === "admin"
+                ? "/admin/manageCars"
+                : "/provider/manageCars"
+            }
             title="Add New Car"
           />
         </div>
@@ -330,8 +451,8 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
         ) : filteredCars.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-600">
-              {searchQuery 
-                ? "No cars match your search criteria." 
+              {searchQuery
+                ? "No cars match your search criteria."
                 : "No cars found. Add your first car to get started."}
             </p>
             {!searchQuery && !showCreateForm && (
@@ -370,7 +491,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
                     scope="col"
                     className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
                   >
-                   MFG Date
+                    MFG Date
                   </th>
                   <th
                     scope="col"
@@ -378,7 +499,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
                   >
                     Daily Rate
                   </th>
-                  {userType === 'admin' && (
+                  {userType === "admin" && (
                     <th
                       scope="col"
                       className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
@@ -430,7 +551,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
                     </td>
                     <td className="px-3 py-3">
                       <div className="text-sm text-gray-500 break-words">
-                        {car.type.charAt(0).toUpperCase() + car.type.slice(1)} /{' '}
+                        {car.type.charAt(0).toUpperCase() + car.type.slice(1)} /{" "}
                         {car.color}
                       </div>
                     </td>
@@ -444,22 +565,22 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
                         ${car.dailyRate.toFixed(2)}/day
                       </div>
                     </td>
-                    
+
                     {/* Provider column for admin only */}
-                    {userType === 'admin' && (
+                    {userType === "admin" && (
                       <td className="px-3 py-3">
                         <div className="text-sm text-gray-500 break-words">
-                          {providerMap[car.provider_id] || 'Unknown'}
+                          {providerMap[car.provider_id] || "Unknown"}
                         </div>
                       </td>
                     )}
-                    
+
                     <td className="px-3 py-3">
                       <div className="text-sm text-gray-500 break-words">
                         {getTierName(car.tier)}
                       </div>
                     </td>
-                    
+
                     {/* Services column */}
                     {token && car.service ? (
                       <CarServicesDropdown
@@ -471,7 +592,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
                         <div className="text-sm text-gray-500">No services</div>
                       </td>
                     )}
-                    
+
                     {/* Status column */}
                     <td className="px-3 py-3">
                       <span
@@ -481,13 +602,36 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {car.available ? "Available" : "Rented"}
+                        {car.available ? "Available" : "Unavailable"}
                       </span>
                     </td>
-                    
+
                     {/* Actions column */}
                     <td className="px-3 py-3 text-center">
-                      <div className="flex items-center justify-center space-x-2">
+                      <div className="flex items-center justify-center space-x-3">
+                        {/* Toggle availability button */}
+                        <button
+                          onClick={() =>
+                            handleToggleAvailability(car._id, car.available)
+                          }
+                          className={`p-1 rounded-full transition-colors ${
+                            car.available
+                              ? "text-red-600 hover:text-red-900 hover:bg-red-50"
+                              : "text-green-500 hover:text-green-800 hover:bg-green-50"
+                          }`}
+                          title={
+                            car.available
+                              ? "Mark as unavailable"
+                              : "Mark as available"
+                          }
+                          disabled={isLoading}
+                        >
+                          {car.available ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
                         {/* Edit button */}
                         <button
                           onClick={() => handleEditCar(car._id)}
@@ -513,30 +657,29 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
             </table>
           </div>
         )}
-        
       </div>
       <div className="flex justify-center mt-6 ">
-          {/* Pagination Controls */}
-          <div className="flex items-center">
-            <button
-              onClick={handlePrevPage}
-              disabled={!pagination.prev}
-              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed "
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <span className="text-sm text-gray-600 mx-3">
-              Page {currentPage} of {Math.ceil(totalItems / 25) || 1}
-            </span>
-            <button
-              onClick={handleNextPage}
-              disabled={!pagination.next}
-              className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed "
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
+        {/* Pagination Controls */}
+        <div className="flex items-center">
+          <button
+            onClick={handlePrevPage}
+            disabled={!pagination.prev}
+            className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed "
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="text-sm text-gray-600 mx-3">
+            Page {currentPage} of {Math.ceil(totalItems / 25) || 1}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={!pagination.next}
+            className="p-2 rounded-md bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed "
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
+      </div>
     </div>
   );
 }
