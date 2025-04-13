@@ -1215,6 +1215,21 @@ export default function CatalogPage() {
                   <span>Clear all filters</span>
                 </button>
               )}
+              {/* Admin toggle as a filter button */}
+              {session?.user?.role === "admin" && (
+                <div className="ml-auto">
+                  <button
+                    onClick={() => setShowUnavailable(!showUnavailable)}
+                    className={`px-2 py-1 rounded-md transition-colors ${
+                      showUnavailable
+                        ? "bg-[#8A7D55] text-white"
+                        : "bg-white border border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    Admin {showUnavailable ? "Hiding" : "Show"} Unavailable Cars
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
