@@ -584,7 +584,7 @@ export default function ReservationManagement({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6 max-w-screen-xl mx-auto w-max">
       {/* Success and Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">

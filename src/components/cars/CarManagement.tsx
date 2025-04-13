@@ -241,7 +241,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6 max-w-screen-xl mx-auto w-max">
       {/* Success and Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
@@ -320,8 +320,8 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
         </div>
       )}
 
-      {/* Cars Table */}
-      <div className="overflow-x-auto">
+      {/* Cars Table - Modified to handle wider content and wrapping */}
+      <div className="overflow-x-auto w-full px-3">
         {isLoading && cars.length === 0 ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55] mx-auto"></div>
@@ -344,172 +344,174 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
             )}
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 table-fixed">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
-                >
-                  License Plate
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[14%]"
-                >
-                  Brand/Model
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
-                >
-                  Type/Color
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
-                >
-                  Manufacture Date
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
-                >
-                  Daily Rate
-                </th>
-                {userType === 'admin' && (
+          <div className="w-full">
+            <table className="w-full max-w-[1400px] mx-auto space-y-4 p-8 pt-6">
+              <thead className="bg-gray-50">
+                <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
                   >
-                    Provider
+                    License Plate
                   </th>
-                )}
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]"
-                >
-                  Tier
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
-                >
-                  Services
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]"
-                >
-                  Status
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCars.map((car) => (
-                <tr
-                  key={car._id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {car.license_plate}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-900 truncate">
-                      {car.brand} {car.model}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-500 truncate">
-                      {car.type.charAt(0).toUpperCase() + car.type.slice(1)} /{' '}
-                      {car.color}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-500">
-                      {formatDate(car.manufactureDate)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-500">
-                      ${car.dailyRate.toFixed(2)}/day
-                    </div>
-                  </td>
-                  
-                  {/* Provider column for admin only */}
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]"
+                  >
+                    Brand/Model
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
+                  >
+                    Type/Color
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
+                  >
+                   MFG Date
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
+                  >
+                    Daily Rate
+                  </th>
                   {userType === 'admin' && (
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-500 truncate">
-                        {providerMap[car.provider_id] || 'Unknown'}
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]"
+                    >
+                      Provider
+                    </th>
+                  )}
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]"
+                  >
+                    Tier
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[13%]"
+                  >
+                    Services
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[7%]"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCars.map((car) => (
+                  <tr
+                    key={car._id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-3 py-3">
+                      <div className="text-sm font-medium text-gray-900 break-words">
+                        {car.license_plate}
                       </div>
                     </td>
-                  )}
-                  
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-500 truncate">
-                      {getTierName(car.tier)}
-                    </div>
-                  </td>
-                  
-                  {/* Services column */}
-                  {token && car.service ? (
-                    <CarServicesDropdown
-                      token={token}
-                      serviceIds={car.service}
-                    />
-                  ) : (
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-500">No services</div>
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-900 break-words">
+                        {car.brand} {car.model}
+                      </div>
                     </td>
-                  )}
-                  
-                  {/* Status column */}
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        car.available
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {car.available ? "Available" : "Rented"}
-                    </span>
-                  </td>
-                  
-                  {/* Actions column */}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center space-x-3">
-                      {/* Edit button */}
-                      <button
-                        onClick={() => handleEditCar(car._id)}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                        title="Edit car"
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-500 break-words">
+                        {car.type.charAt(0).toUpperCase() + car.type.slice(1)} /{' '}
+                        {car.color}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-500">
+                        {formatDate(car.manufactureDate)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-500 whitespace-normal">
+                        ${car.dailyRate.toFixed(2)}/day
+                      </div>
+                    </td>
+                    
+                    {/* Provider column for admin only */}
+                    {userType === 'admin' && (
+                      <td className="px-3 py-3">
+                        <div className="text-sm text-gray-500 break-words">
+                          {providerMap[car.provider_id] || 'Unknown'}
+                        </div>
+                      </td>
+                    )}
+                    
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-500 break-words">
+                        {getTierName(car.tier)}
+                      </div>
+                    </td>
+                    
+                    {/* Services column */}
+                    {token && car.service ? (
+                      <CarServicesDropdown
+                        token={token}
+                        serviceIds={car.service}
+                      />
+                    ) : (
+                      <td className="px-3 py-3">
+                        <div className="text-sm text-gray-500">No services</div>
+                      </td>
+                    )}
+                    
+                    {/* Status column */}
+                    <td className="px-3 py-3">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          car.available
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
                       >
-                        <Edit className="h-4 w-4" />
-                      </button>
+                        {car.available ? "Available" : "Rented"}
+                      </span>
+                    </td>
+                    
+                    {/* Actions column */}
+                    <td className="px-3 py-3 text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        {/* Edit button */}
+                        <button
+                          onClick={() => handleEditCar(car._id)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                          title="Edit car"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
 
-                      {/* Delete button */}
-                      <button
-                        onClick={() => handleDeleteCar(car._id)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        title="Delete car"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        {/* Delete button */}
+                        <button
+                          onClick={() => handleDeleteCar(car._id)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          title="Delete car"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         
       </div>
@@ -523,7 +525,7 @@ export default function UnifiedCarManagement({ token, userType, providerId }: Un
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 mx-3">
               Page {currentPage} of {Math.ceil(totalItems / 25) || 1}
             </span>
             <button
