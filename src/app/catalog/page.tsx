@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/config/apiConfig";
 import Link from "next/link";
-import { CheckCircle,Star } from "lucide-react";
+import { CheckCircle, Star } from "lucide-react";
 import HoverableCarImage from "@/components/cars/HoverableCarImage";
 import FavoriteHeartButton, { FavoriteCarsProvider } from "@/components/util/FavoriteHeartButton";
 
@@ -155,9 +155,9 @@ export default function CatalogPage() {
   const [itemsPerPage, setItemsPerPage] = useState<number>(25); // Default from API
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalMatchingCount, setTotalMatchingCount] = useState<number>(0);
-
-
-
+  
+  // Option to show unavailable cars (admin only)
+  const [showUnavailable, setShowUnavailable] = useState<boolean>(false);
 
   function useLocationSuggestions() {
     const [showLocationSuggestions, setShowLocationSuggestions] =
@@ -287,6 +287,11 @@ export default function CatalogPage() {
 
     router.push(`/catalog?${newParams.toString()}`);
   };
+
+  // Set showUnavailable based on user role
+  useEffect(() => {
+    setShowUnavailable(session?.user?.role === 'admin');
+  }, [session]);
 
   // Fetch car data and providers from API
   useEffect(() => {
@@ -531,6 +536,11 @@ export default function CatalogPage() {
 
   // Filter the cars
   const filteredCars = cars.filter((car) => {
+    // Filter out unavailable cars for non-admin users
+    if (!showUnavailable && !car.available) {
+      return false;
+    }
+
     // Apply search query filter
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
@@ -616,12 +626,14 @@ export default function CatalogPage() {
   };
 
   const isCarAvailableForDates = (car: Car): boolean => {
-    // If no dates are selected, consider the car as available
-    if (!dateRange.startDate || !dateRange.endDate) return true;
+    // If no dates are selected, consider the car as available based on its available property
+    if (!dateRange.startDate || !dateRange.endDate) return car.available;
 
-    // If car doesn't have rents data or is explicitly marked as available
-    if (!car.rents || car.rents.length === 0 || car.available === true)
-      return true;
+    // If car is marked as unavailable, return false
+    if (!car.available) return false;
+
+    // If car doesn't have rents data, use the available flag
+    if (!car.rents || car.rents.length === 0) return car.available;
 
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
@@ -1201,8 +1213,8 @@ export default function CatalogPage() {
         </div>
       )}
 
-      {/* Error state */}
-      {error && !loading && (
+        {/* Error state */}
+        {error && !loading && (
         <div className="text-center py-10">
           <h3 className="text-xl font-medium text-red-600">
             Error loading cars
@@ -1223,11 +1235,17 @@ export default function CatalogPage() {
           {availableCars.map((car) => (
             <div
               key={car.id}
-              className="bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 ease-out hover:shadow-xl hover:scale-[1.02] hover:rotate-1"
-                            >
+              className={`${!car.available && showUnavailable ? 'opacity-60' : ''} bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 ease-out hover:shadow-xl hover:scale-[1.02] hover:rotate-1`}
+            >
               <div className="relative h-48">
                 <FavoriteHeartButton carId={car.id} className="top-2 right-2" />
                 <HoverableCarImage car={car} />
+                {/* Show unavailable badge for admin */}
+                {!car.available && showUnavailable && (
+                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+                    Unavailable
+                  </span>
+                )}
               </div>
 
               <div className="p-4">
@@ -1236,7 +1254,7 @@ export default function CatalogPage() {
                     <h2 className="text-lg font-bold">
                       {car.brand} {car.model}
                     </h2>
-                    <div className="text-sm text-gray-600 -mt-1 flex items-center">
+                    <div className="text-sm text-gray-600 -mt-1 flex items-center flex-wrap">
                         {car.year} •{" "}
                         <span className="font-medium text-[#8A7D55] ml-1">
                           {car.provider}
@@ -1274,10 +1292,6 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {/* CarType */}
-                  {/* <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
-                    {car.type.charAt(0).toUpperCase() + car.type.slice(1)}
-                  </span> */}
                   {car.seats && (
                     <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
                       {car.seats} seats
@@ -1307,7 +1321,9 @@ export default function CatalogPage() {
                   >
                     {isCarAvailableForDates(car)
                       ? "View Car"
-                      : "Not Available for Selected Dates"}
+                      : car.available 
+                        ? "Not Available for Selected Dates"
+                        : "Currently Unavailable"}
                   </button>
                 </div>
               </div>
@@ -1335,7 +1351,7 @@ export default function CatalogPage() {
                 seats: "",
                 provider: "",
               });
-              setPriceRange({ min: 0, max: 500 });
+              setPriceRange({ min: 0, max: Number.MAX_SAFE_INTEGER });
               setDateRange({ startDate: "", endDate: "" });
               setSelectedLocation("");
               setSearchQuery("");
@@ -1347,6 +1363,7 @@ export default function CatalogPage() {
           </button>
         </div>
       )}
+
       {/* Authentication Prompt Modal */}
       {showAuthPrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
@@ -1376,8 +1393,9 @@ export default function CatalogPage() {
           </div>
         </div>
       )}
-      {/* Pagination Controls */}
-      {!loading && !error && availableCars.length > 0 && (
+
+       {/* Pagination Controls */}
+       {!loading && !error && availableCars.length > 0 && (
         <div className="flex flex-col items-center mt-10 space-y-2">
           {/* Show count information - simplified version */}
           <div className="text-sm text-gray-600">
