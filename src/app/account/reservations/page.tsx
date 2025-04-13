@@ -6,7 +6,7 @@ import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import RatingPopup from "@/components/reservations/RatingPopup";
-import { Info } from "lucide-react";
+import { Info, Calendar, CreditCard, Tag, ChevronRight } from "lucide-react";
 
 export default function MyReservationsPage() {
   useScrollToTop();
@@ -15,14 +15,8 @@ export default function MyReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cars, setCars] = useState<{ [key: string]: Car }>({});
-  // Add state to track which reservation's rating popup is active
-  const [activeRatingReservation, setActiveRatingReservation] = useState<
-    string | null
-  >(null);
-  // At the top of your component (inside MyReservationsPage)
-  const [providers, setProviders] = useState<{
-    [key: string]: { name: string };
-  }>({});
+  const [activeRatingReservation, setActiveRatingReservation] = useState<string | null>(null);
+  const [providers, setProviders] = useState<{ [key: string]: Provider }>({});
 
   // Handler for when a rating is selected (or cancelled)
   const handleRatingSelect = async (rating: number | null) => {
@@ -54,7 +48,7 @@ export default function MyReservationsPage() {
         setReservations((prevReservations) =>
           prevReservations.map((reservation) =>
             reservation._id === activeRatingReservation
-              ? { ...reservation, isRated: true } // Change isRated value here as needed
+              ? { ...reservation, isRated: true }
               : reservation
           )
         );
@@ -180,7 +174,7 @@ export default function MyReservationsPage() {
             if (data.success && data.data) {
               setProviders((prev) => ({
                 ...prev,
-                [providerId]: { name: data.data.name },
+                [providerId]: data.data,
               }));
             }
           }
@@ -271,13 +265,13 @@ export default function MyReservationsPage() {
   }
 
   return (
-    <main className="py-10 px-4 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-medium font-serif">My Reservations</h1>
+    <main className="py-6 md:py-10 px-4 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-medium font-serif">My Reservations</h1>
 
         <Link
           href="/catalog"
-          className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
+          className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors w-full sm:w-auto text-center"
         >
           Make New Reservation
         </Link>
@@ -293,7 +287,7 @@ export default function MyReservationsPage() {
           <p>{error}</p>
         </div>
       ) : reservations.length === 0 ? (
-        <div className="bg-white p-10 rounded-lg shadow-md text-center">
+        <div className="bg-white p-6 md:p-10 rounded-lg shadow-md text-center">
           <p className="text-gray-600 mb-6">
             You don't have any reservations yet.
           </p>
@@ -305,115 +299,135 @@ export default function MyReservationsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Vehicle
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Reservation Period
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Price
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Review Provider
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Details
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {reservations.map((reservation) => {
-                const car = getCarDetails(reservation.car);
-                const finalPrice = getDisplayPrice(reservation);
-                return (
-                  <tr key={reservation._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {car
-                          ? `${car.brand} ${car.model}`
-                          : "Car not in system"}
-                      </div>
-                      {car && (
+        <>
+          {/* Desktop version (table) - hidden on small screens */}
+          <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Vehicle
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Reservation Period
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Price
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Review
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Details
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {reservations.map((reservation) => {
+                  const car = getCarDetails(reservation.car);
+                  const finalPrice = getDisplayPrice(reservation);
+                  return (
+                    <tr key={reservation._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {car
+                            ? `${car.brand} ${car.model}`
+                            : "Car not in system"}
+                        </div>
+                        {car && (
+                          <div className="text-xs text-gray-500">
+                            {car.license_plate}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formatDate(reservation.startDate)} -{" "}
+                          {formatDate(reservation.returnDate)}
+                        </div>
                         <div className="text-xs text-gray-500">
-                          {car.license_plate}
+                          Booked on {formatDate(reservation.createdAt)}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(reservation.startDate)} -{" "}
-                        {formatDate(reservation.returnDate)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Booked on {formatDate(reservation.createdAt)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(finalPrice)}
-                      </div>
-                      {/* Show discounts or additional charges if present */}
-                      {reservation.discountAmount ? (
-                        <div className="text-xs text-green-600">
-                          Includes {formatCurrency(reservation.discountAmount)} discount
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatCurrency(finalPrice)}
                         </div>
-                      ) : null}
-                      {reservation.additionalCharges ? (
-                        <div className="text-xs text-amber-600">
-                          Includes {formatCurrency(reservation.additionalCharges)} additional fees
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClasses(
-                          reservation.status
-                        )}`}
-                      >
-                        {reservation.status.charAt(0).toUpperCase() +
-                          reservation.status.slice(1)}
-                      </span>
-                    </td>
-                    {/* Rating column */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                      {!reservation.isRated &&
-                      reservation.status === "completed" ? (
-                        // can be rating
-                        <a
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setActiveRatingReservation(reservation._id);
-                          }}
-                          className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                        {/* Show discounts or additional charges if present */}
+                        {reservation.discountAmount ? (
+                          <div className="text-xs text-green-600">
+                            Includes {formatCurrency(reservation.discountAmount)} discount
+                          </div>
+                        ) : null}
+                        {reservation.additionalCharges ? (
+                          <div className="text-xs text-amber-600">
+                            Includes {formatCurrency(reservation.additionalCharges)} additional fees
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClasses(
+                            reservation.status
+                          )}`}
                         >
+                          {reservation.status.charAt(0).toUpperCase() +
+                            reservation.status.slice(1)}
+                        </span>
+                      </td>
+                      {/* Rating column */}
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        {!reservation.isRated &&
+                        reservation.status === "completed" ? (
+                          // can be rated
+                          <a
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setActiveRatingReservation(reservation._id);
+                            }}
+                            className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                          >
+                            <div className="flex items-center justify-center space-x-1">
+                              <span>Review Provider</span>
+                              {/* Info Icon with tooltip */}
+                              {car?.provider_id && (
+                                <div className="relative group">
+                                  <Info className="w-3 h-3 text-gray-500" />
+                                  <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {providers[car.provider_id]?.name ||
+                                      car.provider_id}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </a>
+                        ) : (
+                          // can't be rated
                           <div className="flex items-center justify-center space-x-1">
-                            <span>Review Provider</span>
+                            <span className="text-gray-400 font-medium">
+                              {reservation.isRated ? "Already Reviewed" : "Review Provider"}
+                            </span>
                             {/* Info Icon with tooltip */}
                             {car?.provider_id && (
                               <div className="relative group">
@@ -425,45 +439,124 @@ export default function MyReservationsPage() {
                               </div>
                             )}
                           </div>
-                        </a>
-                      ) : (
-                        // can't be rating
-                        <div className="flex items-center justify-center space-x-1">
-                          <span className="text-gray-400 font-medium">
-                            {reservation.isRated ? "Already Reviewed" : "Review Provider"}
+                        )}
+                      </td>
+                      {/* Details link */}
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <Link
+                          href={`/account/reservations/${reservation._id}`}
+                          className="text-[#8A7D55] hover:underline font-medium"
+                        >
+                          View Details
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile version (cards) - shown only on small screens */}
+          <div className="md:hidden space-y-4">
+            {reservations.map((reservation) => {
+              const car = getCarDetails(reservation.car);
+              const finalPrice = getDisplayPrice(reservation);
+              return (
+                <div key={reservation._id} className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-medium text-gray-900">
+                        {car ? `${car.brand} ${car.model}` : "Car not in system"}
+                      </h3>
+                      {car && (
+                        <p className="text-xs text-gray-500">
+                          {car.license_plate}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusBadgeClasses(
+                        reservation.status
+                      )}`}
+                    >
+                      {reservation.status.charAt(0).toUpperCase() +
+                        reservation.status.slice(1)}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                      <p>
+                        {formatDate(reservation.startDate)} -{" "}
+                        {formatDate(reservation.returnDate)}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <CreditCard className="w-4 h-4 mr-2 text-gray-500" />
+                      <div>
+                        <p className="font-medium">{formatCurrency(finalPrice)}</p>
+                        {reservation.discountAmount ? (
+                          <p className="text-xs text-green-600">
+                            Includes {formatCurrency(reservation.discountAmount)} discount
+                          </p>
+                        ) : null}
+                        {reservation.additionalCharges ? (
+                          <p className="text-xs text-amber-600">
+                            Includes {formatCurrency(reservation.additionalCharges)} fees
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Provider info section */}
+                    <div className="flex items-center">
+                      <Tag className="w-4 h-4 mr-2 text-gray-500" />
+                      {car?.provider_id && (
+                        <div className="text-sm">
+                          <span className="text-gray-700">Provider: </span>
+                          <span className="font-medium">
+                            {providers[car.provider_id]?.name || "Provider"}
                           </span>
-                          {/* Info Icon with tooltip */}
-                          {car?.provider_id && (
-                            <div className="relative group">
-                              <Info className="w-3 h-3 text-gray-500" />
-                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                {providers[car.provider_id]?.name ||
-                                  car.provider_id}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       )}
-                    </td>
-                    {/* Details link */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <Link
-                        href={`/account/reservations/${reservation._id}`}
-                        className="text-[#8A7D55] hover:underline font-medium"
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between">
+                    {!reservation.isRated && reservation.status === "completed" ? (
+                      <button
+                        onClick={() => setActiveRatingReservation(reservation._id)}
+                        className="text-[#8A7D55] font-medium"
                       >
-                        View Details
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        Review Provider
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 font-medium">
+                        {reservation.isRated ? "Already Reviewed" : "Review Provider"}
+                      </span>
+                    )}
+                    
+                    <Link
+                      href={`/account/reservations/${reservation._id}`}
+                      className="flex items-center text-[#8A7D55] font-medium"
+                    >
+                      View Details
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
           {/* Render the rating popup if a reservation is active for rating */}
           {activeRatingReservation && (
             <RatingPopup onSelect={handleRatingSelect} />
           )}
-        </div>
+        </>
       )}
     </main>
   );
