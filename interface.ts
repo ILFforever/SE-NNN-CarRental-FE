@@ -68,7 +68,7 @@ interface Rent {
   startDate: string;
   returnDate: string;
   actualReturnDate?: string;
-  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  status: 'pending' | 'active' | 'completed' | 'cancelled' | 'unpaid';
   price: number;
   servicePrice?: number;
   additionalCharges?: number;

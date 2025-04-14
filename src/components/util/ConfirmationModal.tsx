@@ -72,7 +72,7 @@ export default function ConfirmationModal({
   // Get icon and colors based on action type
   const getActionDetails = () => {
     switch(actionType) {
-      case 'confirm':
+      case "confirm":
         return {
           icon: <CheckCircle className="h-10 w-10 text-blue-500" />,
           title: 'Confirm Reservation',
@@ -80,13 +80,13 @@ export default function ConfirmationModal({
           buttonColor: 'bg-blue-500 hover:bg-blue-600',
           buttonText: 'Yes, Confirm Reservation'
         };
-      case 'complete':
+      case "complete":
         return {
-          icon: <CheckCircle className="h-10 w-10 text-green-500" />,
-          title: 'Complete Reservation',
-          message: 'Are you sure you want to mark this reservation as completed? This will make the vehicle available for other reservations.',
-          buttonColor: 'bg-green-500 hover:bg-green-600',
-          buttonText: 'Yes, Complete Reservation'
+          icon: <CheckCircle className="h-10 w-10 text-purple-500" />, // Changed from green to purple
+          title: 'Mark Reservation as Unpaid', // Changed title
+          message: 'Are you sure you want to mark this reservation as unpaid? This will make the vehicle available for other reservations.', // Updated message
+          buttonColor: 'bg-purple-500 hover:bg-purple-600', // Changed from green to purple
+          buttonText: 'Yes, Mark as Unpaid' // Updated button text
         };
       case 'cancel':
         return {

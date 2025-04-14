@@ -37,7 +37,7 @@ export default function ReservationManagement({
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [totalPages, setTotalPages] = useState(1);
 
   // Search and filters
@@ -62,7 +62,6 @@ export default function ReservationManagement({
   const [users, setUsers] = useState<{ [key: string]: User }>({});
   const [providers, setProviders] = useState<{ [key: string]: Provider }>({});
 
-  // Fetch all rentals data
   // Fetch all rentals data
   useEffect(() => {
     const fetchRentals = async () => {
@@ -263,7 +262,12 @@ export default function ReservationManagement({
     try {
       // Determine the endpoint based on the action
       let endpoint;
-      let newStatus: "pending" | "active" | "completed" | "cancelled";
+      let newStatus:
+        | "pending"
+        | "active"
+        | "completed"
+        | "cancelled"
+        | "unpaid";
 
       switch (action) {
         case "confirm":
@@ -272,7 +276,8 @@ export default function ReservationManagement({
           break;
         case "complete":
           endpoint = `${API_BASE_URL}/rents/${rentalId}/complete`;
-          newStatus = "completed";
+          // Change this from "completed" to "unpaid"
+          newStatus = "unpaid";
           break;
         case "cancel":
           endpoint = `${API_BASE_URL}/rents/${rentalId}/cancel`;
@@ -290,8 +295,12 @@ export default function ReservationManagement({
         },
         body: JSON.stringify({
           notes: `${
-            action.charAt(0).toUpperCase() + action.slice(1)
-          }ed by admin on ${new Date().toLocaleString()}`,
+            action === "complete"
+              ? "Marked as unpaid"
+              : action.charAt(0).toUpperCase() + action.slice(1) + "ed"
+          } by ${
+            session?.user?.userType || "admin"
+          } on ${new Date().toLocaleString()}`,
         }),
       });
 
@@ -313,7 +322,12 @@ export default function ReservationManagement({
         )
       );
 
-      setSuccess(`Rental ${action}ed successfully`);
+      // Update success message based on action
+      if (action === "complete") {
+        setSuccess(`Rental marked as unpaid successfully`);
+      } else {
+        setSuccess(`Rental ${action}ed successfully`);
+      }
 
       // If completed or cancelled, update car availability
       if (action === "complete" || action === "cancel") {
@@ -458,6 +472,8 @@ export default function ReservationManagement({
         return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "unpaid":
+        return "bg-purple-100 text-purple-800"; // Add a distinct color for unpaid status
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -551,7 +567,7 @@ export default function ReservationManagement({
           break;
         case "complete":
           await updateRentalStatus(rentalId, "complete");
-          setSuccess(`Reservation #${rentalId.slice(-6)} marked as completed`);
+          setSuccess(`Reservation #${rentalId.slice(-6)} marked as unpaid`); // Updated message
           break;
         case "cancel":
           await updateRentalStatus(rentalId, "cancel");
@@ -581,6 +597,160 @@ export default function ReservationManagement({
           : `An unexpected error occurred while trying to ${modalAction} the reservation`
       );
     }
+  };
+
+  const PaginationControls = () => {
+    // Don't show pagination if no data or only one page
+    if (totalPages <= 1 || filteredRentals.length === 0) {
+      return null;
+    }
+
+    // Calculate the range of page numbers to display
+    const getPageRange = () => {
+      const range = [];
+      const maxButtons = 5; // Maximum number of page buttons to show
+
+      let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+      let end = start + maxButtons - 1;
+
+      if (end > totalPages) {
+        end = totalPages;
+        start = Math.max(1, end - maxButtons + 1);
+      }
+
+      for (let i = start; i <= end; i++) {
+        range.push(i);
+      }
+
+      return range;
+    };
+
+    const pageRange = getPageRange();
+
+    // Calculate the indexes of items being displayed
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(
+      startIndex + itemsPerPage - 1,
+      filteredRentals.length
+    );
+    return (
+      <div className="mt-6 flex flex-col items-center space-y-3">
+        {/* Results count indicator */}
+        <div className="text-sm text-gray-600">
+          Showing {startIndex} to {endIndex} of {filteredRentals.length}{" "}
+          reservations
+        </div>
+
+        {/* Pagination buttons */}
+        <div className="flex items-center space-x-1">
+          {/* First page button */}
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to first page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          {/* Previous page button */}
+          <button
+            onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+            disabled={currentPage <= 1}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to previous page"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          {/* Page number buttons */}
+          {pageRange.map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === page
+                  ? "bg-[#8A7D55] text-white font-medium"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          {/* Next page button */}
+          <button
+            onClick={() =>
+              setCurrentPage((page) => Math.min(page + 1, totalPages))
+            }
+            disabled={currentPage >= totalPages}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to next page"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          {/* Last page button */}
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to last page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+              <path
+                fillRule="evenodd"
+                d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Page size selector */}
+        <div className="flex items-center space-x-2 text-sm">
+          <span className="text-gray-600">Items per page:</span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              const newItemsPerPage = parseInt(e.target.value);
+              setItemsPerPage(newItemsPerPage);
+              setTotalPages(
+                Math.ceil(filteredRentals.length / newItemsPerPage)
+              );
+              setCurrentPage(1); // Reset to first page when changing page size
+            }}
+            className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#8A7D55]"
+          >
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -910,12 +1080,12 @@ export default function ReservationManagement({
                             </button>
                           )}
 
-                          {/* Complete Button - Active for active */}
+                          {/* Complete Button - Active for active rentals */}
                           {rental.status === "active" && (
                             <button
                               onClick={() => executeAction("complete", rental)}
                               className="p-1 text-blue-500 hover:text-blue-700"
-                              title="Complete reservation"
+                              title="Mark as unpaid"
                             >
                               <Check size={16} />
                             </button>
@@ -933,11 +1103,25 @@ export default function ReservationManagement({
                             </button>
                           )}
 
-                          {/* Edit Button */}
+                          {/* Edit Button - disabled for completed or cancelled rentals */}
                           <button
                             onClick={() => executeAction("edit", rental)}
-                            className="p-1 text-blue-500 hover:text-blue-700"
-                            title="Edit reservation"
+                            disabled={
+                              rental.status === "completed" ||
+                              rental.status === "cancelled"
+                            }
+                            className={`p-1 ${
+                              rental.status === "completed" ||
+                              rental.status === "cancelled"
+                                ? "text-gray-300 cursor-not-allowed"
+                                : "text-blue-500 hover:text-blue-700"
+                            }`}
+                            title={
+                              rental.status === "completed" ||
+                              rental.status === "cancelled"
+                                ? `Cannot edit ${rental.status} reservations`
+                                : "Edit reservation"
+                            }
                           >
                             <Edit size={16} />
                           </button>

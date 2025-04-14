@@ -633,30 +633,30 @@ export default function CatalogPage() {
   const isCarAvailableForDates = (car: Car): boolean => {
     // If no dates are selected, consider the car as available based on its available property
     if (!dateRange.startDate || !dateRange.endDate) return car.available;
-
+  
     // If car is marked as unavailable, return false
     if (!car.available) return false;
-
+  
     // If car doesn't have rents data, use the available flag
     if (!car.rents || car.rents.length === 0) return car.available;
-
+  
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
-
+  
     // Check for overlaps in the booking dates
-    const conflicts = car.rents.filter((rent: Rent) => {
-      // Only check active and pending bookings
-      if (rent.status !== "active" && rent.status !== "pending") {
-        return false;
+    const conflicts = car.rents.filter((rent) => {
+      // Only check active and pending bookings (explicitly include acceptable statuses)
+      // This avoids the TypeScript error with the "unpaid" status
+      if (rent.status === "active" || rent.status === "pending") {
+        const rentStartDate = new Date(rent.startDate);
+        const rentEndDate = new Date(rent.returnDate);
+  
+        // If the rental period overlaps with the requested booking, return true
+        return start < rentEndDate && end > rentStartDate;
       }
-
-      const rentStartDate = new Date(rent.startDate);
-      const rentEndDate = new Date(rent.returnDate);
-
-      // If the rental period overlaps with the requested booking, return true
-      return start < rentEndDate && end > rentStartDate;
+      return false;
     });
-
+  
     return conflicts.length === 0;
   };
 
