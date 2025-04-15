@@ -1093,7 +1093,7 @@ export default function ReservationManagement({
 
                           {/* Disabled Check - For completed/cancelled */}
                           {(rental.status === "completed" ||
-                            rental.status === "cancelled") && (
+                            rental.status === "cancelled"|| rental.status === "unpaid") && (
                             <button
                               disabled
                               className="p-1 text-gray-300 cursor-not-allowed"
