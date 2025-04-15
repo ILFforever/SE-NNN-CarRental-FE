@@ -5,6 +5,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
 
 :root {
+  --primary:#8A7D55;
+  --secondary:#F2E6D5; 
   --foreground-rgb: 48, 48, 48;
   --background-start-rgb: 240, 237, 230; /* Cream color */
   --background-end-rgb: 230, 225, 215; /* Slightly darker cream */
@@ -47,6 +49,17 @@
   --callout-border-rgb: 172, 165, 153;
   --card-rgb: 180, 173, 158;
   --card-border-rgb: 131, 125, 112;
+}
+
+@theme{
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-foreground: rgb(var(--foreground-rgb));
+  --color-background-start: rgb(var(--background-start-rgb));
+  --color-background-end: rgb(var(--background-end-rgb));
+  --color-accent-light: var(--accent-color-light);
+  --color-accent-medium: var(--accent-color-medium);
+  --color-max-width: var(--max-width);
 }
 
 * {

@@ -1,0 +1,63 @@
+/* Base styles for the overlay (optional, applied by CSSTransition) */
+.popup-overlay {
+    /* Define transition for the overlay fade */
+    transition: opacity 300ms ease-in-out;
+    opacity: 1; /* Start fully opaque when entering/entered */
+  }
+  
+  /* Styles for the content box within the overlay */
+  .popup-content {
+    /* Define transitions for opacity and transform (scale/translate) */
+    transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  /* --- Enter Transition --- */
+  
+  /* State right before entering */
+  .popup-transition-enter .popup-overlay {
+    opacity: 0;
+  }
+  .popup-transition-enter .popup-content {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px); /* Start slightly smaller and moved up */
+  }
+  
+  /* State during entering animation */
+  .popup-transition-enter-active .popup-overlay {
+    opacity: 1;
+  }
+  .popup-transition-enter-active .popup-content {
+    opacity: 1;
+    transform: scale(1) translateY(0); /* Animate to full size and original position */
+  }
+  
+  /* --- Exit Transition --- */
+  
+  /* State right before exiting (already visible) */
+  .popup-transition-exit .popup-overlay {
+    opacity: 1;
+  }
+  .popup-transition-exit .popup-content {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  /* State during exiting animation */
+  .popup-transition-exit-active .popup-overlay {
+    opacity: 0;
+  }
+  .popup-transition-exit-active .popup-content {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px); /* Animate back to smaller/moved up */
+  }
+  
+  /* Optional: Ensure the element is truly gone after exit if not using unmountOnExit,
+     but unmountOnExit is generally preferred */
+  /*
+  .popup-transition-exit-done .popup-overlay,
+  .popup-transition-exit-done .popup-content {
+    display: none;
+  }
+  */
