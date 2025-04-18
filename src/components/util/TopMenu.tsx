@@ -158,7 +158,7 @@ export default function TopMenu() {
         <DesktopMenuItem
           href="/admin/tools"
           onClick={handleNavigation}
-          className="text-red-600 font-semibold px-4 py-2 mx-[6px] rounded-lg transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] border border-transparent hover:shadow-md bg-gradient-to-br from-[rgba(255,0,0,0.08)] to-[rgba(255,0,0,0.15)] hover:bg-gradient-to-br hover:from-[rgba(255,0,0,0.12)] hover:to-[rgba(255,0,0,0.2)] hover:border-[rgba(255,0,0,0.3)] hover:text-red-600 hover:shadow-[0_4px_12px_rgba(255,0,0,0.15)] hover:-translate-y-[3px] hover:scale-[1.03] active:translate-y-0 active:scale-[0.98] after:bg-gradient-to-r after:from-red-500 after:to-red-400"
+          className="text-red-600 font-semibold px-4 py-2 mx-[6px] rounded-lg transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] border border-transparent bg-gradient-to-br from-[rgba(255,0,0,0.08)] to-[rgba(255,0,0,0.15)] hover:bg-gradient-to-br hover:from-[rgba(255,0,0,0.12)] hover:to-[rgba(255,0,0,0.2)] hover:border-[rgba(255,0,0,0.3)] hover:text-red-600 hover:shadow-[0_4px_12px_rgba(255,0,0,0.15)] hover:-translate-y-[3px] hover:scale-[1.03] active:translate-y-0 active:scale-[0.98] after:bg-gradient-to-r after:from-red-500 after:to-red-400"
           isSpecial={true}
         >
           Admin Tools
@@ -173,7 +173,7 @@ export default function TopMenu() {
       <DesktopMenuItem
         href="/provider/tools"
         onClick={handleNavigation}
-        className="text-blue-600 font-semibold px-4 py-2 mx-[6px] rounded-lg transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] border border-transparent hover:shadow-md bg-gradient-to-br from-[rgba(0,0,255,0.08)] to-[rgba(0,0,255,0.15)] hover:bg-gradient-to-br hover:from-[rgba(0,0,255,0.12)] hover:to-[rgba(0,0,255,0.2)] hover:border-[rgba(0,0,255,0.3)] hover:text-blue-600 hover:shadow-[0_4px_12px_rgba(0,0,255,0.15)] hover:-translate-y-[3px] hover:scale-[1.03] active:translate-y-0 active:scale-[0.98] after:bg-gradient-to-r after:from-blue-500 after:to-blue-400"
+        className="text-blue-600 font-semibold px-4 py-2 mx-[6px] rounded-lg transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] border border-transparent bg-gradient-to-br from-[rgba(0,0,255,0.08)] to-[rgba(0,0,255,0.15)] hover:bg-gradient-to-br hover:from-[rgba(0,0,255,0.12)] hover:to-[rgba(0,0,255,0.2)] hover:border-[rgba(0,0,255,0.3)] hover:text-blue-600 hover:shadow-[0_4px_12px_rgba(0,0,255,0.15)] hover:-translate-y-[3px] hover:scale-[1.03] active:translate-y-0 active:scale-[0.98] after:bg-gradient-to-r after:from-blue-500 after:to-blue-400"
         isSpecial={true}
       >
         Provider Tools
