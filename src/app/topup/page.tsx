@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { API_BASE_URL } from "@/config/apiConfig";
 
 export default function TopUpPage() {
   const { data: session } = useSession();
@@ -14,10 +15,12 @@ export default function TopUpPage() {
   const [totalCredit, setTotalCredit] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
 
   // preset buttons for quick select
-  const presetAmounts = [100, 200, 500, 1000];
+  const presetAmounts = [100, 200, 500, 1000, 2000, 5000];
 
+  // calculate bonus when amount changes
   useEffect(() => {
     if (amount < 100) {
       setError("Minimum top-up is $100");
@@ -47,12 +50,27 @@ export default function TopUpPage() {
     );
   }
 
-  const handleConfirm = () => {
+  // handle top-up confirmation: fetch QR code
+  const handleConfirm = async () => {
     if (error || amount < 100) return;
     setLoading(true);
-    router.push(
-      `/account/topup/confirm?amount=${amount}&credit=${totalCredit}`
-    );
+    try {
+      // replace with your actual API base URL or config import
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      const res = await fetch(
+        `${API_BASE_URL}/qrcode/topup?uid=${session.user.id}&cash=${amount}`
+      );
+      const data = await res.json();
+      if (data.success && data.url) {
+        setQrUrl(data.url);
+      } else {
+        setError(data.message || "Failed to generate QR code");
+      }
+    } catch (err) {
+      setError("Network error while generating QR code");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,7 +82,7 @@ export default function TopUpPage() {
           alt="Top Up Banner"
           layout="fill"
           objectFit="cover"
-          className="mask-b-from-20% mask-b-to-80%"
+          className="object-contain"
         />
       </div>
 
@@ -73,7 +91,7 @@ export default function TopUpPage() {
           Account Top-Up
         </h1>
 
-        {/* Select quick amount */}
+        {/* Preset Buttons */}
         <div className="mb-8">
           <label className="text-md md:text-2xl block mb-4 font-medium">
             Select Quick Amount
@@ -82,6 +100,7 @@ export default function TopUpPage() {
             {presetAmounts.map((val) => (
               <button
                 key={val}
+                type="button"
                 onClick={() => setAmount(val)}
                 className={`px-4 py-2 rounded-lg border 
                   ${
@@ -136,7 +155,7 @@ export default function TopUpPage() {
           </div>
         )}
 
-        {/* Confirm Button */}
+        {/* Confirm Button & Loading */}
         <button
           onClick={handleConfirm}
           disabled={!!error || loading}
@@ -148,8 +167,22 @@ export default function TopUpPage() {
             }
           `}
         >
-          {loading ? "Processing..." : "Confirm Top-Up"}
+          {loading ? "Generating QR Code..." : "Generate QR Code for Payment"}
         </button>
+
+        {/* QR Code Display */}
+        {qrUrl && (
+          <div className="mt-16 text-center">
+            <p className="text-md md:text-xl mb-4 font-medium">
+              Scan this QR code to payment:
+            </p>
+            <img
+              src={qrUrl}
+              alt="Top-Up QR Code"
+              className="mx-auto w-1/2 h-1/2"
+            />
+          </div>
+        )}
       </section>
     </main>
   );
