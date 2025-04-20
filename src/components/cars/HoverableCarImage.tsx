@@ -45,13 +45,13 @@ export default function HoverableCarImage({
   const displayImages = useMemo(() => {
     // First, check if we have an imageOrder array to prioritize
     if (car.imageOrder && Array.isArray(car.imageOrder) && car.imageOrder.length > 0) {
-      console.log('Using imageOrder for hoverable display:', car.imageOrder);
+      //console.log('Using imageOrder for hoverable display:', car.imageOrder);
       return car.imageOrder.map(img => processImagePath(img));
     }
     
     // If no imageOrder, fallback to the standard images array
     if (car.images && Array.isArray(car.images) && car.images.length > 0) {
-      console.log('Using images array for hoverable display:', car.images);
+      //console.log('Using images array for hoverable display:', car.images);
       return car.images.map(img => processImagePath(img));
     }
     

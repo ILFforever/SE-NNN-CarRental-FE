@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import FavoriteHeartButton, { FavoriteCarsProvider, useFavoriteCars } from "@/components/cars/FavoriteHeartButton";
-import { CheckCircle, Star } from "lucide-react";
+import { CheckCircle, Star, RefreshCw } from "lucide-react";
 import HoverableCarImage from "@/components/cars/HoverableCarImage";
-import useFavorite from "@/hooks/useFavorite"; // Import our custom hook
-
 
 // Define types for API responses
 interface ApiResponse<T> {
@@ -19,12 +17,7 @@ interface ApiResponse<T> {
   data: T;
 }
 
-interface FavoriteAction {
-  carID: string;
-  userId?: string;
-}
-
-export default function FavoriteCars(): React.ReactNode {
+export default function FavoriteCars() {
   useScrollToTop();
   const [favoriteCars, setFavoriteCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,30 +25,33 @@ export default function FavoriteCars(): React.ReactNode {
   const { data: session, status } = useSession();
   const router = useRouter();
   
-  // Get the favorite cars context to listen for changes
+  // Get the favorite cars context
   const { favorites, setFavorites } = useFavoriteCars();
-
+  
+  // Add state for showing the refresh button
+  const [showRefreshButton, setShowRefreshButton] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  
+  // Initial load when component mounts
   useEffect(() => {
+    console.log('Initial useEffect - Authentication Status:', status);
+    
     // Redirect if user is not authenticated
     if (status === "unauthenticated") {
+      console.log('User not authenticated - redirecting to sign in');
       router.push("/signin?callbackUrl=/account/favorite");
       return;
     }
 
     if (status === "authenticated" && session?.user?.token) {
+      console.log('User authenticated - fetching favorites');
       fetchFavorites();
     }
   }, [status, session, router]);
-  
-  // Re-fetch favorites whenever the favorites list changes
-  useEffect(() => {
-    if (status === "authenticated" && session?.user?.token) {
-      fetchFavorites();
-    }
-  }, [favorites]);
 
   async function fetchProviderDetails(providerId: string, headers: HeadersInit): Promise<Provider | null> {
     try {
+      console.log(`Fetching provider details for ID: ${providerId}`);
       const response = await fetch(`${API_BASE_URL}/Car_Provider/${providerId}`, { headers });
       
       if (!response.ok) {
@@ -66,6 +62,7 @@ export default function FavoriteCars(): React.ReactNode {
       const providerData = await response.json();
       
       if (providerData.success && providerData.data) {
+        console.log('Provider details fetched successfully:', providerData.data);
         return providerData.data;
       }
       
@@ -76,10 +73,17 @@ export default function FavoriteCars(): React.ReactNode {
     }
   }
 
-  async function fetchFavorites(): Promise<void> {
-    setLoading(true);
+  const fetchFavorites = useCallback(async (showLoadingState = true): Promise<void> => {
+    console.log('Fetch Favorites called', { showLoadingState });
+    
+    if (showLoadingState) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
+    
     setError(null);
-
+    
     try {
       // Set up headers with auth token
       const headers: HeadersInit = {
@@ -90,22 +94,30 @@ export default function FavoriteCars(): React.ReactNode {
       // Fetch current user data to get favorite car IDs
       const userRes = await fetch(`${API_BASE_URL}/auth/curuser`, { headers });
       if (!userRes.ok) {
+        console.error('Failed to fetch user data');
         throw new Error("Failed to fetch user data");
       }
 
       const userData: ApiResponse<User> = await userRes.json();
+      console.log('User data fetched:', userData);
 
       if (!userData.success || !userData.data.favorite_cars) {
+        console.log('No favorite cars found');
         setFavoriteCars([]);
-        setLoading(false);
+        setShowRefreshButton(false);
         return;
       }
 
       const favoriteCarIds: string[] = userData.data.favorite_cars;
+      console.log('Favorite car IDs:', favoriteCarIds);
+      
+      // Update global favorites context
+      setFavorites(favoriteCarIds);
 
       if (favoriteCarIds.length === 0) {
+        console.log('Favorite car list is empty');
         setFavoriteCars([]);
-        setLoading(false);
+        setShowRefreshButton(false);
         return;
       }
 
@@ -157,25 +169,54 @@ export default function FavoriteCars(): React.ReactNode {
       });
       
       const favorites = (await Promise.all(carDataPromises)).filter(car => car !== null) as Car[];
-
+      console.log('Processed favorite cars:', favorites);
+      
       setFavoriteCars(favorites);
+      setShowRefreshButton(false);
     } catch (err: unknown) {
       console.error("Error fetching favorites:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load favorite cars"
       );
     } finally {
-      setLoading(false);
+      if (showLoadingState) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
+      console.log('Fetch favorites completed');
     }
-  }
+  }, [session, setFavorites]);
 
   const handleCarAction = (carId: string) => {
+    console.log('Handle car action for car ID:', carId);
     if (!session) {
       router.push("/signin?callbackUrl=/account/favorite");
       return;
     }
     router.push(`/reserve?carId=${carId}`);
   };
+  
+  // Handle refresh button click
+  const handleRefresh = useCallback(() => {
+    console.log('Refresh button clicked');
+    setIsRefreshing(true);
+    fetchFavorites(false)
+      .then(() => {
+        console.log('Refresh completed successfully');
+      })
+      .catch((error) => {
+        console.error('Refresh failed:', error);
+      })
+      .finally(() => {
+        setIsRefreshing(false);
+      });
+  }, [fetchFavorites]);
+
+  // Log context changes
+  useEffect(() => {
+    console.log('Favorites context changed:', favorites);
+  }, [favorites]);
 
   if (status === "loading") {
     return (
@@ -188,9 +229,23 @@ export default function FavoriteCars(): React.ReactNode {
   return (
     <FavoriteCarsProvider>
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-[#8A7D55] mb-6">
-          Your Favorite Cars
-        </h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-[#8A7D55]">
+            Your Favorite Cars
+          </h1>
+          
+          {/* Refresh button that appears when a favorite is removed */}
+          {showRefreshButton && (
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-3 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-70"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh List'}
+            </button>
+          )}
+        </div>
 
         {loading && (
           <div className="flex justify-center items-center h-64">
@@ -223,11 +278,26 @@ export default function FavoriteCars(): React.ReactNode {
             {favoriteCars.map((car) => (
               <div
                 key={car.id}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+                className={`bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 ${!car.available ? 'opacity-60' : ''}`}
               >
                 <div className="relative h-48">
-                  <FavoriteHeartButton carId={car.id} className="top-2 right-2" onToggle={() => fetchFavorites()} />
+                  <FavoriteHeartButton 
+                    carId={car.id} 
+                    className="top-2 right-2" 
+                    onToggle={() => {
+                      console.log('Favorite button toggled for car:', car.id);
+                      // When a user removes a car from favorites, show the refresh button
+                      setShowRefreshButton(true);
+                    }}
+                  />
                   <HoverableCarImage car={car} />
+                  
+                  {/* Add unavailable badge to clarify the status
+                  {!car.available && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full z-20">
+                      Currently Unavailable
+                    </div>
+                  )} */}
                 </div>
 
                 <div className="p-4">
@@ -284,14 +354,34 @@ export default function FavoriteCars(): React.ReactNode {
                   <div className="mt-4">
                     <button
                       onClick={() => handleCarAction(car.id)}
-                      className="w-full py-2.5 bg-[#8A7D55] hover:bg-[#766b48] text-white rounded-md text-sm font-medium transition-colors duration-200 shadow-sm"
+                      disabled={!car.available}
+                      className={`w-full py-2.5 ${
+                        car.available 
+                          ? "bg-[#8A7D55] hover:bg-[#766b48] text-white" 
+                          : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      } rounded-md text-sm font-medium transition-colors duration-200 shadow-sm`}
                     >
-                      Reserve Now
+                      {car.available ? "Reserve Now" : "Car Unavailable"}
                     </button>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        
+        {/* Show refresh list message when needed */}
+        {showRefreshButton && !loading && (
+          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-100 rounded-md text-center">
+            <p className="text-yellow-700 mb-2">Your favorites list has changed. Refresh to see the updated list.</p>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-70"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh List Now'}
+            </button>
           </div>
         )}
       </main>
