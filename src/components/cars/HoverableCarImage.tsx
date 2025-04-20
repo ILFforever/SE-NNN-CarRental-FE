@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
+import FavoriteHeartButton from '@/components/cars/FavoriteHeartButton';
 
 interface HoverableCarImageProps {
   car: Car;

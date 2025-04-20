@@ -6,7 +6,7 @@ import { API_BASE_URL } from "@/config/apiConfig";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-import FavoriteHeartButton, { FavoriteCarsProvider, useFavoriteCars } from "@/components/util/FavoriteHeartButton";
+import FavoriteHeartButton, { FavoriteCarsProvider, useFavoriteCars } from "@/components/cars/FavoriteHeartButton";
 import { CheckCircle, Star } from "lucide-react";
 import HoverableCarImage from "@/components/cars/HoverableCarImage";
 import useFavorite from "@/hooks/useFavorite"; // Import our custom hook

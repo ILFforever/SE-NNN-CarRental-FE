@@ -10,7 +10,7 @@ import { CheckCircle, Star } from "lucide-react";
 import HoverableCarImage from "@/components/cars/HoverableCarImage";
 import FavoriteHeartButton, {
   FavoriteCarsProvider,
-} from "@/components/util/FavoriteHeartButton";
+} from "@/components/cars/FavoriteHeartButton";
 
 // Type definitions
 interface Provider {
