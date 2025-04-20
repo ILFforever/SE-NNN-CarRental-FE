@@ -220,15 +220,28 @@ export default function TopMenu() {
 
   const ServiceCatalogMenu = () => (
     <>
-      <DesktopMenuItem href="/service" onClick={handleNavigation}>Services</DesktopMenuItem>
-      <DesktopMenuItem
-        href="/catalog"
-        onClick={handleNavigation}
-        className="bg-gradient-to-r from-[#8A7D55] to-[#6e6344] text-white font-semibold border border-[#8A7D55] shadow-[0_4px_10px_rgba(138,125,85,0.3)] px-[18px] py-[9px] mx-[6px] rounded-lg relative overflow-hidden z-[1] transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] before:content-[''] before:absolute before:inset-0 before:bg-gradient-to-r before:from-[#766b48] before:to-[#8A7D55] before:opacity-0 before:transition-opacity before:duration-300 before:ease-linear before:z-[-1] hover:text-white hover:border-[#766b48] hover:-translate-y-[3px] hover:scale-[1.03] hover:shadow-[0_6px_15px_rgba(138,125,85,0.4)] hover:before:opacity-100 hover:after:opacity-0 active:translate-y-0 active:scale-[0.98] active:shadow-[0_4px_8px_rgba(138,125,85,0.3)] lg:px-5 lg:py-[9px] lg:text-[12.5pt] lg:tracking-[0.5px]"
-        isSpecial={true}
-      >
-        Catalog
-      </DesktopMenuItem>
+      {session?.user.userType !== "provider" ? (
+        <>
+          <DesktopMenuItem href="/service" onClick={handleNavigation}>Services</DesktopMenuItem>
+          <DesktopMenuItem
+            href="/catalog"
+            onClick={handleNavigation}
+            className="bg-gradient-to-r from-[#8A7D55] to-[#6e6344] text-white font-semibold border border-[#8A7D55] shadow-[0_4px_10px_rgba(138,125,85,0.3)] px-[18px] py-[9px] mx-[6px] rounded-lg relative overflow-hidden z-[1] transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] before:content-[''] before:absolute before:inset-0 before:bg-gradient-to-r before:from-[#766b48] before:to-[#8A7D55] before:opacity-0 before:transition-opacity before:duration-300 before:ease-linear before:z-[-1] hover:text-white hover:border-[#766b48] hover:-translate-y-[3px] hover:scale-[1.03] hover:shadow-[0_6px_15px_rgba(138,125,85,0.4)] hover:before:opacity-100 hover:after:opacity-0 active:translate-y-0 active:scale-[0.98] active:shadow-[0_4px_8px_rgba(138,125,85,0.3)] lg:px-5 lg:py-[9px] lg:text-[12.5pt] lg:tracking-[0.5px]"
+            isSpecial={true}
+          >
+            Catalog
+          </DesktopMenuItem>
+        </>
+      ) : (
+        <DesktopMenuItem
+          href="/provider/tools"
+          onClick={handleNavigation}
+          className="text-blue-600 font-semibold px-4 py-2 mx-[6px] rounded-lg transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] border border-transparent bg-gradient-to-br from-[rgba(0,0,255,0.08)] to-[rgba(0,0,255,0.15)] hover:bg-gradient-to-br hover:from-[rgba(0,0,255,0.12)] hover:to-[rgba(0,0,255,0.2)] hover:border-[rgba(0,0,255,0.3)] hover:text-blue-600 hover:shadow-[0_4px_12px_rgba(0,0,255,0.15)] hover:-translate-y-[3px] hover:scale-[1.03] active:translate-y-0 active:scale-[0.98] after:bg-gradient-to-r after:from-blue-500 after:to-blue-400"
+          isSpecial={true}
+        >
+          Provider Tools
+        </DesktopMenuItem>
+      )}
     </>
   );
 
@@ -368,8 +381,8 @@ export default function TopMenu() {
                   <span className={clsx(
                     'text-xs ml-[34px] px-2 py-0.5 rounded-full',
                     session.user.userType === 'provider' ? 'bg-blue-100 text-blue-700' :
-                    session.user.role === 'admin' ? 'bg-red-100 text-red-700' :
-                    'bg-yellow-100 text-yellow-800'
+                      session.user.role === 'admin' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-800'
                   )}>
                     {session.user.userType === 'provider' ? 'Car Provider' : session.user.role === 'admin' ? 'Administrator' : 'Customer'}
                   </span>
@@ -378,7 +391,7 @@ export default function TopMenu() {
 
                 <div className='flex flex-col px-2 py-1'>
                   {(session.user.userType === 'customer' ? <CustomerMenu /> : <ProviderMenu />)}
-                  <DesktopMenuItem onClick={handleSignOut} href="/signout?callbackUrl=/" 
+                  <DesktopMenuItem onClick={handleSignOut} href="/signout?callbackUrl=/"
                   >
                     Sign Out
                   </DesktopMenuItem>
@@ -484,11 +497,11 @@ export default function TopMenu() {
               <MobileMenuItem href="/register" onClick={handleNavigation} icon={<RegisterIcon />}>Register</MobileMenuItem>
             </>
           ) :
-          session.user.userType === "customer" ? (
-            <MobileCustomerMenu />
-          ) : (
-            <MobileProviderMenu />
-          )}
+            session.user.userType === "customer" ? (
+              <MobileCustomerMenu />
+            ) : (
+              <MobileProviderMenu />
+            )}
 
 
           <MobileMenuItem href="/about" onClick={handleNavigation} icon={<AboutIcon />}>About</MobileMenuItem>
