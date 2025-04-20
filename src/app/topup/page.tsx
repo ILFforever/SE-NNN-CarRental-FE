@@ -56,9 +56,9 @@ export default function TopUpPage() {
   };
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-6 mb-12">
       {/* Banner Image */}
-      <div className="w-full h-[350px] relative">
+      <div className="w-full h-[200px] md:h-[400px] relative">
         <Image
           src="/img/top-up-banner.jpg"
           alt="Top Up Banner"
@@ -68,15 +68,17 @@ export default function TopUpPage() {
         />
       </div>
 
-      <section className="px-4 max-w-lg mx-auto">
-        <h1 className="text-3xl font-semibold mb-4 text-center">
+      <section className="px-4 max-w-xl mx-auto">
+        <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-center">
           Account Top-Up
         </h1>
 
-        {/* Preset Buttons */}
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">Select Quick Amount</label>
-          <div className="flex flex-wrap gap-2">
+        {/* Select quick amount */}
+        <div className="mb-8">
+          <label className="text-md md:text-2xl block mb-4 font-medium">
+            Select Quick Amount
+          </label>
+          <div className="flex flex-wrap gap-4">
             {presetAmounts.map((val) => (
               <button
                 key={val}
@@ -87,6 +89,7 @@ export default function TopUpPage() {
                       ? "bg-green-600 text-white border-green-600"
                       : "bg-white text-gray-700 border-gray-300"
                   }
+                  text-md md:text-xl
                   hover:bg-green-100 transition-colors
                 `}
               >
@@ -97,8 +100,11 @@ export default function TopUpPage() {
         </div>
 
         {/* Custom Input */}
-        <div className="mb-4">
-          <label htmlFor="amount" className="block mb-1 font-medium">
+        <div className="mb-8">
+          <label
+            htmlFor="amount"
+            className="text-md md:text-2xl block mb-1 font-medium"
+          >
             Or Enter Custom Amount ($)
           </label>
           <input
@@ -115,7 +121,7 @@ export default function TopUpPage() {
 
         {/* Summary */}
         {amount >= 100 && (
-          <div className="mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
+          <div className="text-md mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
             <p>
               Top-Up Amount: <span className="font-semibold">${amount}</span>
             </p>
@@ -134,7 +140,7 @@ export default function TopUpPage() {
         <button
           onClick={handleConfirm}
           disabled={!!error || loading}
-          className={`w-full py-3 text-white font-medium rounded-lg transition
+          className={`w-full py-3 text-md md:text-xl text-white font-medium rounded-lg transition
             ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
