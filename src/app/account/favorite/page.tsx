@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-import FavoriteHeartButton from "@/components/util/FavoriteHeartButton";
-import { CheckCircle } from "lucide-react";
+import FavoriteHeartButton, { FavoriteCarsProvider, useFavoriteCars } from "@/components/util/FavoriteHeartButton";
+import { CheckCircle, Star } from "lucide-react";
+import HoverableCarImage from "@/components/cars/HoverableCarImage";
+import useFavorite from "@/hooks/useFavorite"; // Import our custom hook
+
 
 // Define types for API responses
 interface ApiResponse<T> {
@@ -29,11 +31,14 @@ export default function FavoriteCars(): React.ReactNode {
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
+  
+  // Get the favorite cars context to listen for changes
+  const { favorites, setFavorites } = useFavoriteCars();
 
   useEffect(() => {
     // Redirect if user is not authenticated
     if (status === "unauthenticated") {
-      router.push("/signin?callbackUrl=/favorite");
+      router.push("/signin?callbackUrl=/account/favorite");
       return;
     }
 
@@ -41,6 +46,13 @@ export default function FavoriteCars(): React.ReactNode {
       fetchFavorites();
     }
   }, [status, session, router]);
+  
+  // Re-fetch favorites whenever the favorites list changes
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.token) {
+      fetchFavorites();
+    }
+  }, [favorites]);
 
   async function fetchProviderDetails(providerId: string, headers: HeadersInit): Promise<Provider | null> {
     try {
@@ -132,7 +144,15 @@ export default function FavoriteCars(): React.ReactNode {
           price: car.dailyRate || car.price || 0,
           verified: provider ? provider.verified : false,
           providerName: provider ? provider.name : "Unknown Provider",
-          provider: provider
+          provider: provider ? provider.name : "Unknown Provider",
+          // Ensure images array is properly populated from either images or imageOrder
+          images: car.imageOrder && Array.isArray(car.imageOrder) 
+            ? car.imageOrder 
+            : car.images && Array.isArray(car.images) 
+            ? car.images 
+            : [],
+          // Keep single image for backward compatibility
+          image: car.image || "/img/banner.jpg"
         };
       });
       
@@ -149,36 +169,13 @@ export default function FavoriteCars(): React.ReactNode {
     }
   }
 
-  // Function to remove a car from favorites remains the same
-  async function removeFavorite(carId: string): Promise<void> {
-    try {
-      const payload: FavoriteAction = {
-        carID: carId,
-        userId: session?.user?.id,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/auth/favorite`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.user?.token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to remove from favorites");
-      }
-
-      // Update the UI by removing the car from the state
-      setFavoriteCars((prev) => prev.filter((car) => car.id !== carId));
-    } catch (err: unknown) {
-      console.error("Error removing favorite:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to remove from favorites"
-      );
+  const handleCarAction = (carId: string) => {
+    if (!session) {
+      router.push("/signin?callbackUrl=/account/favorite");
+      return;
     }
-  }
+    router.push(`/reserve?carId=${carId}`);
+  };
 
   if (status === "loading") {
     return (
@@ -189,117 +186,115 @@ export default function FavoriteCars(): React.ReactNode {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-[#8A7D55] mb-6">
-        Your Favorite Cars
-      </h1>
+    <FavoriteCarsProvider>
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-[#8A7D55] mb-6">
+          Your Favorite Cars
+        </h1>
 
-      {loading && (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55]"></div>
-        </div>
-      )}
+        {loading && (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55]"></div>
+          </div>
+        )}
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          <p>{error}</p>
-        </div>
-      )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            <p>{error}</p>
+          </div>
+        )}
 
-      {!loading && !error && favoriteCars.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-600 mb-6">
-            You haven't added any cars to your favorites yet.
-          </p>
-          <Link
-            href="/catalog"
-            className="px-6 py-3 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
-          >
-            Browse Cars
-          </Link>
-        </div>
-      )}
-
-      {!loading && !error && favoriteCars.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favoriteCars.map((car) => (
-            <div
-              key={car.id}
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+        {!loading && !error && favoriteCars.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-6">
+              You haven't added any cars to your favorites yet.
+            </p>
+            <Link
+              href="/catalog"
+              className="px-6 py-3 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors"
             >
-              <div className="relative h-48">
-                <FavoriteHeartButton carId={car.id} className="top-2 right-2" />
-                <Image
-                  src={car.image || "/img/banner.jpg"}
-                  alt={`${car.brand} ${car.model}`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
+              Browse Cars
+            </Link>
+          </div>
+        )}
 
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h2 className="text-lg font-bold">
-                      {car.brand} {car.model}
-                    </h2>
-                    <div className="text-sm text-gray-600 -mt-1 flex items-center">
-                      {new Date(car.manufactureDate).getFullYear()} •{" "}
-                      <span className="font-medium text-[#8A7D55] ml-1">
-                        {car.providerName}
-                      </span>
-                      
-                      {/* {car.verified && (
-                        <span className="ml-2 relative group inline-block">
-                          <CheckCircle className="text-green-500 w-4 h-4" />
-                          <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
-                            Verified
-                          </span>
+        {!loading && !error && favoriteCars.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {favoriteCars.map((car) => (
+              <div
+                key={car.id}
+                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+              >
+                <div className="relative h-48">
+                  <FavoriteHeartButton carId={car.id} className="top-2 right-2" onToggle={() => fetchFavorites()} />
+                  <HoverableCarImage car={car} />
+                </div>
+
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h2 className="text-lg font-bold">
+                        {car.brand} {car.model}
+                      </h2>
+                      <div className="text-sm text-gray-600 -mt-1 flex items-center">
+                        {new Date(car.manufactureDate).getFullYear()} •{" "}
+                        <span className="font-medium text-[#8A7D55] ml-1">
+                          {car.providerName}
                         </span>
-                      )} */}
+                        
+                        {car.verified && (
+                          <div className="ml-2 relative group inline-flex items-center">
+                            <CheckCircle className="text-green-500 w-4 h-4" />
+                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-70 transition-opacity">
+                              Verified
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-lg text-[#8A7D55]">
+                        ${car.price}
+                      </span>
+                      <span className="text-gray-600 text-sm"> /day</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-bold text-lg text-[#8A7D55]">
-                      ${car.price}
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
+                      {car.type?.charAt(0).toUpperCase() + car.type?.slice(1) || "Unknown"}
                     </span>
-                    <span className="text-gray-600 text-sm"> /day</span>
+                    {car.seats && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
+                        {car.seats} seats
+                      </span>
+                    )}
+                    {car.color && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
+                        {car.color}
+                      </span>
+                    )}
+                    {car.tier !== undefined && (
+                      <span className="px-3 py-1 bg-[#f8f5f0] text-[#8A7D55] text-xs rounded-full font-medium">
+                        Tier {car.tier}
+                      </span>
+                    )}
                   </div>
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
-                    {car.type.charAt(0).toUpperCase() + car.type.slice(1)}
-                  </span>
-                  {car.seats && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
-                      {car.seats} seats
-                    </span>
-                  )}
-                  {car.color && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
-                      {car.color}
-                    </span>
-                  )}
-                  {car.tier !== undefined && (
-                    <span className="px-3 py-1 bg-[#f8f5f0] text-[#8A7D55] text-xs rounded-full font-medium">
-                      Tier {car.tier}
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <Link href={`/reserve?carId=${car.id}`} className="flex-1">
-                    <button className="w-full py-2.5 bg-[#8A7D55] hover:bg-[#766b48] text-white rounded-md text-sm font-medium transition-colors duration-200 shadow-sm">
+                  <div className="mt-4">
+                    <button
+                      onClick={() => handleCarAction(car.id)}
+                      className="w-full py-2.5 bg-[#8A7D55] hover:bg-[#766b48] text-white rounded-md text-sm font-medium transition-colors duration-200 shadow-sm"
+                    >
                       Reserve Now
                     </button>
-                  </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </main>
+            ))}
+          </div>
+        )}
+      </main>
+    </FavoriteCarsProvider>
   );
 }
