@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 
 export default function CoinChip() {
     const { data: session } = useSession();
-    const [coin,setCoin] = useState('');
+    const [coin,setCoin] = useState('100');
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -22,20 +22,25 @@ export default function CoinChip() {
 
     useEffect(()=>{
         const fetchCoin = async () => {
-            const response = await fetch(`${API_BASE_URL}/credits`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.user.token}`,
-                }
-            });
-            const data = await response.json();
-            setCoin(() => {
-                const credits = data.data.credits;
-                if (credits >= 1000000) return `${(credits / 1000000).toFixed(1).replace(/\.0$/, '')}m`;
-                if (credits >= 1000) return `${(credits / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-                return credits.toString();
-            });
+            try{
+                const response = await fetch(`${API_BASE_URL}/credits`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.user.token}`,
+                    }
+                });
+                const data = await response.json();
+                setCoin(() => {
+                    const credits = data.data.credits;
+                    if (credits >= 1000000) return `${(credits / 1000000).toFixed(1).replace(/\.0$/, '')}m`;
+                    if (credits >= 1000) return `${(credits / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+                    return credits.toString();
+                });
+            }
+            catch (error) {
+                console.error('Error fetching coin data:', error);
+            }
         }
         fetchCoin();
     })
