@@ -32,6 +32,7 @@ export default function CoinChip() {
                 });
                 const data = await response.json();
                 setCoin(() => {
+                    if (!data || !data.data) return '0';
                     const credits = data.data.credits ?? 0;
                     if (credits >= 1000000) return `${(credits / 1000000).toFixed(1).replace(/\.0$/, '')}m`;
                     if (credits >= 1000) return `${(credits / 1000).toFixed(1).replace(/\.0$/, '')}k`;
