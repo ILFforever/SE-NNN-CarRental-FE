@@ -102,7 +102,7 @@ export default function ClientProfilePage({
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/users/update-profile`, {
+      const response = await fetch(`${API_BASE_URL}/auth/update-profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
