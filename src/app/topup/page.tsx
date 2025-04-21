@@ -1,4 +1,3 @@
-// app/account/topup/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,11 +10,17 @@ import { API_BASE_URL } from "@/config/apiConfig";
 export default function TopUpPage() {
   const { data: session } = useSession();
   const router = useRouter();
+
   const [amount, setAmount] = useState<number>(0);
   const [totalCredit, setTotalCredit] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [transId, setTransId] = useState<string | null>(null);
+  const [qrStatus, setQrStatus] = useState<
+    "pending" | "completed" | "expired" | null
+  >(null);
 
   // preset buttons for quick select
   const presetAmounts = [100, 200, 500, 1000, 2000, 5000];
@@ -34,6 +39,48 @@ export default function TopUpPage() {
       setTotalCredit(amount + bonus);
     }
   }, [amount]);
+
+  // extract transaction ID from QR URL
+  useEffect(() => {
+    if (qrUrl) {
+      try {
+        const url = new URL(qrUrl);
+        const id = url.pathname.split("/").pop();
+        setTransId(id || null);
+        setQrStatus("pending");
+      } catch {
+        setTransId(null);
+      }
+    }
+  }, [qrUrl]);
+
+  // poll status every 10 seconds
+  useEffect(() => {
+    if (!transId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5003/api/v1/credits/topup/status?trans_id=${transId}`
+        );
+        if (res.status === 404) {
+          setQrStatus("expired");
+          clearInterval(interval);
+          return;
+        }
+        const data = await res.json();
+        if (data.status === "completed") {
+          setQrStatus("completed");
+          clearInterval(interval);
+          router.push(`/topup/${transId}`);
+        } else {
+          setQrStatus("pending");
+        }
+      } catch (err) {
+        console.error("Error checking QR status", err);
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [transId, router]);
 
   if (!session) {
     return (
@@ -55,11 +102,14 @@ export default function TopUpPage() {
     if (error || amount < 100) return;
     setLoading(true);
     try {
-      // replace with your actual API base URL or config import
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const res = await fetch(
-        `${API_BASE_URL}/qrcode/topup?uid=${session.user.id}&cash=${amount}`
-      );
+      const res = await fetch(`${API_BASE_URL}/credits/topup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.user.token}`,
+        },
+        body: JSON.stringify({ uid: session.user.id, amount }),
+      });
       const data = await res.json();
       if (data.success && data.url) {
         setQrUrl(data.url);
@@ -76,13 +126,12 @@ export default function TopUpPage() {
   return (
     <main className="space-y-6 mb-12">
       {/* Banner Image */}
-      <div className="w-full h-[200px] md:h-[400px] relative">
+      <div className="h-[200px] md:h-[350px] w-full relative">
         <Image
           src="/img/top-up-banner.jpg"
           alt="Top Up Banner"
           layout="fill"
           objectFit="cover"
-          className="object-contain"
         />
       </div>
 
@@ -155,33 +204,39 @@ export default function TopUpPage() {
           </div>
         )}
 
-        {/* Confirm Button & Loading */}
+        {/* Action Button */}
         <button
           onClick={handleConfirm}
-          disabled={!!error || loading}
-          className={`w-full py-3 text-md md:text-xl text-white font-medium rounded-lg transition
+          disabled={loading || qrStatus === "pending"}
+          className={`w-full py-3 text-white font-medium rounded-lg transition
             ${
-              loading
+              loading || qrStatus === "pending"
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700"
             }
           `}
         >
-          {loading ? "Generating QR Code..." : "Generate QR Code for Payment"}
+          {loading
+            ? "Generating QR Code..."
+            : qrStatus === "pending"
+            ? "QR Code Pending..."
+            : "Confirm Top-Up"}
         </button>
 
-        {/* QR Code Display */}
-        {qrUrl && (
-          <div className="mt-16 text-center">
-            <p className="text-md md:text-xl mb-4 font-medium">
-              Scan this QR code to payment:
-            </p>
+        {/* QR Display & Expired */}
+        {qrUrl && qrStatus === "pending" && (
+          <div className="mt-8 text-center">
             <img
               src={qrUrl}
               alt="Top-Up QR Code"
-              className="mx-auto w-1/2 h-1/2"
+              className="mx-auto w-[150px] md:w-[300px] h-[150px] md:h-[300px] rounded-lg border border-gray-300"
             />
           </div>
+        )}
+        {qrStatus === "expired" && (
+          <p className="mt-8 text-center text-red-600 font-medium">
+            This QR code has expired. Please retry.
+          </p>
         )}
       </section>
     </main>
