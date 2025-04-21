@@ -7,7 +7,7 @@ interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
-  actionType: 'confirm' | 'complete' | 'cancel' | 'delete';
+  actionType: 'confirm' | 'unpaid' | 'complete' | 'cancel' | 'delete';
   rentalId: string;
   carDetails?: {
     brand: string;

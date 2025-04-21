@@ -53,7 +53,7 @@ export default function ReservationManagement({
   //modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<
-    "confirm" | "complete" | "cancel" | "delete"
+    "confirm" | "unpaid" | "complete" | "cancel" | "delete"
   >("confirm");
   const [selectedRental, setSelectedRental] = useState<any>(null);
 
@@ -253,7 +253,7 @@ export default function ReservationManagement({
   // Handle rental update (Accept/Complete/Cancel)
   const updateRentalStatus = async (
     rentalId: string,
-    action: "confirm" | "complete" | "cancel"
+    action: "confirm" | "unpaid" | "complete" | "cancel"
   ) => {
     setIsLoading(true);
     setError("");
@@ -265,19 +265,23 @@ export default function ReservationManagement({
       let newStatus:
         | "pending"
         | "active"
+        | "unpaid"
         | "completed"
-        | "cancelled"
-        | "unpaid";
+        | "cancelled";
 
       switch (action) {
         case "confirm":
           endpoint = `${API_BASE_URL}/rents/${rentalId}/confirm`;
           newStatus = "active";
           break;
-        case "complete":
+
+        case "unpaid":
           endpoint = `${API_BASE_URL}/rents/${rentalId}/complete`;
-          // Change this from "completed" to "unpaid"
           newStatus = "unpaid";
+          break;
+        case "complete":
+          endpoint = `${API_BASE_URL}/rents/${rentalId}/paid`;
+          newStatus = "completed";
           break;
         case "cancel":
           endpoint = `${API_BASE_URL}/rents/${rentalId}/cancel`;
@@ -295,8 +299,10 @@ export default function ReservationManagement({
         },
         body: JSON.stringify({
           notes: `${
-            action === "complete"
+            action === "complete" && newStatus === "unpaid"
               ? "Marked as unpaid"
+              : action === "complete" && newStatus === "completed"
+              ? "Marked as completed"
               : action.charAt(0).toUpperCase() + action.slice(1) + "ed"
           } by ${
             session?.user?.userType || "admin"
@@ -322,15 +328,22 @@ export default function ReservationManagement({
         )
       );
 
-      // Update success message based on action
+      // Update success message based on action and new status
       if (action === "complete") {
-        setSuccess(`Rental marked as unpaid successfully`);
+        if (newStatus === "unpaid") {
+          setSuccess(`Rental marked as unpaid successfully`);
+        } else {
+          setSuccess(`Rental marked as completed successfully`);
+        }
       } else {
         setSuccess(`Rental ${action}ed successfully`);
       }
 
       // If completed or cancelled, update car availability
-      if (action === "complete" || action === "cancel") {
+      if (
+        (action === "complete" && newStatus === "completed") ||
+        action === "cancel"
+      ) {
         // Find the rental and its car
         const rental = rentals.find((r) => r._id === rentalId);
         if (rental) {
@@ -487,7 +500,14 @@ export default function ReservationManagement({
 
   // Execute actions on rentals
   const executeAction = (
-    action: "confirm" | "complete" | "cancel" | "view" | "edit" | "delete",
+    action:
+      | "confirm"
+      | "unpaid"
+      | "complete"
+      | "cancel"
+      | "view"
+      | "edit"
+      | "delete",
     rental: Rent
   ) => {
     if (!rental) return;
@@ -514,9 +534,13 @@ export default function ReservationManagement({
     }
 
     // For actions that need confirmation, show the modal
-    if (["confirm", "complete", "cancel", "delete"].includes(action)) {
+    if (
+      ["confirm", "unpaid", "complete", "cancel", "delete"].includes(action)
+    ) {
       setSelectedRental(rental);
-      setModalAction(action as "confirm" | "complete" | "cancel" | "delete");
+      setModalAction(
+        action as "confirm" | "unpaid" | "complete" | "cancel" | "delete"
+      );
       setIsModalOpen(true);
       return;
     }
@@ -565,9 +589,13 @@ export default function ReservationManagement({
             `Reservation #${rentalId.slice(-6)} confirmed successfully`
           );
           break;
+        case "unpaid":
+          await updateRentalStatus(rentalId, "unpaid");
+          setSuccess(`Reservation #${rentalId.slice(-6)} marked as unpaid`);
+          break;
         case "complete":
           await updateRentalStatus(rentalId, "complete");
-          setSuccess(`Reservation #${rentalId.slice(-6)} marked as unpaid`); // Updated message
+          setSuccess(`Reservation #${rentalId.slice(-6)} marked as completed`);
           break;
         case "cancel":
           await updateRentalStatus(rentalId, "cancel");
@@ -1079,11 +1107,10 @@ export default function ReservationManagement({
                               <Check size={16} />
                             </button>
                           )}
-
                           {/* Complete Button - Active for active rentals */}
                           {rental.status === "active" && (
                             <button
-                              onClick={() => executeAction("complete", rental)}
+                              onClick={() => executeAction("unpaid", rental)}
                               className="p-1 text-blue-500 hover:text-blue-700"
                               title="Mark as unpaid"
                             >
@@ -1091,9 +1118,20 @@ export default function ReservationManagement({
                             </button>
                           )}
 
+                          {/* Complete Button - Active for active rentals */}
+                          {rental.status === "unpaid" && (
+                            <button
+                              onClick={() => executeAction("complete", rental)}
+                              className="p-1 text-purple-500 hover:text-purple-700"
+                              title="Mark as complete"
+                            >
+                              <Check size={16} />
+                            </button>
+                          )}
+
                           {/* Disabled Check - For completed/cancelled */}
                           {(rental.status === "completed" ||
-                            rental.status === "cancelled"|| rental.status === "unpaid") && (
+                            rental.status === "cancelled") && (
                             <button
                               disabled
                               className="p-1 text-gray-300 cursor-not-allowed"
