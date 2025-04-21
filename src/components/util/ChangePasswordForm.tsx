@@ -7,9 +7,16 @@ import { AUTH_ENDPOINTS } from '@/config/apiConfig';
 interface ChangePasswordFormProps {
   userId: string;
   token: string;
+  onCancel?: () => void; // Optional onCancel handler
+  returnUrl?: string; // Optional return URL if no onCancel is provided
 }
 
-export default function ChangePasswordForm({ userId, token }: ChangePasswordFormProps) {
+export default function ChangePasswordForm({ 
+  userId, 
+  token, 
+  onCancel,
+  returnUrl = '/account/profile' // Default return URL for user profile
+}: ChangePasswordFormProps) {
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -67,10 +74,15 @@ export default function ChangePasswordForm({ userId, token }: ChangePasswordForm
       setNewPassword('');
       setConfirmPassword('');
       
-      // Return to profile page after 2 seconds
-      setTimeout(() => {
-        router.push('/account/profile');
-      }, 2000);
+      // Return to profile page or call onCancel
+      if (onCancel) {
+        onCancel();
+      } else {
+        // Default behavior if no onCancel is provided
+        setTimeout(() => {
+          router.push(returnUrl);
+        }, 2000);
+      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -79,6 +91,15 @@ export default function ChangePasswordForm({ userId, token }: ChangePasswordForm
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle cancel button click
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.push(returnUrl);
     }
   };
 
@@ -139,7 +160,7 @@ export default function ChangePasswordForm({ userId, token }: ChangePasswordForm
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => router.push('/account/profile')}
+            onClick={handleCancel}
             className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             Cancel
