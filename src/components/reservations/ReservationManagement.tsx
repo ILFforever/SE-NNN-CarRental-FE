@@ -782,20 +782,17 @@ export default function ReservationManagement({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-screen-xl mx-auto w-max">
-      {/* Success and Error Messages */}
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mx-auto w-full">
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
           {error}
         </div>
       )}
-
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
           {success}
         </div>
       )}
-
       {/* Filters and Search */}
       <div className="flex flex-wrap gap-4 mb-6">
         {/* Search Bar */}
@@ -886,7 +883,6 @@ export default function ReservationManagement({
           Clear Filters
         </button>
       </div>
-
       {/* Rentals Table */}
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
@@ -903,8 +899,8 @@ export default function ReservationManagement({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="-mx-4 sm:mx-0">
+            <table className="w-full table-fixed divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th
