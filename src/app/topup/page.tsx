@@ -60,7 +60,7 @@ export default function TopUpPage() {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `http://localhost:5003/api/v1/credits/topup/status?trans_id=${transId}`
+          `${API_BASE_URL}/credits/topup/status?trans_id=${transId}`
         );
         if (res.status === 404) {
           setQrStatus("expired");
