@@ -119,7 +119,7 @@ export const FavoriteCarsProvider: React.FC<FavoriteCarsProviderProps> = ({ chil
 interface FavoriteHeartButtonProps {
   carId: string;
   className?: string;
-  onToggle?: () => void; // Add callback for when favorite status changes
+  onToggle?: () => void;
 }
 
 const FavoriteHeartButton: React.FC<FavoriteHeartButtonProps> = ({ 
@@ -135,23 +135,21 @@ const FavoriteHeartButton: React.FC<FavoriteHeartButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    if (status !== "authenticated") {
-      // Handle unauthenticated user (could redirect to login)
-      return;
-    }
-
+    if (status !== "authenticated") return;
     if (isLoading) return;
 
     setIsLoading(true);
     try {
-      if (isFavorite(carId)) {
+      const currentlyFavorite = isFavorite(carId);
+
+      if (currentlyFavorite) {
         await removeFavorite(carId);
       } else {
         await addFavorite(carId);
       }
       
-      // Call the onToggle callback if provided
-      if (onToggle) {
+      // Ensure onToggle is a function before calling
+      if (typeof onToggle === 'function') {
         onToggle();
       }
     } catch (error) {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, Expand } from 'lucide-react';
-import FavoriteHeartButton from '@/components/util/FavoriteHeartButton';
+import FavoriteHeartButton from '@/components/cars/FavoriteHeartButton';
 
 // Using the existing Car interface from your reserve page
 
