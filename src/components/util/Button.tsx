@@ -3,12 +3,13 @@ import clsx from 'clsx';
 
 type ButtonProps = {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline'|'ghost'|'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  href?: string;
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -19,6 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   className,
   type = 'button',
+  href,
 }) => {
   const baseStyles = 'rounded font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2';
   const variantStyles = {
@@ -43,9 +45,13 @@ const Button: React.FC<ButtonProps> = ({
   );
 
   return (
-    <button type={type} className={classes} onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
+    <>
+      <a href={href}>
+        <button type={type} className={classes} onClick={onClick} disabled={disabled}>
+          {children}
+        </button>
+      </a>
+    </>
   );
 };
 

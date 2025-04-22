@@ -78,9 +78,9 @@ export default function CoinChip() {
                         <Icon icon="mdi:coin" className="coin-icon shrink-0 size-4 text-[#8A7D55] ml-2" />
                         <span className="text-[#8A7D55] text-sm font-bold ml-2">{coin}</span>
                     </div>
-                    <Button variant="primary" size="sm" className="mt-2" onClick={handleClose}>
+                    <Button variant="primary" size="sm" className="mt-2" onClick={handleClose} href="/topup">
                             <Icon icon="mdi:plus" className="text-[#8A7D55]" />
-                            <span className="text-[#8A7D55] text-sm font-bold">Add</span>
+                            <span className="text-[#8A7D55] text-sm font-bold">Topup</span>
                     </Button>
                 </div>
             </Menu>
