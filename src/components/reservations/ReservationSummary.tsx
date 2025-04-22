@@ -9,9 +9,6 @@ import {
   getTierDiscount,
   getRentalPeriod,
   calculateServicesTotalCost,
-  calculateSubtotal,
-  calculateDiscount,
-  getTotalCost,
 } from "@/libs/bookingUtils";
 
 interface ReservationSummaryProps {
@@ -44,39 +41,38 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
 
-  // คำนวณจำนวนวันเช่า
+  // Calculate the rental period (days)
   const rentalDays = getRentalPeriod(pickupDate, returnDate);
-  
-  // คำนวณค่าใช้จ่ายทั้งหมด
-  const totalCost = getTotalCost(
-    pickupDate,
-    returnDate,
-    car?.dailyRate || 0,
-    selectedServices,
-    services,
-    userTier
-  );
 
-  // คำนวณส่วนลด
-  const discount = calculateDiscount(
-    pickupDate,
-    returnDate,
-    car?.dailyRate || 0,
-    selectedServices,
-    services,
-    userTier
-  );
-  
-  // คำนวณบริการเสริมทั้งหมด
+  // Calculate the base car cost
+  const carCost = rentalDays * (car?.dailyRate || 0);
+
+  // Calculate service costs
   const servicesCost = calculateServicesTotalCost(
     selectedServices,
     services,
     pickupDate,
     returnDate
   );
-  
+
+  // Calculate subtotal (car cost + service cost)
+  const subtotal = carCost + servicesCost;
+
+  // Calculate discount
+  const discountPercentage = getTierDiscount(userTier);
+  const discountAmount = subtotal * (discountPercentage / 100);
+
+  // Calculate final price
+  const finalPrice = subtotal - discountAmount;
+
+  // Round all values to 2 decimal places to avoid floating point precision issues
+  const roundedCarCost = Math.round(carCost * 100) / 100;
+  const roundedServicesCost = Math.round(servicesCost * 100) / 100;
+  const roundedDiscountAmount = Math.round(discountAmount * 100) / 100;
+  const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+
   // กรองบริการที่เลือก
-  const selectedServiceItems = services.filter((service) => 
+  const selectedServiceItems = services.filter((service) =>
     selectedServices.includes(service._id)
   );
 
@@ -84,9 +80,11 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
     <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8 border border-gray-200">
       <div className="bg-[#8A7D55] text-white px-6 py-5 flex justify-between items-center">
         <h2 className="text-xl font-serif font-medium">Reservation Summary</h2>
-        <span className="text-lg font-medium">{formatCurrency(totalCost)}</span>
+        <span className="text-lg font-medium">
+          {formatCurrency(roundedFinalPrice)}
+        </span>
       </div>
-      
+
       {/* ส่วนแสดงข้อมูลสำคัญที่เห็นได้ทันที */}
       <div className="p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -94,7 +92,9 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             <Car size={22} className="text-[#8A7D55]" />
             <div>
               <p className="text-xs text-gray-500">Vehicle</p>
-              <p className="font-medium text-gray-800">{car.brand} {car.model}</p>
+              <p className="font-medium text-gray-800">
+                {car.brand} {car.model}
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-3 bg-gray-50 p-3 rounded-md border border-gray-100">
@@ -107,7 +107,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             </div>
           </div>
         </div>
-        
+
         {/* ปุ่มแสดงรายละเอียดการเช่ารถ - ปรับให้เห็นได้ชัดโดยไม่ต้อง hover */}
         <div className="border-t border-gray-200 pt-3">
           <button
@@ -127,17 +127,21 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
               }`}
             />
           </button>
-          
+
           <div
             id="rental-details-panel"
             className={`overflow-hidden transition-all duration-300 ${
-              detailsExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+              detailsExpanded
+                ? "max-h-[500px] opacity-100"
+                : "max-h-0 opacity-0"
             }`}
           >
             <div className="p-4 bg-gray-50 rounded-md space-y-5 mt-1 border border-gray-200">
               {/* รายละเอียดรถ */}
               <div>
-                <h3 className="text-lg font-medium text-gray-600 mb-3 border-b border-gray-200 pb-2">Vehicle Information</h3>
+                <h3 className="text-lg font-medium text-gray-600 mb-3 border-b border-gray-200 pb-2">
+                  Vehicle Information
+                </h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-600">Make/Model:</span>
@@ -145,21 +149,21 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                   <div className="text-right font-medium text-gray-800">
                     {car.brand} {car.model}
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-600">License:</span>
                   </div>
                   <div className="text-right font-medium text-gray-800">
                     {car.license_plate || "N/A"}
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-600">Daily Rate:</span>
                   </div>
                   <div className="text-right font-medium text-gray-800">
                     ${car.dailyRate?.toFixed(2) || "0.00"}
                   </div>
-                  
+
                   {car.tier !== undefined && (
                     <>
                       <div>
@@ -172,10 +176,12 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                   )}
                 </div>
               </div>
-              
+
               {/* รายละเอียดการเช่า */}
               <div>
-                <h3 className="text-lg font-medium text-gray-600 mb-3 border-b border-gray-200 pb-2">Rental Period</h3>
+                <h3 className="text-lg font-medium text-gray-600 mb-3 border-b border-gray-200 pb-2">
+                  Rental Period
+                </h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-600">Pickup:</span>
@@ -183,14 +189,14 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                   <div className="text-right font-medium text-gray-800">
                     {pickupDate?.format("MMM D, YYYY")} at {pickupTime}
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-600">Return:</span>
                   </div>
                   <div className="text-right font-medium text-gray-800">
                     {returnDate?.format("MMM D, YYYY")} at {returnTime}
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-600">Duration:</span>
                   </div>
@@ -202,7 +208,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             </div>
           </div>
         </div>
-        
+
         {/* ส่วนบริการเสริม (แสดงเฉพาะเมื่อมีการเลือกบริการ) - ปรับให้เห็นได้ชัดโดยไม่ต้อง hover */}
         {selectedServices.length > 0 && services.length > 0 && (
           <div className="border-t border-gray-200 pt-3 mt-3">
@@ -231,11 +237,13 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                 />
               </div>
             </button>
-            
+
             <div
               id="services-panel"
               className={`overflow-hidden transition-all duration-300 ${
-                servicesExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                servicesExpanded
+                  ? "max-h-[500px] opacity-100"
+                  : "max-h-0 opacity-0"
               }`}
             >
               <div className="p-4 bg-gray-50 rounded-md mt-1 border border-gray-200">
@@ -243,9 +251,12 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                   const cost = service.daily
                     ? service.rate * rentalDays
                     : service.rate;
-                  
+
                   return (
-                    <div key={service._id} className="flex justify-between items-start py-3 px-2 border-b border-gray-200 last:border-0">
+                    <div
+                      key={service._id}
+                      className="flex justify-between items-start py-3 px-2 border-b border-gray-200 last:border-0"
+                    >
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <Check size={16} className="text-green-500" />
@@ -253,7 +264,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                             {service.name}
                           </span>
                         </div>
-                        
+
                         {service.description && (
                           <p className="text-xs text-gray-600 mt-1 pl-5">
                             {service.description.length > 80
@@ -262,13 +273,15 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                           </p>
                         )}
                       </div>
-                      
+
                       <div className="text-right flex-shrink-0">
                         <span className="text-[#8A7D55] font-medium">
                           ${cost.toFixed(2)}
                         </span>
                         <div className="text-xs text-gray-600">
-                          {service.daily ? `$${service.rate.toFixed(2)}/day × ${rentalDays}` : "One-time fee"}
+                          {service.daily
+                            ? `$${service.rate.toFixed(2)}/day × ${rentalDays}`
+                            : "One-time fee"}
                         </div>
                       </div>
                     </div>
@@ -278,19 +291,19 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             </div>
           </div>
         )}
-        
-        {/* ส่วนสรุปค่าใช้จ่าย */}
-        <div className="mt-5 pt-4 border-t border-gray-200">
+
+         {/* ส่วนสรุปค่าใช้จ่าย */}
+         <div className="mt-5 pt-4 border-t border-gray-200">
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-700">Car Rental ({rentalDays} {rentalDays === 1 ? "day" : "days"}):</span>
-              <span className="font-medium text-gray-800">${((car?.dailyRate || 0) * rentalDays).toFixed(2)}</span>
+              <span className="font-medium text-gray-800">${roundedCarCost.toFixed(2)}</span>
             </div>
             
             {selectedServices.length > 0 && (
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-700">Additional Services:</span>
-                <span className="font-medium text-gray-800">${servicesCost.toFixed(2)}</span>
+                <span className="font-medium text-gray-800">${roundedServicesCost.toFixed(2)}</span>
               </div>
             )}
             
@@ -302,20 +315,20 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
                   </svg>
                   Loyalty Discount ({getTierDiscount(userTier)}%):
                 </span>
-                <span className="font-medium">-${discount.toFixed(2)}</span>
+                <span className="font-medium">-${roundedDiscountAmount.toFixed(2)}</span>
               </div>
             )}
             
             <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 text-lg font-medium">
               <span className="text-gray-800">Total:</span>
-              <span className="text-[#8A7D55] font-semibold">{formatCurrency(totalCost)}</span>
+              <span className="text-[#8A7D55] font-semibold">{formatCurrency(roundedFinalPrice)}</span>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* ปุ่มยืนยันการจอง */}
-      <div className="px-6 py-5 bg-gray-50 border-t border-gray-200">
+
+       {/* ปุ่มยืนยันการจอง */}
+       <div className="px-6 py-5 bg-gray-50 border-t border-gray-200">
         <button
           onClick={onSubmit}
           disabled={!formValid || isSubmitting}

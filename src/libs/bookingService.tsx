@@ -1,3 +1,5 @@
+// src/libs/bookingService.tsx
+
 import dayjs, { Dayjs } from "dayjs";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { 
@@ -103,24 +105,31 @@ export const makeBooking = async (
         return total + serviceCost;
       }, 0);
     
-    const subtotal = calculateSubtotal(
-      pickupDateTime,
-      returnDateTime,
-      dailyRate,
-      selectedServices,
-      services
-    );
+    // Calculate the subtotal (base price + service price)
+    const subtotal = basePrice + servicePrice;
     
-    const discountAmount = calculateDiscount(
-      pickupDateTime,
-      returnDateTime,
-      dailyRate,
-      selectedServices,
-      services,
-      userTier
-    );
+    // Calculate the discount amount based on the user tier
+    const discountPercentage = getTierDiscount(userTier);
+    const discountAmount = subtotal * (discountPercentage / 100);
     
+    // Calculate the final price (subtotal - discount)
     const finalPrice = subtotal - discountAmount;
+    
+    // Round all values to avoid floating point precision issues
+    const roundedBasePrice = Math.round(basePrice * 100) / 100;
+    const roundedServicePrice = Math.round(servicePrice * 100) / 100;
+    const roundedDiscountAmount = Math.round(discountAmount * 100) / 100;
+    const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+    
+    console.log("Price calculation details:", {
+      days,
+      dailyRate,
+      basePrice: roundedBasePrice,
+      servicePrice: roundedServicePrice,
+      discountPercentage,
+      discountAmount: roundedDiscountAmount,
+      finalPrice: roundedFinalPrice
+    });
     
     // Send booking data to backend
     const response = await fetch(`${API_BASE_URL}/rents`, {
@@ -135,10 +144,10 @@ export const makeBooking = async (
         startTime: formattedStartTime,
         returnTime: formattedReturnTime,
         car: carId,
-        price: basePrice,
-        servicePrice: servicePrice,
-        discountAmount: discountAmount,
-        finalPrice: finalPrice,
+        price: roundedBasePrice,
+        servicePrice: roundedServicePrice,
+        discountAmount: roundedDiscountAmount,
+        finalPrice: roundedFinalPrice,
         service: selectedServices,
         rentalDays: days,
       }),
@@ -283,3 +292,4 @@ export const getBookingById = async (
     };
   }
 };
+
