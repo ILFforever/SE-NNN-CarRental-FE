@@ -1062,9 +1062,9 @@ export default function ReservationManagement({
                           )}
                         </div>
                         {rental.additionalCharges != null &&
-                          rental.additionalCharges > 0 && (
+                          rental.additionalCharges.lateFee > 0 && (
                             <div className="text-xs text-red-500">
-                              +{formatCurrency(rental.additionalCharges)}{" "}
+                              +{formatCurrency(rental.additionalCharges.lateFee)}{" "}
                               (extra)
                             </div>
                           )}
