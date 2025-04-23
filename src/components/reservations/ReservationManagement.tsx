@@ -1057,15 +1057,14 @@ export default function ReservationManagement({
                       {/* Price Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(
-                            rental.price + (rental.servicePrice || 0)
-                          )}
+                          {formatCurrency(rental.finalPrice || 0)}
                         </div>
-                        {rental.additionalCharges != null &&
+                        {rental.additionalCharges?.lateFee &&
                           rental.additionalCharges.lateFee > 0 && (
                             <div className="text-xs text-red-500">
-                              +{formatCurrency(rental.additionalCharges.lateFee)}{" "}
-                              (extra)
+                              +{" "}
+                              {formatCurrency(rental.additionalCharges.lateFee)}{" "}
+                              LF
                             </div>
                           )}
                       </td>
