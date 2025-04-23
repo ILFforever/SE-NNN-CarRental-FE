@@ -1,3 +1,10 @@
+/**
+ *
+ * @param value Cash Value that's being formatted
+ * @param type Transaction type
+ * @description Formats the cash value to a string with 2 decimal places
+ * @returns The formatted cash value (Example format: +1,234.56 or -1,234.56)
+ */
 export const coinDisplay = (
   value: number,
   type: "withdrawl" | "deposit"
