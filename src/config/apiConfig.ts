@@ -37,3 +37,8 @@ export const PROVIDER_ENDPOINTS = {
   LOGOUT: `${API_BASE_URL}/Car_Provider/logout`,
   CHANGE_PASSWORD: `${API_BASE_URL}/Car_Provider/update-password`, // Changed to match common backend naming
 };
+
+export const TRANSACTION_ENDPOINTS = {
+  ADMIN: `${API_BASE_URL}/credits/transactions`,
+  USER: `${API_BASE_URL}/credits/history`
+}
