@@ -1,4 +1,3 @@
-// src/app/admin/manageCars/page.tsx
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions';
@@ -19,19 +18,27 @@ export default async function ManageCarsPage() {
   }
   
   return (
-    <main className="py-10 px-4 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-medium mb-6 text-center">Manage Cars</h1>
-      <p className="text-gray-600 mb-8 text-center max-w-3xl mx-auto">
-        Add, edit, or deactivate cars in the rental fleet. All cars must be associated with a car provider.
-      </p>
+    <main className="py-6 sm:py-10 px-4 max-w-full sm:max-w-6xl mx-auto">
+      <div className="text-center mb-8">
+        <h1 className="text-2xl sm:text-3xl font-medium mb-4">
+          Manage Cars
+        </h1>
+        <p className="text-sm sm:text-base text-gray-600 max-w-3xl mx-auto">
+          Add, edit, or deactivate cars in the rental fleet. All cars must be associated with a car provider.
+        </p>
+      </div>
       
       {session?.user?.token ? (
-        <UnifiedCarManagement 
-          token={session.user.token} 
-          userType="admin"
-        />
+        <div className="flex justify-center">
+          <div className="w-fit">
+            <UnifiedCarManagement 
+              token={session.user.token} 
+              userType="admin"
+            />
+          </div>
+        </div>
       ) : (
-        <div className="bg-yellow-100 p-4 rounded-md text-yellow-800">
+        <div className="bg-yellow-100 p-4 rounded-md text-yellow-800 max-w-lg mx-auto text-center">
           Authentication token not available. Please try logging out and back in.
         </div>
       )}

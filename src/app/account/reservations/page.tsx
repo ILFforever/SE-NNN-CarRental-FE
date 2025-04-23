@@ -243,7 +243,7 @@ export default function MyReservationsPage() {
     const basePrice = reservation.price || 0;
     const servicePrice = reservation.servicePrice || 0;
     const discountAmount = reservation.discountAmount || 0;
-    const additionalCharges = reservation.additionalCharges || 0;
+    const additionalCharges = reservation.additionalCharges.lateFee || 0;
 
     return basePrice + servicePrice - discountAmount + additionalCharges;
   };
@@ -301,7 +301,7 @@ export default function MyReservationsPage() {
       ) : (
         <>
           {/* Desktop version (table) - hidden on small screens */}
-          <div className="hidden md:block w-fit bg-white rounded-lg shadow-md overflow-x-auto">
+          <div className="hidden md:block w-fit bg-white rounded-lg shadow-md">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -382,7 +382,7 @@ export default function MyReservationsPage() {
                         ) : null}
                         {reservation.additionalCharges ? (
                           <div className="text-xs text-amber-600">
-                            Includes {formatCurrency(reservation.additionalCharges)} additional fees
+                            Includes {formatCurrency(reservation.additionalCharges.lateFee)} additional fees
                           </div>
                         ) : null}
                       </td>
@@ -505,7 +505,7 @@ export default function MyReservationsPage() {
                         ) : null}
                         {reservation.additionalCharges ? (
                           <p className="text-xs text-amber-600">
-                            Includes {formatCurrency(reservation.additionalCharges)} fees
+                            Includes {formatCurrency(reservation.additionalCharges.lateFee)} fees
                           </p>
                         ) : null}
                       </div>

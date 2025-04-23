@@ -455,7 +455,7 @@ export default function UnifiedReservationDetails({
   
   const baseCost = rental.price || 0;
   const serviceCost = rental.servicePrice || 0;
-  const additionalCharges = rental.additionalCharges || 0;
+  const additionalCharges = rental.additionalCharges.lateFee || 0;
   const lateFees = daysLate > 0 ? totalLateFee : 0;
   
   return baseCost + serviceCost + additionalCharges + lateFees;

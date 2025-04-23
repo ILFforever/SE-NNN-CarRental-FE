@@ -71,7 +71,7 @@ interface Rent {
   status: 'pending' | 'active' | 'completed' | 'cancelled' | 'unpaid';
   price: number;
   servicePrice?: number;
-  additionalCharges?: number;
+  additionalCharges: AdditionalCharges;
   notes?: string;
   car: string | Car;
   user: string | User;
@@ -80,6 +80,9 @@ interface Rent {
   isRated?: boolean;
   finalPrice?: number;
   discountAmount?: number;
+}
+interface AdditionalCharges {
+  lateFee: number;
 }
 
 interface BookingItem {

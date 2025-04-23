@@ -195,3 +195,4 @@ export const getTotalCost = (
 
   return subtotal - discount;
 };
+

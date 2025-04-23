@@ -342,7 +342,8 @@ export default function UnifiedCarManagement({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-screen-xl mx-auto w-max">
+    <div className="w-fit bg-white rounded-lg shadow-md p-6 max-w-screen-xl mx-auto  ml-5">
+
       {/* Success and Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
@@ -442,7 +443,7 @@ export default function UnifiedCarManagement({
       )}
 
       {/* Cars Table - Modified to handle wider content and wrapping */}
-      <div className="overflow-x-auto w-full px-3">
+      <div className="overflow-x-auto w-fit px-3">
         {isLoading && cars.length === 0 ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55] mx-auto"></div>
@@ -465,8 +466,8 @@ export default function UnifiedCarManagement({
             )}
           </div>
         ) : (
-          <div className="w-full">
-            <table className="w-full max-w-[1400px] mx-auto space-y-4 p-8 pt-6">
+          <div className=" overflow-x-auto">
+            <table className="mx-auto max-w-[1400px] border-collapse">
               <thead className="bg-gray-50">
                 <tr>
                   <th

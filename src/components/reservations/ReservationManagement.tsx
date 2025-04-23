@@ -782,7 +782,8 @@ export default function ReservationManagement({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mx-auto w-full">
+    <div className="bg-white rounded-lg shadow-md p-6 max-w-screen-xl mx-auto w-max">
+      {/* Success and Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
           {error}
@@ -999,7 +1000,14 @@ export default function ReservationManagement({
                         {car ? (
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {car.brand} {car.model}
+                              <div className="max-w-[200px]">
+                                <div
+                                  className="truncate"
+                                  title={`${car.brand} ${car.model}`}
+                                >
+                                  {car.brand} {car.model}
+                                </div>
+                              </div>
                             </div>
                             <div className="text-xs text-gray-500">
                               {car.license_plate}
@@ -1057,15 +1065,14 @@ export default function ReservationManagement({
                       {/* Price Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(
-                            rental.price + (rental.servicePrice || 0)
-                          )}
+                          {formatCurrency(rental.finalPrice || 0)}
                         </div>
-                        {rental.additionalCharges != null &&
-                          rental.additionalCharges > 0 && (
+                        {rental.additionalCharges?.lateFee &&
+                          rental.additionalCharges.lateFee > 0 && (
                             <div className="text-xs text-red-500">
-                              +{formatCurrency(rental.additionalCharges)}{" "}
-                              (extra)
+                              +{" "}
+                              {formatCurrency(rental.additionalCharges.lateFee)}{" "}
+                              LF
                             </div>
                           )}
                       </td>
