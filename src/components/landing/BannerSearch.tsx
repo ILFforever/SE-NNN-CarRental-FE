@@ -1,275 +1,257 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Dayjs } from 'dayjs';
 import { useRouter } from 'next/navigation';
-import styles from './banner-search.module.css';
+import {
+  MapPin,
+  Calendar,
+  Clock,
+  Search,
+  ChevronDown,
+} from 'lucide-react';
+import SimpleTimePicker from './timePicker';
 
-function DateSection({ 
-  label, 
-  date, 
-  setDate, 
-  timeValue, 
-  setTimeValue, 
-  timeOptions 
-}: {
-  label: string;
-  date: Dayjs | null;
-  setDate: (date: Dayjs | null) => void;
-  timeValue: string;
-  setTimeValue: (time: string) => void;
-  timeOptions: string[];
-}) {
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  
-  return (
-    <div className={styles.inputGroup}>
-      <label className={styles.label}>{label}</label>
-      <div className={styles.dateTimeWrapper}>
-        <div 
-          className={styles.datePickerContainer}
-          onClick={() => setIsPickerOpen(true)}
-        >
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              value={date}
-              onChange={(newValue) => setDate(newValue)}
-              className={styles.datePicker}
-              open={isPickerOpen}
-              onClose={() => setIsPickerOpen(false)}
-              slotProps={{
-                popper: {
-                  placement: 'bottom',
-                  style: { 
-                    marginTop: '16px',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
-                  }
-                },
-                textField: {
-                  variant: 'outlined',
-                  fullWidth: true,
-                  size: 'small',
-                  InputProps: {
-                    className: styles.datePickerInput,
-                    endAdornment: <span className={styles.hiddenIcon}></span>,
-                    style: { 
-                      fontSize: '14px',
-                      padding: 0
-                    }
-                  }
-                },
-                field: {
-                  shouldRespectLeadingZeros: true,
-                  format: 'MM/DD/YYYY'
-                }
-              }}
-            />
-          </LocalizationProvider>
-        </div>
-        <select 
-          value={timeValue}
-          onChange={(e) => setTimeValue(e.target.value)}
-          className={styles.timeSelect}
-        >
-          {timeOptions.map(time => (
-            <option key={time} value={time}>{time}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
+type SearchField = 'location' | 'pickup-date' | 'pickup-time' | 'return-date' | 'return-time' | null;
 
 export default function BannerSearch() {
   const router = useRouter();
   const [location, setLocation] = useState('');
   const [pickupDate, setPickupDate] = useState<Dayjs | null>(null);
   const [returnDate, setReturnDate] = useState<Dayjs | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [timePickup, setTimePickup] = useState('10:00 AM');
-  const [timeReturn, setTimeReturn] = useState('10:00 AM');
-  
-  // Refs for dropdown management
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const componentMounted = useRef(true);
-  const dropdownWrapperRef = useRef<HTMLDivElement>(null);
+  const [activeField, setActiveField] = useState<SearchField>(null);
+  const [pickupTime, setPickupTime] = useState('10:00 AM');
+  const [returnTime, setReturnTime] = useState('10:00 AM');
+  const [isPickupDateOpen, setIsPickupDateOpen] = useState(false);
+  const [isReturnDateOpen, setIsReturnDateOpen] = useState(false);
 
-  // Popular locations
-  const popularLocations = [
-    { type: 'city', name: 'London', icon: '🏙️' },
-    { type: 'city', name: 'Manchester', icon: '🏙️' },
-    { type: 'city', name: 'Edinburgh', icon: '🏙️' },
-    { type: 'airport', name: 'Heathrow Airport', icon: '✈️' },
-    { type: 'airport', name: 'Gatwick Airport', icon: '✈️' },
-    { type: 'hotel', name: 'The Ritz London', icon: '🏨' }
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const locations = [
+    { name: 'London', type: 'City', icon: '🏙️' },
+    { name: 'Heathrow Airport', type: 'Airport', icon: '✈️' },
+    { name: 'Manchester', type: 'City', icon: '🏙️' },
+    { name: 'Edinburgh', type: 'City', icon: '🏙️' },
   ];
 
-  const timeOptions = [
-    '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', 
-    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-    '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
-    '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM',
-    '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
-    '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM'
-  ];
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      componentMounted.current = false;
-    };
-  }, []);
-
-  // Handle clicks outside the dropdown to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownWrapperRef.current && 
-        !dropdownWrapperRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setActiveField(null);
+        setIsPickupDateOpen(false);
+        setIsReturnDateOpen(false);
       }
     };
-
-    // Add event listener only when dropdown is shown
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
-
-  const handleLocationClick = (locationName: string) => {
-    setLocation(locationName);
-    // Don't immediately close dropdown to prevent race conditions
-    setTimeout(() => {
-      if (componentMounted.current) {
-        setShowDropdown(false);
-      }
-    }, 50);
-  };
-
-  const toggleDropdown = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event from bubbling
-    setShowDropdown(prev => !prev);
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = () => {
-    // Format dates for URL
     const pickupFormatted = pickupDate ? pickupDate.format('YYYY-MM-DD') : '';
     const returnFormatted = returnDate ? returnDate.format('YYYY-MM-DD') : '';
-    
-    // Navigate to vehicle listing with search parameters
     router.push(
-      `/catalog?location=${encodeURIComponent(location)}&startDate=${pickupFormatted}&pickupTime=${encodeURIComponent(timePickup)}&endDate=${returnFormatted}&returnTime=${encodeURIComponent(timeReturn)}`
+      `/catalog?location=${encodeURIComponent(location)}&startDate=${pickupFormatted}&pickupTime=${encodeURIComponent(pickupTime)}&endDate=${returnFormatted}&returnTime=${encodeURIComponent(returnTime)}`
     );
   };
 
-  return (
-    <div className={styles.searchContainer}>
-      <div className={styles.searchBar}>
-        {/* Location field */}
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>Where</label>
-          <div 
-            className={styles.locationInputWrapper}
-            ref={dropdownWrapperRef}
+  const renderLocationDropdown = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="absolute top-full left-0 w-full mt-2 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50"
+    >
+      <div className="p-2">
+        <div
+          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
+          onClick={() => {
+            setLocation('Current Location');
+            setActiveField(null);
+          }}
+        >
+          <MapPin className="mr-3 text-gray-500" size={18} />
+          <span>Current Location</span>
+        </div>
+        <div className="border-t my-2"></div>
+        <div className="text-xs text-gray-500 px-4 mb-2">Popular Locations (Beta)</div>
+        {locations.map((loc, index) => (
+          <div
+            key={index}
+            className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
+            onClick={() => {
+              setLocation(loc.name);
+              setActiveField(null);
+            }}
           >
+            <span className="mr-3 text-lg">{loc.icon}</span>
+            <div>
+              <div className="font-medium">{loc.name}</div>
+              <div className="text-xs text-gray-500">{loc.type}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  const renderDateTimeField = (
+    type: 'pickup' | 'return',
+    date: Dayjs | null,
+    time: string,
+    setDate: (d: Dayjs | null) => void,
+    setTime: (t: string) => void,
+    isDatePickerOpen: boolean,
+    setIsDatePickerOpen: (isOpen: boolean) => void
+  ) => (
+    <div className="relative flex-1 border-l border-gray-200 pl-2">
+      <div className="flex flex-col px-3 py-2">
+        {/* Date section */}
+        <div 
+          className="flex items-center space-x-2 group cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveField(null);
+            setIsDatePickerOpen(!isDatePickerOpen);
+          }}
+        >
+          <Calendar className="text-gray-500 group-hover:text-black" size={18} />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              value={date}
+              onChange={(newValue) => {
+                setDate(newValue);
+                setIsDatePickerOpen(false);
+              }}
+              open={isDatePickerOpen}
+              onClose={() => setIsDatePickerOpen(false)}
+              slotProps={{
+                textField: {
+                  variant: 'standard',
+                  InputProps: { 
+                    disableUnderline: true,
+                    endAdornment: null, // removes calendar icon
+                    className: 'text-sm cursor-pointer',
+                    readOnly: true,
+                  },
+                  placeholder: `${type === 'pickup' ? 'Pickup' : 'Return'} Date`,
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    setIsDatePickerOpen(!isDatePickerOpen);
+                  }
+                }
+              }}
+            />
+          </LocalizationProvider>
+        </div>
+        
+        {/* Time section - using our custom time picker */}
+        <div className="mt-2">
+          <SimpleTimePicker
+            value={time}
+            onChange={setTime}
+            use12Hours={true}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-x-0 top-[30%] md:top-[10%] z-40 flex justify-center px-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+        className="w-full max-w-4xl bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/30 p-2 flex items-center space-x-2"
+      >
+        <style jsx global>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d1d1;
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #b1b1b1;
+          }
+        `}</style>
+        
+        {/* Location */}
+        <div className="relative flex-1">
+          <div
+            className="flex items-center p-3 cursor-pointer group"
+            onClick={() => {
+              setActiveField(activeField === 'location' ? null : 'location');
+              setIsPickupDateOpen(false);
+              setIsReturnDateOpen(false);
+            }}
+          >
+            <MapPin className="mr-3 text-gray-500 group-hover:text-black" size={20} />
             <input
-              ref={inputRef}
               type="text"
-              placeholder="City, airport, address or hotel"
+              placeholder="Where"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              onClick={toggleDropdown}
-              className={styles.input}
+              className="w-full bg-transparent outline-none text-sm placeholder-gray-500 group-hover:placeholder-black"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveField('location');
+                setIsPickupDateOpen(false);
+                setIsReturnDateOpen(false);
+              }}
             />
-            {showDropdown && (
-              <div 
-                ref={dropdownRef}
-                className={styles.dropdown}
-              >
-                <div className={styles.dropdownSection}>
-                  <div 
-                    className={styles.dropdownOption} 
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleLocationClick('Current location');
-                    }}
-                  >
-                    <span className={styles.optionIcon}>📍</span>
-                    <span>Current location</span>
-                  </div>
-                  <div 
-                    className={styles.dropdownOption} 
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleLocationClick('Anywhere');
-                    }}
-                  >
-                    <span className={styles.optionIcon}>🌎</span>
-                    <span>Anywhere</span>
-                    <span className={styles.optionSubtext}>Browse all cars</span>
-                  </div>
-                </div>
-                
-                <div className={styles.dropdownSection}>
-                  <div className={styles.sectionTitle}>Popular Locations</div>
-                  {popularLocations.map((loc, index) => (
-                    <div 
-                      key={index} 
-                      className={styles.dropdownOption}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleLocationClick(loc.name);
-                      }}
-                    >
-                      <span className={styles.optionIcon}>{loc.icon}</span>
-                      <span>{loc.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <ChevronDown className="ml-2 text-gray-500 group-hover:text-black" size={16} />
           </div>
+          <AnimatePresence>
+            {activeField === 'location' && renderLocationDropdown()}
+          </AnimatePresence>
         </div>
 
-        {/* From date */}
-        <DateSection
-          label="From"
-          date={pickupDate}
-          setDate={setPickupDate}
-          timeValue={timePickup}
-          setTimeValue={setTimePickup}
-          timeOptions={timeOptions}
-        />
-        
-        {/* Until date */}
-        <DateSection
-          label="Until"
-          date={returnDate}
-          setDate={setReturnDate}
-          timeValue={timeReturn}
-          setTimeValue={setTimeReturn}
-          timeOptions={timeOptions}
-        />
+        {/* Pickup */}
+        {renderDateTimeField(
+          'pickup', 
+          pickupDate, 
+          pickupTime, 
+          setPickupDate,
+          setPickupTime,
+          isPickupDateOpen, 
+          setIsPickupDateOpen
+        )}
 
-        {/* Search button */}
-        <button className={styles.searchButton} onClick={handleSearch} aria-label="Search">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="white"/>
-          </svg>
-        </button>
-      </div>
+        {/* Return */}
+        {renderDateTimeField(
+          'return', 
+          returnDate, 
+          returnTime, 
+          setReturnDate,
+          setReturnTime,
+          isReturnDateOpen, 
+          setIsReturnDateOpen
+        )}
+
+        {/* Search Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSearch}
+          className="bg-[#8A7D55] text-white p-3 rounded-xl hover:bg-[#766b48] transition-colors flex items-center"
+        >
+          <Search size={20} />
+        </motion.button>
+      </motion.div>
     </div>
   );
 }
