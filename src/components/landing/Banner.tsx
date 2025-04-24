@@ -31,7 +31,7 @@ export default function Banner() {
             subtitle: "Where Innovation Meets Sophistication"
         },
         {
-            image: '/img/banner4.jpg',
+            image: '/img/banner4cropped.jpg',
             title: "The Art of Automotive Excellence",
             subtitle: "Craftsmanship That Commands Attention"
         },
