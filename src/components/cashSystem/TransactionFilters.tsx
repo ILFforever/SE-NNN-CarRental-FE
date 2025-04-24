@@ -3,26 +3,27 @@ import React from "react";
 
 /**
  * A responsive filter panel for transactions.
- * - Mobile: horizontal toolbar
+ * - Mobile: wraps items horizontally
  * - Desktop (lg+): vertical sidebar
  */
 export default function TransactionFilters() {
   return (
     <div
       className={`
-        bg-white border border-gray-200 rounded-2xl p-6
+      bg-white border border-gray-200 rounded-2xl p-4 md:p-6
+        justify-center items-center
 
-        /* Mobile*/
-        flex flex-row overflow-x-auto space-x-4
+      /* Mobile: wrap horizontally */
+      flex flex-row flex-wrap gap-3 
 
-        /* Desktop*/
-        lg:flex-col lg:overflow-visible lg:space-x-0 lg:space-y-6 lg:w-64
-        `}
+      /* Desktop: vertical list */
+      lg:flex-col lg:flex-nowrap lg:gap-6 lg:w-64 
+      `}
     >
       {/* Start Date */}
-      <div className="flex-shrink-0 min-w-[140px]">
-        <label className="block text-sm font-medium text-gray-700">
-          วันที่เริ่มต้น
+      <div className="flex-shrink-0 w-40">
+        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
+          Start Date
         </label>
         <input
           type="date"
@@ -31,9 +32,9 @@ export default function TransactionFilters() {
       </div>
 
       {/* End Date */}
-      <div className="flex-shrink-0 min-w-[140px]">
-        <label className="block text-sm font-medium text-gray-700">
-          จนถึงวันที่
+      <div className="flex-shrink-0 w-40">
+        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
+          End Date
         </label>
         <input
           type="date"
@@ -41,29 +42,11 @@ export default function TransactionFilters() {
         />
       </div>
 
-      {/* Value Range */}
-      <div className="flex-shrink-0 min-w-[160px]">
-        <label className="block text-sm font-medium text-gray-700">
-          มูลค่า
+      {/* Transaction Type */}
+      <div className="flex-shrink-0 w-40 space-y-2">
+        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
+          Transaction Type
         </label>
-        <div className="mt-2 flex items-center space-x-2">
-          <input
-            type="number"
-            placeholder="min"
-            className="w-1/2 border-gray-300 rounded-lg p-2"
-          />
-          <span className="text-gray-400">-</span>
-          <input
-            type="number"
-            placeholder="max"
-            className="w-1/2 border-gray-300 rounded-lg p-2"
-          />
-        </div>
-        <input type="range" className="mt-3 w-full" />
-      </div>
-
-      {/* Deposit / Withdraw */}
-      <div className="flex-shrink-0 min-w-[140px] space-y-3">
         <div className="flex items-center">
           <input
             id="filter-deposit"
@@ -73,9 +56,9 @@ export default function TransactionFilters() {
           />
           <label
             htmlFor="filter-deposit"
-            className="ml-2 text-sm text-gray-700"
+            className="ml-2 text-sm md:text-md text-gray-700"
           >
-            เติมเงิน
+            Deposit
           </label>
         </div>
         <div className="flex items-center">
@@ -87,29 +70,29 @@ export default function TransactionFilters() {
           />
           <label
             htmlFor="filter-withdraw"
-            className="ml-2 text-sm text-gray-700"
+            className="ml-2 text-sm md:text-md text-gray-700"
           >
-            ถอนเงิน
+            Withdraw
           </label>
         </div>
       </div>
 
       {/* Payment Method */}
-      <div className="flex-shrink-0 min-w-[160px]">
-        <label className="block text-sm font-medium text-gray-700">
-          ช่องทางการชำระเงิน
+      <div className="flex-shrink-0 w-40">
+        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
+          Payment Method
         </label>
         <select className="mt-2 block w-full border-gray-300 rounded-lg p-2">
-          <option value="">ทั้งหมด</option>
+          <option value="">All</option>
           <option value="qr">QR Code</option>
           <option value="bank">Bank Transfer</option>
         </select>
       </div>
 
       {/* Search Button */}
-      <div className="flex-shrink-0 min-w-[120px]">
-        <button className="w-full py-3 bg-yellow-400 text-white font-medium rounded-lg shadow hover:bg-yellow-500">
-          ค้นหา
+      <div className="flex-shrink-0 w-20 md:w-32 mt-4 md:mt-0">
+        <button className="flex justify-center items-center item w-full h-8 py-2 bg-white text-black font-medium rounded-lg shadow hover:bg-gray-100 border border-[#8A7D55] transition duration-200 ease-in-out">
+          Search
         </button>
       </div>
     </div>

@@ -29,30 +29,32 @@ export default function TransactionCard({
   toggle,
 }: TransactionCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow p-6 border">
+    <div className="bg-white rounded-xl shadow p-4 md:p-6 border">
       <div className="flex items-start justify-between">
         {/* Left: amount & description */}
         <div>
           <p
-            className={`text-2xl font-semibold ${
+            className={`text-md md:text-xl lg:text-2xl font-semibold ${
               tx.type === "deposit" ? "text-green-500" : "text-red-500"
             }`}
           >
             {tx.type === "deposit" ? "+" : "-"}
             {Math.abs(tx.amount).toFixed(2)} THB
           </p>
-          <p className="text-sm text-gray-500">{tx.description}</p>
+          <p className="hidden lg:block text-sm lg:text-md text-gray-500">
+            {tx.description}
+          </p>
         </div>
 
         {/* Right: type, date, toggle */}
         <div className="text-right flex items-center space-x-2">
           <div>
             <p
-              className={`font-medium ${
+              className={`font-medium text-sm md:text-md lg:text-xl ${
                 tx.type === "deposit" ? "text-green-500" : "text-red-500"
               }`}
             >
-              {tx.type === "deposit" ? "เติมเงิน" : "ถอนเงิน"}
+              {tx.type === "deposit" ? "deposit" : "withdraw"}
             </p>
             <p className="text-xs text-gray-400">{tx.date}</p>
           </div>
@@ -62,9 +64,9 @@ export default function TransactionCard({
             aria-label={isOpen ? "Collapse details" : "Expand details"}
           >
             {isOpen ? (
-              <ChevronUp className="w-5 h-5 text-gray-600" />
+              <ChevronUp className="w-3 h-3 md:w-5 md:h-5 text-gray-600" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-gray-600" />
+              <ChevronDown className="w-3 h-3 md:w-5 md:h-5 text-gray-600" />
             )}
           </button>
         </div>
@@ -72,7 +74,7 @@ export default function TransactionCard({
 
       {isOpen && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-700">
+          <div className="grid grid-cols-2 gap-y-2 text-xs md:text-sm text-gray-700">
             <div className="font-medium">TransactionID:</div>
             <div>{tx.details.transactionId}</div>
 

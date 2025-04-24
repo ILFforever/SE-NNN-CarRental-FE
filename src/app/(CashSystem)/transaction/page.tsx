@@ -67,13 +67,21 @@ export default function TransactionsPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">My Transaction logs</h1>
-        <p className="text-lg text-gray-700 mb-6">Transaction History</p>
+        <h1 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2">
+          My Transaction logs
+        </h1>
+        <p className="text-md lg:text-lg text-gray-700 mb-6">
+          Transaction History
+        </p>
+
+        {/* Content */}
         <div className="flex flex-col md:flex-row gap-6">
+          {/* Filter */}
           <div className="w-full md:w-[30%] xl:w-[20%]">
             <TransactionFilters />
           </div>
-          <div className="space-y-4 w-full md:w-[70%] xl:w-[80%]">
+          {/* Transaction List */}
+          <div className="space-y-1 md:space-y-3 w-full md:w-[70%] xl:w-[80%]">
             {mockTransactions.map((tx: Transaction) => {
               const isOpen = openIds.has(tx.id);
               return (
