@@ -70,7 +70,7 @@ export default function CoinChip() {
                       background: 'linear-gradient(to bottom, #F2E6D5,#8A7D5522)',
                       border: '1px solid #8A7D55',
                       overflow: 'visible',
-                      filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                      filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32)); backdrop-filter: blur(10px)',
                       mt: 1.5,
                       borderRadius: '16px',
                     },
