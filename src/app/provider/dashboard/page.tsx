@@ -231,7 +231,7 @@ export default function ProviderDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-medium">Recent Rentals</h2>
-            <Link href="/provider/rentals" className="text-[#8A7D55] text-sm hover:underline">
+            <Link href="/provider/reservations" className="text-[#8A7D55] text-sm hover:underline">
               View All
             </Link>
           </div>
@@ -296,7 +296,7 @@ export default function ProviderDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <h2 className="text-xl font-medium mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/provider/cars/add" className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+            <Link href="/provider/manageCars" className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
               <div className="w-10 h-10 rounded-full bg-[#f8f5f0] flex items-center justify-center">
                 <Plus className="h-5 w-5 text-[#8A7D55]" />
               </div>
@@ -312,7 +312,7 @@ export default function ProviderDashboard() {
               </div>
               <div>
                 <h3 className="font-medium">Pending Rentals</h3>
-                <p className="text-sm text-gray-500">Review {dashboardData?.pendingRentals?.count || 0} rentals</p>
+                <p className="text-sm text-gray-500">Approve {dashboardData?.pendingRentals?.count || 0} rentals</p>
               </div>
             </Link>
           </div>
