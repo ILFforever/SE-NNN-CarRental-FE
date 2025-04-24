@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 export default function CoinChip() {
     const { data: session } = useSession();
     const [coin,setCoin] = useState('100');
+    const [coin_raw,setCoinraw] = useState('100');
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -31,6 +32,7 @@ export default function CoinChip() {
                     }
                 });
                 const data = await response.json();
+                setCoinraw(data.data.credits);
                 setCoin(() => {
                     if (!data || !data.data) return '0';
                     const credits = data.data.credits ?? 0;
@@ -65,6 +67,8 @@ export default function CoinChip() {
                   paper: {
                     elevation: 0,
                     sx: {
+                      background: 'linear-gradient(to bottom, #F2E6D5,#8A7D5522)',
+                      border: '1px solid #8A7D55',
                       overflow: 'visible',
                       filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                       mt: 1.5,
@@ -73,10 +77,12 @@ export default function CoinChip() {
                   },
                 }}
             >
-                <div className="p-4 flex flex-col">
-                    <div className="flex items-center justify-center mt-2">
-                        <Icon icon="mdi:coin" className="coin-icon shrink-0 size-4 text-[#8A7D55] ml-2" />
-                        <span className="text-[#8A7D55] text-sm font-bold ml-2">{coin}</span>
+                <div className="p-4 flex flex-col relative">
+                    <span className="text-[#8A7D55] text-sm font-normal text-start">
+                        Your Credits
+                    </span>
+                    <div className="flex items-center justify-center">
+                        <span className="text-[#8A7D55] font-bold text-xl">{coin_raw}</span>
                     </div>
                     <Button variant="primary" size="sm" className="mt-2" onClick={handleClose} href="/topup">
                             <Icon icon="mdi:plus" className="text-[#8A7D55]" />
