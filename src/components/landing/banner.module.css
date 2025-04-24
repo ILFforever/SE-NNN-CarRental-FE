@@ -3,10 +3,11 @@
   padding: 0;
   margin: 0;
   width: 100vw;
-  height: 70vh; /* Taller for Apple-like impact */
+  height: 70vh;
   position: relative;
   overflow: hidden;
   transition: all 0.5s ease;
+  background-color: #000; /* Ensure black background during transitions */
 }
 
 .imageContainer {
@@ -15,31 +16,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-}
-
-.fadeIn {
-  opacity: 0;
-  animation: fadeInAnimation 1.2s forwards;
-}
-
-.fadeOut {
-  opacity: 1;
-  animation: fadeOutAnimation 1.2s forwards;
-}
-
-@keyframes fadeInAnimation {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-@keyframes fadeOutAnimation {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
+  will-change: transform, opacity; /* Optimize for animation performance */
 }
 
 .bannerText {
   position: absolute;
-  top: 55%; /* Position this lower on the banner */
+  top: 55%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20;
@@ -47,11 +29,11 @@
   max-width: 90%;
   width: auto;
   padding: 2rem 3rem !important;
-  border: none !important; /* Apple-style clean borders */
-  background: transparent !important; /* Apple-style clean background */
+  border: none !important;
+  background: transparent !important;
 }
 
-/* Pagination indicators styling - Apple style */
+/* Enhanced pagination indicators */
 .paginationContainer {
   position: absolute;
   bottom: 40px;
@@ -68,7 +50,7 @@
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1); /* More refined animation curve */
   border: none;
   padding: 0;
   margin: 0;
@@ -76,24 +58,25 @@
 
 .paginationDot:hover {
   background-color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
 }
 
 .activeDot {
   background-color: white;
-  transform: scale(1.2);
+  transform: scale(1.3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* Subtle glow effect */
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .banner {
-    height: 80vh; /* Slightly taller on mobile */
+    height: 80vh;
   }
   
   .bannerText {
-    width: 90%;
+    width: 95%;
     padding: 1.5rem !important;
-    font-size: 0.9rem;
-    margin-top: -6rem; /* Move up more on mobile to avoid search bar overlap */
+    margin-top: -6rem;
   }
   
   .bannerText h1 {
@@ -106,14 +89,13 @@
   }
 }
 
-/* Extra small devices */
 @media (max-width: 480px) {
   .banner {
-    height: 90vh; /* Even taller on very small screens */
+    height: 90vh;
   }
   
   .bannerText {
-    margin-top: -10rem; /* Move up even more on smaller screens */
+    margin-top: -10rem;
     padding: 1rem !important;
   }
   
