@@ -1,13 +1,15 @@
 "use client";
 import React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { TransactionDate, TransactionTime } from "@/libs/cash/transaction_date";
+import { coinDisplay } from "@/libs/cash/coin_display";
 
 // Mirror the updated Transaction interface
 export interface Transaction {
   _id: string;
   amount: number;
   description: string;
-  type: "deposit" | "withdraw";
+  type: "deposit" | "withdrawal";
   transactionDate: string;
   reference: string;
   rental: any;
@@ -27,20 +29,17 @@ interface TransactionCardProps {
   toggle: () => void;
 }
 
+const showCapitalized = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export default function TransactionCard({
   tx,
   isOpen,
   toggle,
 }: TransactionCardProps) {
   // Format date to a more readable form (e.g., local time)
-  const date = new Date(tx.transactionDate).toLocaleString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const date = TransactionDate(new Date(tx.transactionDate)) + " " + TransactionTime(new Date(tx.transactionDate), true);
 
   return (
     <div className="bg-white hover:bg-gray-50 rounded-xl shadow p-4 md:p-6 border">
@@ -52,8 +51,7 @@ export default function TransactionCard({
               tx.type === "deposit" ? "text-green-500" : "text-red-500"
             }`}
           >
-            {tx.type === "deposit" ? "+" : "-"}
-            {Math.abs(tx.amount).toFixed(2)}
+            {coinDisplay(tx.amount, tx.type)}
           </p>
           <p className="hidden lg:block text-sm lg:text-md text-gray-500">
             {tx.description}
@@ -68,7 +66,7 @@ export default function TransactionCard({
                 tx.type === "deposit" ? "text-green-500" : "text-red-500"
               }`}
             >
-              {tx.type}
+              {showCapitalized(tx.type)}
             </p>
             <p className="text-xs text-gray-400">{date}</p>
           </div>

@@ -21,7 +21,7 @@ interface Transaction {
   reference: string;
   rental: any;
   status: string;
-  type: "deposit" | "withdraw";
+  type: "deposit" | "withdrawal";
   user: string;
   __v: number;
 }
