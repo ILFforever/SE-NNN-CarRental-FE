@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import TransactionFilters from "@/components/cashSystem/TransactionFilters";
+import TransactionCard from "@/components/cashSystem/CardTransaction";
 
 //interface Transaction
 interface Transaction {
@@ -69,79 +70,19 @@ export default function TransactionsPage() {
         <h1 className="text-4xl font-bold mb-2">My Transaction logs</h1>
         <p className="text-lg text-gray-700 mb-6">Transaction History</p>
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-[20%]"><TransactionFilters/></div>
-          <div className="space-y-4 w-full md:w-[80%]">
-            {mockTransactions.map((tx) => {
+          <div className="w-full md:w-[30%] xl:w-[20%]">
+            <TransactionFilters />
+          </div>
+          <div className="space-y-4 w-full md:w-[70%] xl:w-[80%]">
+            {mockTransactions.map((tx: Transaction) => {
               const isOpen = openIds.has(tx.id);
               return (
-                <div
+                <TransactionCard
                   key={tx.id}
-                  className="bg-white rounded-xl shadow p-6 border block"
-                >
-                  <div className="flex items-start justify-between">
-                    {/* Left: amount & description */}
-                    <div>
-                      <p
-                        className={`text-2xl font-semibold ${
-                          tx.type === "deposit"
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {tx.type === "deposit" ? "+" : "-"}
-                        {Math.abs(tx.amount).toFixed(2)} THB
-                      </p>
-                      <p className="text-sm text-gray-500">{tx.description}</p>
-                    </div>
-
-                    {/* Right: type, date, toggle */}
-                    <div className="text-right flex flex-row">
-                      <div className="flex flex-col items-end mr-2">
-                        <p
-                          className={`font-medium text-xl ${
-                            tx.type === "deposit"
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {tx.type === "deposit" ? "Deposit" : "Withdraw"}
-                        </p>
-                        <p className="text-md text-gray-400 mb-2">{tx.date}</p>
-                      </div>
-                      <button
-                        onClick={() => toggle(tx.id)}
-                        className="p-1 hover:bg-gray-100 rounded-full"
-                        aria-label={
-                          isOpen ? "Collapse details" : "Expand details"
-                        }
-                      >
-                        {isOpen ? (
-                          <ChevronUp className="w-5 h-5 text-gray-600" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-600" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {isOpen && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-700">
-                        <div className="font-medium">TransactionID:</div>
-                        <div>{tx.details.transactionId}</div>
-
-                        <div className="font-medium">UserID:</div>
-                        <div>{tx.details.userId}</div>
-
-                        <div className="font-medium">Payment Type:</div>
-                        <div>{tx.details.paymentType}</div>
-
-                        <div className="font-medium">Time (GMT+7):</div>
-                        <div>{tx.details.time}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  tx={tx}
+                  isOpen={isOpen}
+                  toggle={toggle}
+                />
               );
             })}
           </div>
