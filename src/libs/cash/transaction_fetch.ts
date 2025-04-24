@@ -23,7 +23,7 @@ export interface TransactionResponse {
             count: number;
             total: number;
         };
-        withdrawls: {
+        withdrawals: {
             count: number;
             total: number;
         };
