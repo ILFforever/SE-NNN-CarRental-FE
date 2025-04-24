@@ -3,7 +3,7 @@
   padding: 0;
   margin: 0;
   width: 100vw;
-  height: 70vh;
+  height: 70vh; /* Taller for Apple-like impact */
   position: relative;
   overflow: hidden;
   transition: all 0.5s ease;
@@ -44,26 +44,27 @@
   transform: translate(-50%, -50%);
   z-index: 20;
   text-align: center;
-  max-width: 80%;
+  max-width: 90%;
   width: auto;
   padding: 2rem 3rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none !important; /* Apple-style clean borders */
+  background: transparent !important; /* Apple-style clean background */
 }
 
-/* Pagination indicators styling */
+/* Pagination indicators styling - Apple style */
 .paginationContainer {
   position: absolute;
-  bottom: 20px;
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: 12px;
   z-index: 20;
 }
 
 .paginationDot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
@@ -85,7 +86,7 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .banner {
-    height: 60vh; /* Slightly taller on mobile */
+    height: 80vh; /* Slightly taller on mobile */
   }
   
   .bannerText {
@@ -96,7 +97,8 @@
   }
   
   .bannerText h1 {
-    font-size: 1.8rem !important;
+    font-size: 2.5rem !important;
+    line-height: 1.1 !important;
   }
   
   .bannerText h3 {
@@ -107,7 +109,7 @@
 /* Extra small devices */
 @media (max-width: 480px) {
   .banner {
-    height: 70vh; /* Even taller on very small screens */
+    height: 90vh; /* Even taller on very small screens */
   }
   
   .bannerText {
@@ -116,7 +118,7 @@
   }
   
   .bannerText h1 {
-    font-size: 1.5rem !important;
+    font-size: 2rem !important;
   }
   
   .bannerText h3 {
