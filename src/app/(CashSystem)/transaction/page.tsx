@@ -7,6 +7,7 @@ import TransactionCard from "@/components/cashSystem/CardTransaction";
 import TransactionFetch, {
   TransactionResponse,
 } from "@/libs/cash/transaction_fetch";
+import CircularProgress from "@mui/material/CircularProgress";
 
 //interface Transaction
 interface Transaction {
@@ -32,31 +33,52 @@ export default function TransactionsPage() {
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [filters, setFilters] = useState<any>({});
+  const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0 });
 
-  useEffect(() => {
+  //fetchFilteredTransactions function to fetch transactions based on filters
+  const fetchFilteredTransactions = async (filters: any) => {
     if (status !== "authenticated" || !session) return;
 
-    const fetchTransactions = async () => {
-      try {
-        const token = session.user.token; // assumes accessToken in session
-        const roles = session.user.role as "User" | "Admin"; // assumes role in session.user
+    try {
+      const token = session.user.token;
+      const roles = session.user.role as "User" | "Admin";
 
-        const response: TransactionResponse = await TransactionFetch({
-          token,
-          roles,
-        });
-        console.log(response);
-        setTransactions(response.data.transactions);
-      } catch (err: unknown) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const response: TransactionResponse = await TransactionFetch({
+        token,
+        roles,
+        filter: {
+          type: filters.transactionType,
+          status: filters.status,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          reference: filters.reference,
+          rentalId: filters.rentalId,
+          search: filters.search,
+        },
+        pagination: {
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
+      setTransactions(response.data.transactions);
+      console.log(response.data);
+      setPagination((prev) => ({
+        ...prev,
+        total: response.total as any, 
+      }));
+    } catch (err: unknown) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchTransactions();
-  }, []);
+  useEffect(() => {
+    fetchFilteredTransactions(filters);
+  }, [filters, pagination.page]);
 
+  //Function to handle toggle of transaction details
   const toggle = (id: string) => {
     setOpenIds((prev) => {
       const next = new Set(prev);
@@ -65,10 +87,29 @@ export default function TransactionsPage() {
     });
   };
 
+  // Function to handle pagination
+  const handlePreviousPage = () => {
+    if (pagination.page > 1) {
+      setPagination((prev) => ({ ...prev, page: prev.page - 1 }));
+    }
+  };
+  //Function to handle next page
+  const handleNextPage = () => {
+    if (pagination.page * pagination.limit < pagination.total) {
+      setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
+    }
+  };
+
+  //page loading state
   if (loading) {
-    return <p>Loading transactions...</p>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <CircularProgress size="3rem" />
+      </div>
+    );
   }
 
+  //page error state
   if (error) {
     return <p className="text-red-500">Error: {error}</p>;
   }
@@ -83,11 +124,11 @@ export default function TransactionsPage() {
           Transaction History
         </p>
 
-        {/* Content */}
+        {/* Content Filter & Transaction list */}
         <div className="flex flex-col md:flex-row gap-6">
           {/* Filter */}
           <div className="w-full md:w-[30%] xl:w-[20%]">
-            <TransactionFilters />
+            <TransactionFilters onSearch={setFilters} />
           </div>
           {/* Transaction List */}
           <div className="space-y-1 md:space-y-3 w-full md:w-[70%] xl:w-[80%]">
@@ -99,17 +140,33 @@ export default function TransactionsPage() {
                   key={id}
                   tx={tx}
                   isOpen={isOpen}
-                  toggle={() => {
-                    setOpenIds((prev) => {
-                      const next = new Set(prev);
-                      next.has(id) ? next.delete(id) : next.add(id);
-                      return next;
-                    });
-                  }}
+                  toggle={() => toggle(id)}
                 />
               );
             })}
           </div>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-between items-center mt-16">
+          <button
+            onClick={handlePreviousPage}
+            disabled={pagination.page <= 1}
+            className="text-sm md:text-xl px-4 py-2 rounded-md bg-[#8A7D55] text-white hover:bg-[#766b48] disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="text-sm md:text-xl px-4 py-2 text-gray-700">
+            Page {pagination.page} of{" "}
+            {Math.ceil(pagination.total / pagination.limit)}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={pagination.page * pagination.limit >= pagination.total}
+            className="text-sm md:text-xl px-4 py-2 rounded-md bg-[#8A7D55] text-white hover:bg-[#766b48] disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

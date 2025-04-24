@@ -1,12 +1,35 @@
 "use client";
-import React from "react";
+import React, {useState} from "react";
 
 /**
  * A responsive filter panel for transactions.
  * - Mobile: wraps items horizontally
  * - Desktop (lg+): vertical sidebar
  */
-export default function TransactionFilters() {
+export default function TransactionFilters({
+  onSearch,
+}: {
+  onSearch: (filters: any) => void;
+}) {
+  // State variables for filter inputs
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [transactionType, setTransactionType] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [minAmount, setMinAmount] = useState<number | string>("");
+  const [maxAmount, setMaxAmount] = useState<number | string>("");
+
+  const handleSearch = () => {
+    onSearch({
+      startDate,
+      endDate,
+      transactionType,
+      paymentMethod,
+      minAmount: minAmount ? parseFloat(minAmount.toString()) : undefined,
+      maxAmount: maxAmount ? parseFloat(maxAmount.toString()) : undefined,
+    });
+  };
+
   return (
     <div
       className={`
@@ -27,7 +50,9 @@ export default function TransactionFilters() {
         </label>
         <input
           type="date"
-          className="mt-2 block w-full border-gray-300 rounded-lg p-2"
+          className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
         />
       </div>
 
@@ -38,7 +63,9 @@ export default function TransactionFilters() {
         </label>
         <input
           type="date"
-          className="mt-2 block w-full border-gray-300 rounded-lg p-2"
+          className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
         />
       </div>
 
@@ -52,6 +79,9 @@ export default function TransactionFilters() {
             id="filter-deposit"
             name="filter-type"
             type="radio"
+            value="deposit"
+            checked={transactionType === "deposit"}
+            onChange={() => setTransactionType("deposit")}
             className="h-4 w-4 border-gray-300"
           />
           <label
@@ -66,6 +96,9 @@ export default function TransactionFilters() {
             id="filter-withdraw"
             name="filter-type"
             type="radio"
+            value="withdrawal"
+            checked={transactionType === "withdrawal"}
+            onChange={() => setTransactionType("withdrawal")}
             className="h-4 w-4 border-gray-300"
           />
           <label
@@ -82,16 +115,54 @@ export default function TransactionFilters() {
         <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
           Payment Method
         </label>
-        <select className="mt-2 block w-full border-gray-300 rounded-lg p-2">
+        <select
+          className="mt-2 h-10 block w-full border-2 border-gray-300 rounded-lg p-2 text-md"
+          value={paymentMethod}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        >
           <option value="">All</option>
           <option value="qr">QR Code</option>
           <option value="bank">Bank Transfer</option>
         </select>
       </div>
 
+      {/* Amount Range */}
+      <div className="flex flex-col align-center items-center w-40 space-y-2">
+        <div className="block text-sm md:text-md font-bold text-[#8A7D55]">
+          Range of Amount
+        </div>
+        <div className="flex flex-row gap-3">
+          <div className="flex-shrink-0 w-20">
+            <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
+              Min
+            </label>
+            <input
+              type="number"
+              className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+            />
+          </div>
+          <div className="flex-shrink-0 w-20">
+            <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
+              Max
+            </label>
+            <input
+              type="number"
+              className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
+              value={maxAmount}
+              onChange={(e) => setMaxAmount(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Search Button */}
       <div className="flex-shrink-0 w-20 md:w-32 mt-4 md:mt-0">
-        <button className="flex justify-center items-center item w-full h-8 py-2 bg-white text-black font-medium rounded-lg shadow hover:bg-gray-100 border border-[#8A7D55] transition duration-200 ease-in-out">
+        <button
+          onClick={handleSearch}
+          className="flex justify-center items-center item w-full h-8 py-2 bg-white text-black font-medium rounded-lg shadow hover:bg-gray-100 border border-[#8A7D55] transition duration-200 ease-in-out"
+        >
           Search
         </button>
       </div>
