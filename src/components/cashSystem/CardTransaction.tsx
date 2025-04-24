@@ -2,25 +2,29 @@
 import React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-// Reuse or mirror the Transaction interface from your types
+// Mirror the updated Transaction interface
 export interface Transaction {
-  id: string;
+  _id: string;
   amount: number;
   description: string;
   type: "deposit" | "withdraw";
-  date: string;
-  details: {
-    transactionId: string;
-    userId: string;
-    paymentType: string;
-    time: string;
-  };
+  transactionDate: string;
+  reference: string;
+  rental: any;
+  performedBy: string | null;
+  status: string;
+  // Optionally include these if you want more details
+  createdAt?: string;
+  updatedAt?: string;
+  user?: string;
+  metadata?: Record<string, any>;
+  __v?: number;
 }
 
 interface TransactionCardProps {
   tx: Transaction;
   isOpen: boolean;
-  toggle: (id: string) => void;
+  toggle: () => void;
 }
 
 export default function TransactionCard({
@@ -28,8 +32,18 @@ export default function TransactionCard({
   isOpen,
   toggle,
 }: TransactionCardProps) {
+  // Format date to a more readable form (e.g., local time)
+  const date = new Date(tx.transactionDate).toLocaleString("th-TH", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
   return (
-    <div className="bg-white rounded-xl shadow p-4 md:p-6 border">
+    <div className="bg-white hover:bg-gray-50 rounded-xl shadow p-4 md:p-6 border">
       <div className="flex items-start justify-between">
         {/* Left: amount & description */}
         <div>
@@ -39,7 +53,7 @@ export default function TransactionCard({
             }`}
           >
             {tx.type === "deposit" ? "+" : "-"}
-            {Math.abs(tx.amount).toFixed(2)} THB
+            {Math.abs(tx.amount).toFixed(2)}
           </p>
           <p className="hidden lg:block text-sm lg:text-md text-gray-500">
             {tx.description}
@@ -54,12 +68,12 @@ export default function TransactionCard({
                 tx.type === "deposit" ? "text-green-500" : "text-red-500"
               }`}
             >
-              {tx.type === "deposit" ? "deposit" : "withdraw"}
+              {tx.type}
             </p>
-            <p className="text-xs text-gray-400">{tx.date}</p>
+            <p className="text-xs text-gray-400">{date}</p>
           </div>
           <button
-            onClick={() => toggle(tx.id)}
+            onClick={toggle}
             className="p-1 hover:bg-gray-100 rounded-full"
             aria-label={isOpen ? "Collapse details" : "Expand details"}
           >
@@ -73,19 +87,22 @@ export default function TransactionCard({
       </div>
 
       {isOpen && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 gap-y-2 text-xs md:text-sm text-gray-700">
-            <div className="font-medium">TransactionID:</div>
-            <div>{tx.details.transactionId}</div>
+        <div className="mt-4 pt-4 border-t border-gray-200 text-gray-700">
+          <div className="grid grid-cols-2 gap-y-2 text-xs md:text-sm">
+            <div className="font-medium">Reference:</div>
+            <div>{tx.reference || "-"}</div>
 
-            <div className="font-medium">UserID:</div>
-            <div>{tx.details.userId}</div>
+            <div className="font-medium">Performed By:</div>
+            <div>{tx.performedBy || "-"}</div>
 
-            <div className="font-medium">Payment Type:</div>
-            <div>{tx.details.paymentType}</div>
+            <div className="font-medium">Status:</div>
+            <div>{tx.status}</div>
 
-            <div className="font-medium">Time (GMT+7):</div>
-            <div>{tx.details.time}</div>
+            <div className="font-medium">Rental:</div>
+            <div>{tx.rental ?? "-"}</div>
+
+            <div className="font-medium">Created At:</div>
+            <div>{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : '-'}</div>
           </div>
         </div>
       )}
