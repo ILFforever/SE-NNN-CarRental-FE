@@ -24,6 +24,7 @@ import {
   calculateServicesTotalCost,
 } from "@/libs/bookingUtils";
 import ErrorMessage from "./ErrorToAddRentMessage";
+import SuccessMessage from "./SuccessMessage";
 import { useSession } from "next-auth/react";
 import { API_BASE_URL } from "@/config/apiConfig";
 
@@ -39,9 +40,9 @@ interface ReservationSummaryProps {
   formValid: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;
+  onSuccessClose?: () => void; // เพิ่ม prop นี้
   userId?: string;
 }
-
 interface CreditData {
   credits: number;
   transactions: any[];
@@ -72,6 +73,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [reservationId, setReservationId] = useState<string | null>(null);
 
   // Credit data state
   const [creditData, setCreditData] = useState<CreditData>({
@@ -164,13 +166,22 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   }, [session]);
 
   // Handle reservation submission with deposit
-  const handleSubmitWithDeposit = async () => {
-    // Clear previous messages
+
+  const handleSubmitWithDeposit = async (
+    e?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    // ป้องกันการทำงานปกติของฟอร์ม
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    // ล้างข้อความแจ้งเตือนเก่า
     setError(null);
     setSuccessMessage(null);
     setIsProcessing(true);
+    setReservationId(null);
 
-    // Check if user has enough credits for the deposit
+    // ตรวจสอบว่ามีเครดิตเพียงพอหรือไม่
     if (creditData.credits < depositAmount) {
       setError(
         `Insufficient credits. You need ${formatCurrency(
@@ -184,7 +195,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
     }
 
     try {
-      // Prepare rental data
+      // เตรียมข้อมูลการเช่า
       const rentalData = {
         car: car._id,
         startDate: pickupDate?.toISOString(),
@@ -199,7 +210,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         user: userId,
       };
 
-      // Call the API to create a reservation with deposit
+      // เรียก API เพื่อสร้างการจองพร้อมเงินมัดจำ
       if (!session?.user?.token) {
         throw new Error("No authentication token available");
       }
@@ -219,26 +230,53 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         throw new Error(data.message || "Failed to create reservation");
       }
 
-      // Success! Show success message
+      // บันทึก reservation ID ถ้ามี
+      if (data._id) {
+        setReservationId(data._id);
+      }
+
+      // ลดเครดิตและแสดงข้อความสำเร็จ
+      const remainingCredits = creditData.credits - depositAmount;
+
+      // แสดงข้อความสำเร็จ
       setSuccessMessage(
         `Reservation created successfully! Deposit of ${formatCurrency(
           depositAmount
         )} has been paid.`
       );
 
-      // Refresh credit data after successful payment
+      // อัปเดตข้อมูลเครดิต
       fetchCreditData();
 
-      // Call the original onSubmit to handle any additional logic
-      onSubmit();
+      // ป้องกันการแสดง alert จาก onSubmit
+      if (typeof onSubmit === "function") {
+        try {
+          // แทนที่ window.alert ชั่วคราว
+          const originalAlert = window.alert;
+          window.alert = () => {}; // ฟังก์ชันว่างเพื่อไม่ให้แสดง alert
+
+          if (typeof onSubmit === "function") {
+            onSubmit();
+          }
+
+          // คืนค่า window.alert
+          window.alert = originalAlert;
+        } catch (error) {
+          console.error("Error calling onSubmit:", error);
+        }
+      }
     } catch (err) {
-      // Handle any errors
+      // จัดการข้อผิดพลาด
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred"
       );
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCloseSuccessMessage = () => {
+    setSuccessMessage(null);
   };
 
   return (
@@ -262,42 +300,38 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         </div>
       </div>
       {/* Notification Area */}
-      {(error || creditData.error || successMessage) && (
-        <div className="px-6 pt-4">
-          {error && (
-            <ErrorMessage
-              message={error}
-              variant="error"
-              onClose={() => setError(null)}
-            />
-          )}
+      <div className="px-6 pt-4">
+        {error && (
+          <ErrorMessage
+            message={error}
+            variant="error"
+            onClose={() => setError(null)}
+          />
+        )}
 
-          {creditData.error && (
-            <ErrorMessage
-              message={`Unable to fetch credit balance: ${creditData.error}`}
-              variant="warning"
-              onClose={() =>
-                setCreditData((prev) => ({ ...prev, error: null }))
-              }
-            />
-          )}
+        {creditData.error && (
+          <ErrorMessage
+            message={`Unable to fetch credit balance: ${creditData.error}`}
+            variant="warning"
+            onClose={() => setCreditData((prev) => ({ ...prev, error: null }))}
+          />
+        )}
 
-          {successMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4 animate-fadeIn">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <ShieldCheck className="h-5 w-5 text-green-500" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">
-                    {successMessage}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        {successMessage && (
+          <SuccessMessage
+            message={successMessage}
+            depositAmount={depositAmount}
+            rentalDetails={{
+              carName: `${car.brand} ${car.model}`,
+              pickupDate: pickupDate?.format("D MMM YYYY") + ` ${pickupTime}`,
+              returnDate: returnDate?.format("D MMM YYYY") + ` ${returnTime}`,
+              reservationId: reservationId || undefined,
+            }}
+            remainingCredits={creditData.credits}
+            onClose={handleCloseSuccessMessage}
+          />
+        )}
+      </div>
 
       {/* Main Content Area */}
       <div className="p-5">
@@ -698,7 +732,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
       {/* Bottom CTA Section */}
       <div className="px-6 py-5 bg-gray-50 border-t border-gray-200">
         <button
-          onClick={handleSubmitWithDeposit}
+          onClick={(e) => handleSubmitWithDeposit(e)}
           disabled={
             !formValid ||
             isProcessing ||

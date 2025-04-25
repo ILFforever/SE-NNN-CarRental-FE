@@ -71,6 +71,7 @@ export default function Booking() {
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   const [formValid, setFormValid] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [shouldNavigate, setShouldNavigate] = useState(false);
 
   // Check form validity whenever relevant fields change
   useEffect(() => {
@@ -187,10 +188,9 @@ export default function Booking() {
         
         console.log(item);
         dispatch(addBooking(item));
-        alert("Booking successful!");
 
         // Redirect to reservations page
-        router.push("/account/reservations");
+        setShouldNavigate(true);
       } else {
         alert(result.message);
         if (result.message.includes("not available")) {
@@ -203,6 +203,14 @@ export default function Booking() {
       alert("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSuccessClose = () => {
+    // ถ้า shouldNavigate เป็น true ให้ navigate ไปที่หน้า reservations
+    if (shouldNavigate) {
+      setShouldNavigate(false); // รีเซ็ต state
+      router.push("/account/reservations");
     }
   };
 
@@ -417,18 +425,20 @@ export default function Booking() {
       {/* Reservation Summary */}
       {car && pickupDateTime && returnDateTime && (
         <ReservationSummary
-          car={car}
-          pickupDate={pickupDateTime}
-          returnDate={returnDateTime}
-          pickupTime={pickupTime}
-          returnTime={returnTime}
-          userTier={userTier}
-          selectedServices={selectedServices}
-          services={services}
-          formValid={formValid}
-          isSubmitting={isSubmitting}
-          onSubmit={handleMakeBooking}
-        />
+        car={car}
+        pickupDate={pickupDateTime}
+        returnDate={returnDateTime}
+        pickupTime={pickupTime}
+        returnTime={returnTime}
+        userTier={userTier}
+        selectedServices={selectedServices}
+        services={services}
+        formValid={formValid}
+        isSubmitting={isSubmitting}
+        onSubmit={handleMakeBooking}
+        onSuccessClose={handleSuccessClose}
+        userId={session?.user?.id}
+      />
       )}
     </main>
   );
