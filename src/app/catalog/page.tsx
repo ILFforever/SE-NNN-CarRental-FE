@@ -977,9 +977,50 @@ export default function CatalogPage() {
                     type="text"
                     placeholder="Search by model, brand..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => 
+                       {
+                        const value = e.target.value;
+                        setSearchQuery(value);
+                        updateSearch({ location: value });
+                        // Show suggestions if there's a value
+                        setShowLocationSuggestions(value.trim() !== "");
+                      
+                    }
+                  }
+                    onFocus={(e) => {
+                      // Show suggestions if there's a value when focused
+                      if (e.target.value.trim() !== "") {
+                        setShowLocationSuggestions(true);
+                      }
+                    }}
                     className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-sm placeholder-opacity-50 focus:placeholder-opacity-0"
                   />
+                  {filterOptions.provider.length > 0 &&
+                  selectedLocation.trim() !== "" &&
+                  showLocationSuggestions && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto">
+                      {filterOptions.provider
+                        .filter((provider) =>
+                          provider
+                            .toLowerCase()
+                            .includes(selectedLocation.toLowerCase())
+                        )
+                        .map((provider, index) => (
+                          <div
+                            key={index}
+                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                            onClick={() => {
+                              setSearchQuery(provider);
+                              updateSearch({ location: provider });
+                              setShowLocationSuggestions(false);
+                            }}
+                          >
+                            {/* Highlight matching text */}
+                            {highlightMatch(provider, selectedLocation)}
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
