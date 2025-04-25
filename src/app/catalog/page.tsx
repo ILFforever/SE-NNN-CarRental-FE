@@ -874,7 +874,7 @@ export default function CatalogPage() {
           dropdownRefs.current["search"] = el;
         }
       }}
-      className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto"
+      className="absolute z-[99] mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto"
     >
       {/* Show brand suggestions */}
       {filterOptions.brand
