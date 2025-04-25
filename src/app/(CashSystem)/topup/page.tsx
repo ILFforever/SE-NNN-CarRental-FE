@@ -22,8 +22,13 @@ export default function TopUpPage() {
     "pending" | "completed" | "expired" | null
   >(null);
 
+  const [userCredit,setUserCredit]=useState<number>(0);
+  const [showPresetModal, setShowPresetModal] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+
   // preset buttons for quick select
-  const presetAmounts = [100, 200, 500, 1000, 2000, 5000];
+  const presetAmounts = [100, 500, 1000];
 
   // calculate bonus when amount changes
   useEffect(() => {
@@ -116,6 +121,7 @@ export default function TopUpPage() {
       } else {
         setError(data.message || "Failed to generate QR code");
       }
+      setShowQRModal(true);
     } catch (err) {
       setError("Network error while generating QR code");
     } finally {
@@ -123,122 +129,143 @@ export default function TopUpPage() {
     }
   };
 
+  useEffect(()=>{
+    const fetchData = async()=>{
+      try{
+        const response = await fetch(`${API_BASE_URL}/credits`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.user.token}`,
+          }
+        });
+        const data = await response.json();
+        setUserCredit(data.data.credits);
+      }
+      catch (error) {
+        console.error('Error fetching coin data:', error);
+      }
+    }
+    fetchData();
+  },[userCredit,session]);
+
+  const handlePresetTopupClick = (amount: number) => {
+    setAmount(amount);
+    setShowPresetModal(true);
+  };
+
+  const handleCustomTopupClick = () => {
+    setShowCustomModal(true);
+  };
+
   return (
     <main className="space-y-6 mb-12">
-      {/* Banner Image */}
-      <div className="h-[200px] md:h-[350px] w-full relative">
-        <Image
-          src="/img/top-up-banner.jpg"
-          alt="Top Up Banner"
-          layout="fill"
-          objectFit="cover"
-        />
+      <div className="w-lg h-40 m-10 font-sans">
+        <h1 className="text-3xl font-bold mb-8">Topup</h1>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="p-6 bg-white rounded-xl shadow col-span-2 md:col-span-1">
+          <h2 className="text-sm font-semibold text-gray-500">Total Balance</h2>
+          <p className="text-2xl font-bold text-black">{userCredit} Coin</p>
+          <p className="text-xs text-gray-400 mt-2">
+            Note: this currency is only being used in our website only
+          </p>
+        </div>
+        {
+          presetAmounts.map((val)=>(
+            <button key={val} onClick={()=>(handlePresetTopupClick(val))} className="p-4 bg-white rounded-xl shadow hover:shadow-md">
+              <p className="font-semibold">{val} THB</p>
+              <p className="text-xs text-gray-500">Add {val} Coin</p>
+            </button>
+          ))
+        }
+        <button onClick={()=>(handleCustomTopupClick())} className="p-4 bg-white rounded-xl shadow hover:shadow-md">
+          <p className="font-semibold">Custom Amount</p>
+          <p className="text-xs text-gray-500">Add custom amount</p>
+        </button>
+        </div>
       </div>
 
-      <section className="px-4 max-w-xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-center">
-          Account Top-Up
-        </h1>
-
-        {/* Preset Buttons */}
-        <div className="mb-8">
-          <label className="text-md md:text-2xl block mb-4 font-medium">
-            Select Quick Amount
-          </label>
-          <div className="flex flex-wrap gap-4">
-            {presetAmounts.map((val) => (
+      {showPresetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl text-center">
+            <p className="mb-4 text-lg font-semibold">Confirm Topup</p>
+            <p className="mb-6">Are you sure you want to top up {amount} THB?</p>
+            <div className="flex justify-center gap-4">
               <button
-                key={val}
-                type="button"
-                onClick={() => setAmount(val)}
-                className={`px-4 py-2 rounded-lg border 
-                  ${
-                    amount === val
-                      ? "bg-green-600 text-white border-green-600"
-                      : "bg-white text-gray-700 border-gray-300"
-                  }
-                  text-md md:text-xl
-                  hover:bg-green-100 transition-colors
-                `}
+                onClick={()=>{handleConfirm(); setShowPresetModal(false);}}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
               >
-                ${val}
+                Confirm
               </button>
-            ))}
+              <button
+                onClick={() => setShowPresetModal(false)}
+                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Custom Input */}
-        <div className="mb-8">
-          <label
-            htmlFor="amount"
-            className="text-md md:text-2xl block mb-1 font-medium"
-          >
-            Or Enter Custom Amount ($)
-          </label>
-          <input
-            id="amount"
-            type="number"
-            min={0}
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            placeholder="Minimum $100"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          {error && <p className="mt-1 text-red-600">{error}</p>}
-        </div>
-
-        {/* Summary */}
-        {amount >= 100 && (
-          <div className="text-md mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
-            <p>
-              Top-Up Amount: <span className="font-semibold">${amount}</span>
-            </p>
-            <p>
-              Bonus Credit:{" "}
-              <span className="font-semibold">${totalCredit - amount}</span>
-            </p>
-            <p>
-              Total Credit:{" "}
-              <span className="font-semibold">${totalCredit}</span>
-            </p>
-          </div>
-        )}
-
-        {/* Action Button */}
-        <button
-          onClick={handleConfirm}
-          disabled={loading || qrStatus === "pending"}
-          className={`w-full py-3 text-white font-medium rounded-lg transition
-            ${
-              loading || qrStatus === "pending"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
-            }
-          `}
-        >
-          {loading
-            ? "Generating QR Code..."
-            : qrStatus === "pending"
-            ? "QR Code Pending..."
-            : "Confirm Top-Up"}
-        </button>
-
-        {/* QR Display & Expired */}
-        {qrUrl && qrStatus === "pending" && (
-          <div className="mt-8 text-center">
-            <img
-              src={qrUrl}
-              alt="Top-Up QR Code"
-              className="mx-auto w-[150px] md:w-[300px] h-[150px] md:h-[300px] rounded-lg border border-gray-300"
+      {showCustomModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl text-center">
+            <p className="mb-4 text-lg font-semibold">Custom Topup</p>
+            <input
+              id="amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              placeholder="Minimum $100"
+              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
             />
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={()=>{handleConfirm(); setShowCustomModal(false);}}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setShowCustomModal(false)}
+                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        )}
-        {qrStatus === "expired" && (
-          <p className="mt-8 text-center text-red-600 font-medium">
-            This QR code has expired. Please retry.
-          </p>
-        )}
-      </section>
+        </div>
+      )}
+
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl text-center">
+            {qrUrl && qrStatus === "pending" && (
+              <div className="mt-8 text-center">
+                <img
+                  src={qrUrl}
+                  alt="Top-Up QR Code"
+                  className="mx-auto w-[150px] md:w-[300px] h-[150px] md:h-[300px] rounded-lg border border-gray-300"
+                />
+              </div>
+            )}
+            {qrStatus === "expired" && (
+              <div>
+                <p className="mt-8 text-center text-red-600 font-medium">
+                  This QR code has expired. Please retry.
+                </p>
+                <button
+                  onClick={() => setShowQRModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+            </div>
+        </div>
+      )}
     </main>
   );
 }

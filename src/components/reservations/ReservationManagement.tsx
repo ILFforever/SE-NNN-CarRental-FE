@@ -20,10 +20,14 @@ import ConfirmationModal from "@/components/util/ConfirmationModal";
 
 interface ReservationManagementProps {
   token: string;
+  initialStatus?: string;
+  initialPage?: number;
 }
 
 export default function ReservationManagement({
   token,
+  initialStatus,
+  initialPage = 1,
 }: ReservationManagementProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -62,6 +66,8 @@ export default function ReservationManagement({
   const [users, setUsers] = useState<{ [key: string]: User }>({});
   const [providers, setProviders] = useState<{ [key: string]: Provider }>({});
 
+  const [status, setStatus] = useState<string | undefined>(initialStatus);
+
   // Fetch all rentals data
   useEffect(() => {
     const fetchRentals = async () => {
@@ -75,33 +81,48 @@ export default function ReservationManagement({
       setError("");
 
       try {
-        let response;
-        let data;
+        const queryParams = new URLSearchParams();
+
+        // Add status to query if present
+        if (status) {
+          queryParams.append("status", status);
+        }
+
+        // Add page to query
+        queryParams.append("page", currentPage.toString());
+        queryParams.append("limit", itemsPerPage.toString());
+
+        // Add search query if present
+        if (searchQuery) {
+          queryParams.append("search", searchQuery);
+        }
+
+        // Add date range filters if present
+        if (dateRangeFilter.start) {
+          queryParams.append("startDate", dateRangeFilter.start);
+        }
+        if (dateRangeFilter.end) {
+          queryParams.append("endDate", dateRangeFilter.end);
+        }
 
         // Use the appropriate endpoint based on user type
-        if (session.user.userType === "provider") {
-          // For providers, use the enhanced provider-specific endpoint
-          response = await fetch(`${API_BASE_URL}/rents/provider`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-        } else {
-          // For admin, fetch all rentals
-          response = await fetch(`${API_BASE_URL}/rents/all`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-        }
+        const endpoint =
+          session.user.userType === "provider"
+            ? `${API_BASE_URL}/rents/provider`
+            : `${API_BASE_URL}/rents/all`;
+
+        const response = await fetch(`${endpoint}?${queryParams.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch rentals: ${response.status}`);
         }
 
-        data = await response.json();
+        const data = await response.json();
 
         if (!data.success) {
           throw new Error("Failed to fetch rental data");
@@ -163,7 +184,9 @@ export default function ReservationManagement({
         setProviders(providerMap);
         setRentals(rentals);
         setFilteredRentals(rentals);
-        setTotalPages(Math.ceil(rentals.length / itemsPerPage));
+
+        // Update total pages based on server-side pagination
+        setTotalPages(data.pagination?.totalPages || 1);
       } catch (err) {
         console.error("Error fetching rentals:", err);
         setError(
@@ -175,79 +198,14 @@ export default function ReservationManagement({
     };
 
     fetchRentals();
-  }, [token, itemsPerPage, session?.user?.userType]);
-
-  // Apply filters
-  useEffect(() => {
-    let results = [...rentals];
-
-    // Apply status filter
-    if (statusFilter) {
-      results = results.filter((rental) => rental.status === statusFilter);
-    }
-
-    // Apply date range filter
-    if (dateRangeFilter.start) {
-      const startDate = new Date(dateRangeFilter.start);
-      results = results.filter(
-        (rental) => new Date(rental.startDate) >= startDate
-      );
-    }
-
-    if (dateRangeFilter.end) {
-      const endDate = new Date(dateRangeFilter.end);
-      results = results.filter(
-        (rental) => new Date(rental.returnDate) <= endDate
-      );
-    }
-
-    // Apply search query filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-
-      results = results.filter((rental) => {
-        // Search in rental ID
-        if (rental._id.toLowerCase().includes(query)) return true;
-
-        // Search in car details
-        const car =
-          typeof rental.car === "string"
-            ? cars[rental.car]
-            : (rental.car as Car);
-
-        if (car) {
-          if (car.brand?.toLowerCase().includes(query)) return true;
-          if (car.model?.toLowerCase().includes(query)) return true;
-          if (car.license_plate?.toLowerCase().includes(query)) return true;
-        }
-
-        // Search in user details
-        const user =
-          typeof rental.user === "string"
-            ? users[rental.user]
-            : (rental.user as User);
-
-        if (user) {
-          if (user.name?.toLowerCase().includes(query)) return true;
-          if (user.email?.toLowerCase().includes(query)) return true;
-          if (user.telephone_number?.toLowerCase().includes(query)) return true;
-        }
-
-        return false;
-      });
-    }
-
-    setFilteredRentals(results);
-    setTotalPages(Math.ceil(results.length / itemsPerPage));
-    setCurrentPage(1); // Reset to first page when filters change
   }, [
-    searchQuery,
-    statusFilter,
-    dateRangeFilter,
-    rentals,
-    cars,
-    users,
+    token,
     itemsPerPage,
+    session?.user?.userType,
+    status,
+    currentPage,
+    searchQuery,
+    dateRangeFilter,
   ]);
 
   // Handle rental update (Accept/Complete/Cancel)
@@ -795,9 +753,9 @@ export default function ReservationManagement({
         </div>
       )}
       {/* Filters and Search */}
-      <div className="flex flex-wrap gap-4 mb-6">
+      <div className="flex flex-wrap gap-4 mb-6 items-center">
         {/* Search Bar */}
-        <div className="relative flex-grow">
+        <div className="relative flex-grow min-w-[250px]">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -816,9 +774,12 @@ export default function ReservationManagement({
           </div>
           <input
             type="text"
-            placeholder="Search by ID, car, or customer..."
+            placeholder="Search by ID, name, email, license plate..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-[#8A7D55]"
           />
         </div>
@@ -826,13 +787,19 @@ export default function ReservationManagement({
         {/* Status Filter */}
         <div className="relative">
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="pl-3 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] appearance-none"
+            value={status || ""}
+            onChange={(e) => {
+              const selectedStatus =
+                e.target.value === "" ? undefined : e.target.value;
+              setStatus(selectedStatus);
+              setCurrentPage(1);
+            }}
+            className="pl-3 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] appearance-none w-48"
           >
-            <option value="">All Status</option>
+            <option value="">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
+            <option value="unpaid">Unpaid</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
@@ -846,28 +813,33 @@ export default function ReservationManagement({
           <div className="relative">
             <input
               type="date"
-              placeholder="From Date"
               value={dateRangeFilter.start}
-              onChange={(e) =>
+              onChange={(e) => {
                 setDateRangeFilter((prev) => ({
                   ...prev,
                   start: e.target.value,
-                }))
-              }
-              className="pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                }));
+                setCurrentPage(1);
+              }}
+              className="pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] w-44"
+              placeholder="Start Date"
             />
           </div>
           <span className="text-gray-500">to</span>
           <div className="relative">
             <input
               type="date"
-              placeholder="To Date"
               value={dateRangeFilter.end}
               min={dateRangeFilter.start}
-              onChange={(e) =>
-                setDateRangeFilter((prev) => ({ ...prev, end: e.target.value }))
-              }
-              className="pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+              onChange={(e) => {
+                setDateRangeFilter((prev) => ({
+                  ...prev,
+                  end: e.target.value,
+                }));
+                setCurrentPage(1);
+              }}
+              className="pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55] w-44"
+              placeholder="End Date"
             />
           </div>
         </div>
@@ -876,8 +848,9 @@ export default function ReservationManagement({
         <button
           onClick={() => {
             setSearchQuery("");
-            setStatusFilter("");
+            setStatus(undefined);
             setDateRangeFilter({ start: "", end: "" });
+            setCurrentPage(1);
           }}
           className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
         >
