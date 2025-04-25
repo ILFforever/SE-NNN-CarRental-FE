@@ -9,7 +9,14 @@ export const metadata: Metadata = {
   description: 'Car provider tools for managing reservations',
 };
 
-export default async function ManageReservationPage() {
+export default async function ManageReservationPage({
+  searchParams
+}: {
+  searchParams?: { 
+    status?: string;
+    page?: string;
+  };
+}) {
   const session = await getServerSession(authOptions);
   
   // Redirect if not logged in or not a provider
@@ -30,8 +37,12 @@ export default async function ManageReservationPage() {
       
       {session?.user?.token ? (
         <div className="flex justify-center">
-          <div className="w-fit">
-            <ReservationManagement token={session.user.token} />
+          <div className="w-full">
+            <ReservationManagement 
+              token={session.user.token} 
+              initialStatus={searchParams?.status}
+              initialPage={searchParams?.page ? parseInt(searchParams.page) : 1}
+            />
           </div>
         </div>
       ) : (

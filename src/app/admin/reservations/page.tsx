@@ -9,7 +9,14 @@ export const metadata: Metadata = {
   description: "Administrative tools for managing reservations in CEDT Rentals",
 };
 
-export default async function ManageReservationPage() {
+export default async function ManageReservationPage({
+  searchParams,
+}: {
+  searchParams?: {
+    status?: string;
+    page?: string;
+  };
+}) {
   const session = await getServerSession(authOptions);
 
   // Redirect if not logged in or not an admin
@@ -24,18 +31,24 @@ export default async function ManageReservationPage() {
           Manage Reservations
         </h1>
         <p className="text-sm sm:text-base text-gray-600 max-w-3xl mx-auto">
-          View, create, or deactivate reservations from this management dashboard.
+          View, create, or deactivate reservations from this management
+          dashboard.
         </p>
       </div>
       {session?.user?.token ? (
         <div className="flex justify-center">
-          <div className="w-fit">
-            <ReservationManagement token={session.user.token} />
+          <div className="w-full">
+            <ReservationManagement
+              token={session.user.token}
+              initialStatus={searchParams?.status}
+              initialPage={searchParams?.page ? parseInt(searchParams.page) : 1}
+            />
           </div>
         </div>
       ) : (
         <div className="bg-yellow-100 p-4 rounded-md text-yellow-800 max-w-lg mx-auto text-center">
-          Authentication token not available. Please try logging out and back in.
+          Authentication token not available. Please try logging out and back
+          in.
         </div>
       )}
     </main>
