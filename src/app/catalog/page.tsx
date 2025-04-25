@@ -840,7 +840,7 @@ export default function CatalogPage() {
  ...
  Replace the existing search input with this code: */}
 <div className="relative">
-  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-99">
+  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-[1000]">
     <Search className="h-4 w-4 text-gray-400" />
   </div>
   <input
