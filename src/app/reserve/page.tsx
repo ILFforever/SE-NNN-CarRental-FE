@@ -27,6 +27,7 @@ export default function Booking() {
   useScrollToTop();
   const router = useRouter();
   const { data: session } = useSession();
+  console.log(session);
   
   useEffect(() => {
     if (session?.user?.userType === "provider") {
