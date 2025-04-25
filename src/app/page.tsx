@@ -1,7 +1,8 @@
 import Banner from "../components/landing/Banner";
 import Image from "next/image";
 import Link from "next/link";
-import BookingCTA from "@/components/util/BookingCTA";
+import BookingCTA from "@/components/landing/BookingCTA";
+
 
 export default function Home() {
   return (

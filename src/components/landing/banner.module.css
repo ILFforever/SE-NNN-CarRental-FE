@@ -2,8 +2,10 @@
   display: block;
   padding: 0;
   margin: 0;
-  width: 100vw;
-  height: 70vh;
+  width: 100%;
+  height: 70vh; /* Reduced from 100vh to 70vh for proper scaling */
+  max-height: 650px; /* Reduced maximum height */
+  min-height: 400px; /* Reduced minimum height */
   position: relative;
   overflow: hidden;
   transition: all 0.5s ease;
@@ -21,13 +23,13 @@
 
 .bannerText {
   position: absolute;
-  top: 55%;
-  left: 50%;
+  top: 55%; /* Moved down slightly */
+  left: 40%; /* Moved more to the left from 50% */
   transform: translate(-50%, -50%);
   z-index: 20;
-  text-align: center;
-  max-width: 90%;
-  width: auto;
+  text-align: left; /* Changed from center to left */
+  max-width: 800px;
+  width: auto; /* Changed from 100% to auto */
   padding: 2rem 3rem !important;
   border: none !important;
   background: transparent !important;
@@ -36,7 +38,7 @@
 /* Enhanced pagination indicators */
 .paginationContainer {
   position: absolute;
-  bottom: 40px;
+  bottom: 24px; /* Adjusted from bottom position */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -68,42 +70,106 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
   .banner {
-    height: 80vh;
+    height: 60vh;
   }
   
   .bannerText {
-    width: 95%;
-    padding: 1.5rem !important;
-    margin-top: -6rem;
+    left: 30%;
+  }
+}
+
+@media (max-width: 768px) {
+  .banner {
+    height: 60vh;
+    min-height: 400px;
+  }
+  
+  .bannerText {
+    width: 90%;
+    max-width: 600px;
+    padding: 1.5rem 1rem !important;
+    top: 45%; /* Adjust position to make room for search component */
+    left: 45%; /* Move closer to center on mobile */
   }
   
   .bannerText h1 {
     font-size: 2.5rem !important;
     line-height: 1.1 !important;
+    text-align: left;
   }
   
   .bannerText h3 {
     font-size: 1.2rem !important;
+    text-align: left;
+  }
+  
+  .paginationContainer {
+    bottom: 16px;
   }
 }
 
 @media (max-width: 480px) {
   .banner {
-    height: 90vh;
+    height: 85vh;
+    min-height: 400px;
   }
   
   .bannerText {
-    margin-top: -10rem;
+    width: 92%;
     padding: 1rem !important;
+    top: 42%;
   }
   
   .bannerText h1 {
-    font-size: 2rem !important;
+    font-size: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
   }
   
   .bannerText h3 {
     font-size: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .paginationContainer {
+    bottom: 12px;
+  }
+}
+
+/* Handle extremely wide screens */
+@media (min-aspect-ratio: 21/9) {
+  .banner {
+    height: 70vh;
+  }
+  
+  .bannerText {
+    max-width: 900px;
+  }
+}
+
+/* Handle short but wide screens (landscape mobile) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .banner {
+    height: 100vh;
+  }
+  
+  .bannerText {
+    top: 55%;
+    padding: 0.75rem !important;
+  }
+  
+  .bannerText h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .bannerText h3 {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .paginationContainer {
+    bottom: 8px;
   }
 }

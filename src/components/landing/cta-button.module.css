@@ -1,0 +1,134 @@
+.ctaContainer {
+  margin: 20px auto;
+  max-width: 900px;
+  background: linear-gradient(135deg, #8A7D55 0%, #766b48 100%);
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  position: relative;
+}
+
+.ctaContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/img/pattern.png');
+  background-size: cover;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+}
+
+.ctaContent {
+  position: relative;
+  padding: 40px 24px;
+  text-align: center;
+  color: white;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.ctaHeading {
+  font-family: var(--font-serif, serif);
+  font-weight: 500;
+  margin-bottom: 16px;
+  line-height: 1.2;
+  /* Text will automatically adjust size based on screen */
+  /* Fallbacks are provided in the component */
+}
+
+.ctaText {
+  line-height: 1.6;
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  /* Text will automatically adjust size based on screen */
+  /* Fallbacks are provided in the component */
+}
+
+.ctaButton {
+  background-color: white;
+  color: #8A7D55;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  transition: left 0.7s ease;
+}
+
+.ctaButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ctaButton:hover::before {
+  left: 100%;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+  .ctaContainer {
+    margin: 20px 16px;
+    border-radius: 12px;
+  }
+  
+  .ctaContent {
+    padding: 32px 16px;
+  }
+  
+  .ctaButton {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ctaContainer {
+    margin: 16px 12px;
+  }
+  
+  .ctaContent {
+    padding: 24px 16px;
+  }
+  
+  .ctaHeading {
+    margin-bottom: 12px;
+    /* Text size controlled in component with responsive classes */
+  }
+  
+  .ctaText {
+    margin-bottom: 24px;
+    /* Text size controlled in component with responsive classes */
+  }
+  
+  .ctaButton {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    width: 100%;
+    max-width: 280px;
+  }
+}
