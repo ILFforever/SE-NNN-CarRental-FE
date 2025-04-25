@@ -3,9 +3,9 @@
   padding: 0;
   margin: 0;
   width: 100%;
-  height: 70vh; /* Reduced from 100vh to 70vh for proper scaling */
-  max-height: 650px; /* Reduced maximum height */
-  min-height: 400px; /* Reduced minimum height */
+  height: 75vh; /* Further reduced height */
+  max-height: 550px; /* Reduced maximum height */
+  min-height: 350px; /* Reduced minimum height */
   position: relative;
   overflow: hidden;
   transition: all 0.5s ease;
@@ -23,16 +23,29 @@
 
 .bannerText {
   position: absolute;
-  top: 55%; /* Moved down slightly */
-  left: 40%; /* Moved more to the left from 50% */
-  transform: translate(-50%, -50%);
+  top: 65%; /* Moved lower */
+  right: 5%; /* Positioned from right instead of left */
+  left: auto; /* Removing left positioning */
+  transform: none; /* Remove the transform that was centering it */
   z-index: 20;
-  text-align: left; /* Changed from center to left */
-  max-width: 800px;
-  width: auto; /* Changed from 100% to auto */
-  padding: 2rem 3rem !important;
+  text-align: right; /* Right-aligned text */
+  max-width: 500px;
+  width: auto;
+  padding: 0 !important;
   border: none !important;
   background: transparent !important;
+}
+
+.bannerText h1 {
+  font-size: 2.5rem !important;
+  line-height: 1.1 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.bannerText h3 {
+  font-size: 1.25rem !important;
+  font-weight: normal !important;
+  margin-bottom: 1rem !important;
 }
 
 /* Enhanced pagination indicators */
@@ -72,37 +85,38 @@
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .banner {
-    height: 60vh;
+    height: 55vh;
   }
   
   .bannerText {
-    left: 30%;
+    right: 5%;
+    max-width: 450px;
+  }
+  
+  .bannerText h1 {
+    font-size: 2.5rem !important;
   }
 }
 
 @media (max-width: 768px) {
   .banner {
-    height: 60vh;
-    min-height: 400px;
+    height: 50vh;
+    min-height: 350px;
   }
   
   .bannerText {
-    width: 90%;
-    max-width: 600px;
-    padding: 1.5rem 1rem !important;
-    top: 45%; /* Adjust position to make room for search component */
-    left: 45%; /* Move closer to center on mobile */
+    right: 5%;
+    max-width: 400px;
+    top: 60%;
   }
   
   .bannerText h1 {
-    font-size: 2.5rem !important;
+    font-size: 2rem !important;
     line-height: 1.1 !important;
-    text-align: left;
   }
   
   .bannerText h3 {
-    font-size: 1.2rem !important;
-    text-align: left;
+    font-size: 1rem !important;
   }
   
   .paginationContainer {
@@ -112,24 +126,24 @@
 
 @media (max-width: 480px) {
   .banner {
-    height: 85vh;
-    min-height: 400px;
+    height: 50vh;
+    min-height: 300px;
   }
   
   .bannerText {
-    width: 92%;
-    padding: 1rem !important;
-    top: 42%;
+    right: 5%;
+    max-width: 300px;
+    top: 60%;
   }
   
   .bannerText h1 {
-    font-size: 1.75rem !important;
-    margin-bottom: 0.5rem !important;
+    font-size: 1.5rem !important;
+    margin-bottom: 0.25rem !important;
   }
   
   .bannerText h3 {
-    font-size: 1rem !important;
-    margin-bottom: 1rem !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 0.5rem !important;
   }
   
   .paginationContainer {

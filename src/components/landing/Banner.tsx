@@ -32,7 +32,7 @@ export default function Banner() {
         },
         {
             image: '/img/banner4cropped.jpg',
-            title: "The Art of Automotive Excellence",
+            title: "Art of Automotive Excellence",
             subtitle: "Craftsmanship That Commands Attention"
         },
         {
