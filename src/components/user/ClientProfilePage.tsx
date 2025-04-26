@@ -186,6 +186,13 @@ export default function ClientProfilePage({
     }
   };
 
+  const formatNumber = (num: number) => {
+    if (num >= 1000000000) {
+      return num.toExponential(2);
+    }
+    return num.toLocaleString();
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* Dark gradient background matching topup page */}
@@ -530,7 +537,7 @@ export default function ClientProfilePage({
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-bold font-bold bg-gradient-to-r from-[#d4c4a0] to-[#8A7D55] bg-clip-text text-transparent">
-                            {userCredits.toLocaleString()}
+                            {formatNumber(userCredits)}
                           </p>
                           <p className="text-sm text-[#d4c4a0]/80">
                             CEDT Coins
