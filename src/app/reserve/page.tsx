@@ -22,20 +22,20 @@ import { FavoriteCarsProvider } from "@/components/cars/FavoriteHeartButton";
 // Import utils and services
 import { getTotalCost, createDateTimeObject } from "@/libs/bookingUtils";
 import { checkCarAvailability } from "@/libs/carAvailability";
-import { makeBooking } from "@/libs/bookingService";
+// Removed makeBooking import
 
 export default function Booking() {
   useScrollToTop();
   const router = useRouter();
   const { data: session } = useSession();
   console.log(session);
-  
+
   useEffect(() => {
     if (session?.user?.userType === "provider") {
       router.back(); // Go back to previous page
     }
   }, [session, router]);
-  
+
   const searchParams = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -52,23 +52,28 @@ export default function Booking() {
   const [tel, setTel] = useState<string>("");
   const [userTier, setUserTier] = useState<number>(0);
   const [price, setPrice] = useState<number>(0);
-  
+
   // Date and time states
   const [pickupDate, setPickupDate] = useState<dayjs.Dayjs | null>(null);
   const [returnDate, setReturnDate] = useState<dayjs.Dayjs | null>(null);
   const [pickupTime, setPickupTime] = useState<string>("10:00 AM");
   const [returnTime, setReturnTime] = useState<string>("10:00 AM");
-  
+
   // DateTime objects that combine date and time
-  const [pickupDateTime, setPickupDateTime] = useState<dayjs.Dayjs | null>(null);
-  const [returnDateTime, setReturnDateTime] = useState<dayjs.Dayjs | null>(null);
-  
+  const [pickupDateTime, setPickupDateTime] = useState<dayjs.Dayjs | null>(
+    null
+  );
+  const [returnDateTime, setReturnDateTime] = useState<dayjs.Dayjs | null>(
+    null
+  );
+
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  
+
   // States for availability checking
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
-  const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] =
+    useState<boolean>(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   const [formValid, setFormValid] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -87,13 +92,18 @@ export default function Booking() {
 
   // Callback for checking car availability
   const handleCheckCarAvailability = useCallback(async () => {
-    if (!car?._id || !pickupDateTime || !returnDateTime || !session?.user?.token) {
+    if (
+      !car?._id ||
+      !pickupDateTime ||
+      !returnDateTime ||
+      !session?.user?.token
+    ) {
       return; // Don't check if we don't have all the required data
     }
-    
+
     setIsCheckingAvailability(true);
     setAvailabilityMessage("Checking availability...");
-    
+
     try {
       // ใช้ pickup/return DateTime ในการเช็คความพร้อมใช้งาน
       const result = await checkCarAvailability(
@@ -102,7 +112,7 @@ export default function Booking() {
         returnDateTime,
         session.user.token
       );
-      
+
       setIsAvailable(result.isAvailable);
       setAvailabilityMessage(result.availabilityMessage);
     } finally {
@@ -112,11 +122,9 @@ export default function Booking() {
 
   // Check availability whenever dates or times change
   useEffect(() => {
-    const shouldCheckAvailability = 
-      pickupDateTime !== null && 
-      returnDateTime !== null && 
-      car !== null;
-    
+    const shouldCheckAvailability =
+      pickupDateTime !== null && returnDateTime !== null && car !== null;
+
     if (shouldCheckAvailability) {
       handleCheckCarAvailability();
     }
@@ -150,62 +158,6 @@ export default function Booking() {
 
     fetchServices();
   }, [session?.user?.token]);
-
-  // Handle booking submission
-  const handleMakeBooking = async () => {
-    if (!formValid || isSubmitting || !car || !pickupDateTime || !returnDateTime || !session?.user?.token) {
-      return;
-    }
-  
-    setIsSubmitting(true);
-    try {
-      // ใช้ datetime objects ในการสร้างการจอง
-      const result = await makeBooking(
-        car._id,
-        pickupDateTime,
-        returnDateTime,
-        selectedServices,
-        services,
-        userTier,
-        car.dailyRate || 0,
-        session.user.token
-      );
-
-      if (result.success) {
-        // Booking successful, dispatch to Redux store
-        const item = {
-          nameLastname: nameLastname,
-          tel: tel,
-          car: car._id,
-          // บันทึกทั้งวันที่และเวลาในรูปแบบ ISO string
-          bookDateTime: pickupDateTime.toISOString(),
-          returnDateTime: returnDateTime.toISOString(),
-          // ยังคงเก็บเฉพาะวันที่และเวลาแยกกันไว้ด้วยสำหรับการแสดงผล
-          bookDate: pickupDateTime.format("YYYY/MM/DD"),
-          returnDate: returnDateTime.format("YYYY/MM/DD"),
-          pickupTime: pickupTime,
-          returnTime: returnTime,
-        };
-        
-        console.log(item);
-        dispatch(addBooking(item));
-
-        // Redirect to reservations page
-        setShouldNavigate(true);
-      } else {
-        alert(result.message);
-        if (result.message.includes("not available")) {
-          setIsAvailable(false);
-          setAvailabilityMessage(result.message);
-        }
-      }
-    } catch (error) {
-      console.error("Error booking:", error);
-      alert("An error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleSuccessClose = () => {
     // ถ้า shouldNavigate เป็น true ให้ navigate ไปที่หน้า reservations
@@ -374,75 +326,86 @@ export default function Booking() {
     );
   }
 
+
+
+  const handleMakeBooking = async () => {
+    if (!formValid || isSubmitting || !car || !pickupDateTime || !returnDateTime || !session?.user?.token) {
+      return;
+    }
+    // Navigate to reservations page
+    router.push("/account/reservations");
+  };
+
   return (
     <FavoriteCarsProvider>
-    <main className="max-w-6xl mx-auto py-10 px-4 min-h-screen">
-  <div className="text-center mb-12">
-    <h1 className="text-3xl font-medium mb-3 font-serif text-[#6B5B35]">
-      Make Your Reservation
-    </h1>
-    <p className="text-gray-600 max-w-3xl mx-auto">
-      Complete the details below to reserve your premium vehicle
-    </p>
-  </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        {/* Car Details */}
-        {car && (
-          <CarDetails
-            car={car}
+      <main className="max-w-6xl mx-auto py-10 px-4 min-h-screen">
+        <div className="text-center mb-12">
+          <h1 className="text-3xl font-medium mb-3 font-serif text-[#6B5B35]">
+            Make Your Reservation
+          </h1>
+          <p className="text-gray-600 max-w-3xl mx-auto">
+            Complete the details below to reserve your premium vehicle
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          {/* Car Details */}
+          {car && (
+            <CarDetails
+              car={car}
+              isAvailable={isAvailable}
+              session={session}
+              selectedServices={selectedServices}
+              setSelectedServices={setSelectedServices}
+            />
+          )}
+
+          {/* Booking Form */}
+          <BookingForm
+            nameLastname={nameLastname}
+            setNameLastname={setNameLastname}
+            tel={tel}
+            setTel={setTel}
+            pickupDate={pickupDate}
+            setPickupDate={setPickupDate}
+            returnDate={returnDate}
+            setReturnDate={setReturnDate}
+            pickupTime={pickupTime}
+            setPickupTime={setPickupTime}
+            returnTime={returnTime}
+            setReturnTime={setReturnTime}
             isAvailable={isAvailable}
-            session={session}
+            isCheckingAvailability={isCheckingAvailability}
+            availabilityMessage={availabilityMessage}
+            providerId={car?.provider_id}
+            token={session?.user?.token}
+            pickupDateTime={pickupDateTime}
+            setPickupDateTime={setPickupDateTime}
+            returnDateTime={returnDateTime}
+            setReturnDateTime={setReturnDateTime}
+          />
+        </div>
+
+        {/* Reservation Summary */}
+        {car && pickupDateTime && returnDateTime && (
+          <ReservationSummary
+            car={car}
+            pickupDate={pickupDateTime}
+            returnDate={returnDateTime}
+            pickupTime={pickupTime}
+            returnTime={returnTime}
+            userTier={userTier}
             selectedServices={selectedServices}
-            setSelectedServices={setSelectedServices}
+            services={services}
+            formValid={formValid}
+            isSubmitting={isSubmitting}
+            // Removed onSubmit prop
+            onSuccessClose={handleSuccessClose}
+            userId={session?.user?.id}
+            onSubmit={handleMakeBooking}
           />
         )}
-
-        {/* Booking Form */}
-        <BookingForm
-          nameLastname={nameLastname}
-          setNameLastname={setNameLastname}
-          tel={tel}
-          setTel={setTel}
-          pickupDate={pickupDate}
-          setPickupDate={setPickupDate}
-          returnDate={returnDate}
-          setReturnDate={setReturnDate}
-          pickupTime={pickupTime}
-          setPickupTime={setPickupTime}
-          returnTime={returnTime}
-          setReturnTime={setReturnTime}
-          isAvailable={isAvailable}
-          isCheckingAvailability={isCheckingAvailability}
-          availabilityMessage={availabilityMessage}
-          providerId={car?.provider_id}
-          token={session?.user?.token}
-          pickupDateTime={pickupDateTime}
-          setPickupDateTime={setPickupDateTime}
-          returnDateTime={returnDateTime}
-          setReturnDateTime={setReturnDateTime}
-        />
-      </div>
-
-      {/* Reservation Summary */}
-      {car && pickupDateTime && returnDateTime && (
-        <ReservationSummary
-        car={car}
-        pickupDate={pickupDateTime}
-        returnDate={returnDateTime}
-        pickupTime={pickupTime}
-        returnTime={returnTime}
-        userTier={userTier}
-        selectedServices={selectedServices}
-        services={services}
-        formValid={formValid}
-        isSubmitting={isSubmitting}
-        onSubmit={handleMakeBooking}
-        onSuccessClose={handleSuccessClose}
-        userId={session?.user?.id}
-      />
-      )}
-    </main>
+      </main>
     </FavoriteCarsProvider>
   );
 }

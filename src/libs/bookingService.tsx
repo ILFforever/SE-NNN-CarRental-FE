@@ -4,20 +4,9 @@ import dayjs, { Dayjs } from "dayjs";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { 
   isBookingAtLeastTwoHours, 
-  calculateRentalDays, 
-  getTotalCost,
-  calculateSubtotal,
-  calculateDiscount,
   getTierDiscount,
-  getTierName,
   getRentalPeriod
 } from "./bookingUtils";
-
-interface BookingResponse {
-  success: boolean;
-  data?: any;
-  message?: string;
-}
 
 /**
  * สร้างการจองใหม่

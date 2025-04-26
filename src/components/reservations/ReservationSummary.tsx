@@ -208,6 +208,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         discountAmount: roundedDiscountAmount,
         finalPrice: roundedFinalPrice,
         user: userId,
+        payDeposit: true
       };
 
       // เรียก API เพื่อสร้างการจองพร้อมเงินมัดจำ
@@ -215,7 +216,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         throw new Error("No authentication token available");
       }
 
-      const response = await fetch(`${API_BASE_URL}/rents/with-deposit`, {
+      const response = await fetch(`${API_BASE_URL}/rents`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
