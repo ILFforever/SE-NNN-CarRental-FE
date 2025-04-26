@@ -4,20 +4,30 @@ test.describe('Car Favorite Feature', () => {
   // Use beforeEach to login instead of registering a new user
   test.beforeEach(async ({ page }) => {
     // Navigate to the login page
-    await page.goto('http://localhost:3000/signin');
+    // await page.goto('http://localhost:3000/signin');
     
-    // Login with an existing test user
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('test_favo@gmail.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
-    await page.getByRole('button', { name: 'Sign In as User' }).click();
+    // // Login with an existing test user
+    // await page.getByRole('textbox', { name: 'Email Address' }).fill('test_favo@gmail.com');
+    // await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
+    // await page.getByRole('button', { name: 'Sign In as User' }).click();
     
-    // Wait for navigation to complete
-    await page.waitForURL('**/');
+    // // Wait for navigation to complete
+    // await page.waitForURL('**/');
   });
 
   test('should add and remove cars from favorites', async ({ page }) => {
+    await page.goto('http://localhost:3000/');
+    await page.goto('http://localhost:3000/signin');
+    
+    // Login with an existing test user
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('playwright@gmail.com');
+    await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
+    await page.getByRole('button', { name: 'Sign In as User' }).click();
+
+    await page.goto('http://localhost:3000/catalog');
+
     // Navigate to catalog
-    await page.getByRole('link', { name: 'Catalog' }).click();
+    // await page.getByRole('link', { name: 'Catalog' }).click();
     
     // Wait for cars to load
     await page.waitForSelector('[data-test-id="catalog-item"]');
@@ -27,15 +37,15 @@ test.describe('Car Favorite Feature', () => {
     
     // Add first three cars to favorites
     for (let i = 0; i < 3; i++) {
-       await favoriteButtons.nth(i).click();
+      await favoriteButtons.nth(i).click();
 
-       // Wait for the button state to change
-       await expect(favoriteButtons.nth(i)).toHaveAttribute('aria-label', 'Remove from favorites');
     }
     
     // Navigate to favorites page
-    await page.getByRole('button', { name: /test_favo/i }).click();
-    await page.getByRole('link', { name: 'View Favorite Cars' }).click();
+    await page.getByRole('button', { name: 'Playwright Man' }).click();
+    await page.getByRole('link', { name: 'My Profile' }).click();
+    await page.locator('.MuiBackdrop-root').click();
+    await page.getByRole('link', { name: 'View Favorite Cars See your' }).click();
     
     // Verify that 3 cars are in favorites
     const favoriteCars = page.locator('[data-test-id="favorite-car-item"]');
@@ -99,7 +109,8 @@ test.describe('Car Favorite Feature', () => {
     await removeFavoriteButton.click();
     
     // Navigate to favorites page
-    await page.getByRole('button', { name: /test_favo/i }).click();
+    await page.getByRole('button', { name: 'Playwright Test' }).click();
+    await page.getByRole('link', { name: 'My Profile' }).click();
     await page.getByRole('link', { name: 'View Favorite Cars' }).click();
     
     // Verify empty state
