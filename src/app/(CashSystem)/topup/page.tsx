@@ -7,7 +7,7 @@ import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@iconify-icon/react";
-import { PlusCircle, XCircle, Loader2, CheckCircle } from "lucide-react";
+import { PlusCircle, XCircle, Loader2, CheckCircle, ArrowRight } from "lucide-react";
 
 // Modal Component
 interface ModalProps {
@@ -326,19 +326,38 @@ export default function TopUpPage() {
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6">
-        <div className="max-w-md text-center">
-          <h1 className="text-3xl font-semibold mb-4">Sign in Required</h1>
-          <p className="text-gray-600 mb-8">
-            Please sign in to top up your account balance.
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-[#8A7D55] flex items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl p-10 max-w-md w-full text-center"
+        >
+          <div className="bg-[#8A7D55]/10 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <Icon
+              icon="mdi:lock-open-variant-outline"
+              className="text-6xl text-[#8A7D55]"
+            />
+          </div>
+          <h1 className="text-4xl font-serif font-semibold mb-4 text-white">
+            Sign In Required
+          </h1>
+          <p className="text-gray-300 mb-8 text-lg">
+            Please sign in to access your account and top up your balance.
           </p>
           <Link
             href="/signin?callbackUrl=/topup"
-            className="inline-flex items-center px-6 py-3 bg-[#8A7D55] text-white rounded-full hover:bg-[#766b48] transition-all duration-300"
+            className="inline-flex items-center px-8 py-4 bg-[#8A7D55] text-white rounded-full 
+          hover:bg-[#766b48] transition-all duration-300 
+          shadow-lg hover:shadow-xl 
+          transform hover:-translate-y-1 
+          text-lg font-medium 
+          group"
           >
-            Sign In to Continue
+            Sign In
+            <ArrowRight className="ml-2 w-5 h-5 transform transition-transform group-hover:translate-x-1" />
           </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
