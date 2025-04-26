@@ -17,6 +17,7 @@ import ErrorState from "@/components/ui/ErrorState";
 import CarDetails from "@/components/cars/CarDetails";
 import BookingForm from "@/components/reservations/BookingForm";
 import ReservationSummary from "@/components/reservations/ReservationSummary";
+import { FavoriteCarsProvider } from "@/components/cars/FavoriteHeartButton";
 
 // Import utils and services
 import { getTotalCost, createDateTimeObject } from "@/libs/bookingUtils";
@@ -374,6 +375,7 @@ export default function Booking() {
   }
 
   return (
+    <FavoriteCarsProvider>
     <main className="max-w-6xl mx-auto py-10 px-4 min-h-screen">
   <div className="text-center mb-12">
     <h1 className="text-3xl font-medium mb-3 font-serif text-[#6B5B35]">
@@ -441,5 +443,6 @@ export default function Booking() {
       />
       )}
     </main>
+    </FavoriteCarsProvider>
   );
 }

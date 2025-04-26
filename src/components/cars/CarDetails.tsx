@@ -3,6 +3,7 @@
 import React from "react";
 import { getTierName } from "@/libs/bookingUtils";
 import CarImageGallery from "@/components/cars/CarImageGallery";
+import FavoriteHeartButton from "./FavoriteHeartButton";
 
 interface CarDetailsProps {
   car: Car;
@@ -26,7 +27,9 @@ const CarDetails: React.FC<CarDetailsProps> = ({
       </h2>
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow duration-300">
         <div className="aspect-w-16 aspect-h-9 max-h-[300px] overflow-hidden">
-          <CarImageGallery car={car} />
+          <CarImageGallery car={car} showFavoriteButton = {true} 
+          />
+
         </div>
         <div className="p-6 space-y-5">
           <div>
