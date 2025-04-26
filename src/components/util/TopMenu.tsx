@@ -87,18 +87,12 @@ export default function TopMenu() {
 
   const handleSignOut = async () => {
     try {
-      if (session?.user?.token) {
-        session.user.userType === 'provider'
-          ? await carProviderLogOut(session.user.token)
-          : await userLogOut(session.user.token);
-      }
-      await signOut({ redirect: false });
+      // Instead of immediately signing out, redirect to the sign-out confirmation page
       setMobileMenuOpen(false);
       handleClose();
-      router.push("/");
-      router.refresh();
+      router.push("/signout");
     } catch (error) {
-      console.error("Error during sign out:", error);
+      console.error("Error during sign out redirection:", error);
     }
   };
 

@@ -6,7 +6,14 @@ import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import RatingPopup from "@/components/reservations/RatingPopup";
-import { Info, Calendar, CreditCard, Tag, ChevronRight } from "lucide-react";
+import {
+  Info,
+  Calendar,
+  CreditCard,
+  Tag,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 
 export default function MyReservationsPage() {
   useScrollToTop();
@@ -15,8 +22,15 @@ export default function MyReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cars, setCars] = useState<{ [key: string]: Car }>({});
-  const [activeRatingReservation, setActiveRatingReservation] = useState<string | null>(null);
+  const [activeRatingReservation, setActiveRatingReservation] = useState<
+    string | null
+  >(null);
   const [providers, setProviders] = useState<{ [key: string]: Provider }>({});
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(11);
 
   // Handler for when a rating is selected (or cancelled)
   const handleRatingSelect = async (rating: number | null) => {
@@ -74,12 +88,15 @@ export default function MyReservationsPage() {
       try {
         setLoading(true);
         // Use the rents endpoint to fetch user's rentals
-        const response = await fetch(`${API_BASE_URL}/rents`, {
-          headers: {
-            Authorization: `Bearer ${session.user.token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/rents?page=${currentPage}&limit=${itemsPerPage}`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.user.token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`Failed to fetch reservations: ${response.status}`);
@@ -88,6 +105,20 @@ export default function MyReservationsPage() {
         const data = await response.json();
 
         if (data.success && Array.isArray(data.data)) {
+          // Calculate total pages based on totalCount and itemsPerPage
+          const calculatedTotalPages = Math.ceil((data.totalCount || data.count || 0) / itemsPerPage);
+        
+          console.log('Pagination Data:', {
+            calculatedTotalPages: calculatedTotalPages,
+            totalCount: data.totalCount || data.count || 0,
+            currentPage: currentPage,
+            itemsPerPage: itemsPerPage,
+            dataLength: data.data.length,
+            hasNextPage: data.pagination?.next ? true : false
+          });
+        
+          setTotalPages(calculatedTotalPages);
+          setTotalCount(data.totalCount || data.count || 0);
           setReservations(data.data);
 
           // Extract car IDs to fetch car details
@@ -116,7 +147,7 @@ export default function MyReservationsPage() {
     };
 
     fetchReservations();
-  }, [session]);
+  }, [session, currentPage, itemsPerPage]);
 
   // Fetch car details by IDs
   const fetchCarDetails = async (carIds: string[], token: string) => {
@@ -264,10 +295,137 @@ export default function MyReservationsPage() {
     );
   }
 
+  const PaginationControls = () => {
+    if (totalPages <= 1 || reservations.length === 0) {
+      return null;
+    }
+
+    // Calculate the range of items being shown
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
+
+    return (
+      <div className="mt-6 flex flex-col items-center space-y-3">
+        {/* Results count */}
+        <div className="text-sm text-gray-600">
+          Showing {startIndex} to {endIndex} of {totalCount} reservations
+        </div>
+
+        {/* Pagination buttons */}
+        <div className="flex items-center space-x-2">
+          {/* First page button */}
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to first page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          {/* Previous page button */}
+          <button
+            onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to previous page"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          {/* Page number buttons */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === page
+                  ? "bg-[#8A7D55] text-white font-medium"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          {/* Next page button */}
+          <button
+            onClick={() =>
+              setCurrentPage((page) => Math.min(page + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to next page"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          {/* Last page button */}
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Go to last page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+              <path
+                fillRule="evenodd"
+                d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Page size selector */}
+        <div className="flex items-center space-x-2 text-sm">
+          <span className="text-gray-600">Items per page:</span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              const newItemsPerPage = parseInt(e.target.value);
+              setItemsPerPage(newItemsPerPage);
+              setCurrentPage(1); // Reset to first page when changing page size
+            }}
+            className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#8A7D55]"
+          >
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main className="py-6 md:py-10 px-4 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl md:text-3xl font-medium font-serif">My Reservations</h1>
+        <h1 className="text-2xl md:text-3xl font-medium font-serif">
+          My Reservations
+        </h1>
 
         <Link
           href="/catalog"
@@ -377,12 +535,18 @@ export default function MyReservationsPage() {
                         {/* Show discounts or additional charges if present */}
                         {reservation.discountAmount ? (
                           <div className="text-xs text-green-600">
-                            Includes {formatCurrency(reservation.discountAmount)} discount
+                            Includes{" "}
+                            {formatCurrency(reservation.discountAmount)}{" "}
+                            discount
                           </div>
                         ) : null}
                         {reservation.additionalCharges ? (
                           <div className="text-xs text-amber-600">
-                            Includes {formatCurrency(reservation.additionalCharges.lateFee)} additional fees
+                            Includes{" "}
+                            {formatCurrency(
+                              reservation.additionalCharges.lateFee
+                            )}{" "}
+                            additional fees
                           </div>
                         ) : null}
                       </td>
@@ -426,7 +590,9 @@ export default function MyReservationsPage() {
                           // can't be rated
                           <div className="flex items-center justify-center space-x-1">
                             <span className="text-gray-400 font-medium">
-                              {reservation.isRated ? "Already Reviewed" : "Review Provider"}
+                              {reservation.isRated
+                                ? "Already Reviewed"
+                                : "Review Provider"}
                             </span>
                             {/* Info Icon with tooltip */}
                             {car?.provider_id && (
@@ -463,11 +629,16 @@ export default function MyReservationsPage() {
               const car = getCarDetails(reservation.car);
               const finalPrice = getDisplayPrice(reservation);
               return (
-                <div key={reservation._id} className="bg-white rounded-lg shadow-md p-4">
+                <div
+                  key={reservation._id}
+                  className="bg-white rounded-lg shadow-md p-4"
+                >
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-medium text-gray-900">
-                        {car ? `${car.brand} ${car.model}` : "Car not in system"}
+                        {car
+                          ? `${car.brand} ${car.model}`
+                          : "Car not in system"}
                       </h3>
                       {car && (
                         <p className="text-xs text-gray-500">
@@ -493,19 +664,27 @@ export default function MyReservationsPage() {
                         {formatDate(reservation.returnDate)}
                       </p>
                     </div>
-                    
+
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-2 text-gray-500" />
                       <div>
-                        <p className="font-medium">{formatCurrency(finalPrice)}</p>
+                        <p className="font-medium">
+                          {formatCurrency(finalPrice)}
+                        </p>
                         {reservation.discountAmount ? (
                           <p className="text-xs text-green-600">
-                            Includes {formatCurrency(reservation.discountAmount)} discount
+                            Includes{" "}
+                            {formatCurrency(reservation.discountAmount)}{" "}
+                            discount
                           </p>
                         ) : null}
                         {reservation.additionalCharges ? (
                           <p className="text-xs text-amber-600">
-                            Includes {formatCurrency(reservation.additionalCharges.lateFee)} fees
+                            Includes{" "}
+                            {formatCurrency(
+                              reservation.additionalCharges.lateFee
+                            )}{" "}
+                            fees
                           </p>
                         ) : null}
                       </div>
@@ -526,19 +705,24 @@ export default function MyReservationsPage() {
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between">
-                    {!reservation.isRated && reservation.status === "completed" ? (
+                    {!reservation.isRated &&
+                    reservation.status === "completed" ? (
                       <button
-                        onClick={() => setActiveRatingReservation(reservation._id)}
+                        onClick={() =>
+                          setActiveRatingReservation(reservation._id)
+                        }
                         className="text-[#8A7D55] font-medium"
                       >
                         Review Provider
                       </button>
                     ) : (
                       <span className="text-gray-400 font-medium">
-                        {reservation.isRated ? "Already Reviewed" : "Review Provider"}
+                        {reservation.isRated
+                          ? "Already Reviewed"
+                          : "Review Provider"}
                       </span>
                     )}
-                    
+
                     <Link
                       href={`/account/reservations/${reservation._id}`}
                       className="flex items-center text-[#8A7D55] font-medium"
@@ -551,7 +735,104 @@ export default function MyReservationsPage() {
               );
             })}
           </div>
-          
+          {/* Pagination Controls */}
+          <div className="mt-6 flex flex-col items-center space-y-3">
+            {/* Results count */}
+            <div className="text-sm text-gray-600">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}{" "}
+              reservations
+            </div>
+
+            {/* Pagination buttons */}
+            <div className="flex items-center space-x-2">
+              {/* First page button */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Go to first page"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+
+              {/* Previous page button */}
+              <button
+                onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Go to previous page"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+              {/* Page number buttons */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === page
+                        ? "bg-[#8A7D55] text-white font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              {/* Next page button */}
+              <button
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(page + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Go to next page"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+
+              {/* Last page button */}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Go to last page"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
           {/* Render the rating popup if a reservation is active for rating */}
           {activeRatingReservation && (
             <RatingPopup onSelect={handleRatingSelect} />
