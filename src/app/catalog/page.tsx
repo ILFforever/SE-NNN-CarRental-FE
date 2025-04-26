@@ -1314,13 +1314,14 @@ export default function CatalogPage() {
 
         {/* Cars grid - only show when we have data and no errors */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-test-id="catalog">
             {availableCars.map((car) => (
               <div
                 key={car.id}
                 className={`${
                   !car.available && showUnavailable ? "opacity-60" : ""
                 } bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 ease-out hover:shadow-xl hover:scale-[1.02] hover:rotate-1`}
+                data-test-id="catalog-item"
               >
                 <div className="relative h-48">
                   <FavoriteHeartButton
@@ -1339,7 +1340,7 @@ export default function CatalogPage() {
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h2 className="text-lg font-bold">
+                      <h2 className="text-lg font-bold" data-test-id="catalog-item-title">
                         {car.brand} {car.model}
                       </h2>
                       <div className="text-sm text-gray-600 -mt-1 flex items-center flex-wrap">
