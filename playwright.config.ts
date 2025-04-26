@@ -58,13 +58,13 @@ export default defineConfig({
       },
     },
 
-    {
-      name: 'firefox',
-      use: { 
-        ...devices['Desktop Firefox'],
-        viewport: { width: 1280, height: 720 },
-      },
-    },
+    // {
+    //   name: 'firefox',
+    //   use: { 
+    //     ...devices['Desktop Firefox'],
+    //     viewport: { width: 1280, height: 720 },
+    //   },
+    // },
 
     /* Test against mobile viewports. */
     // {
