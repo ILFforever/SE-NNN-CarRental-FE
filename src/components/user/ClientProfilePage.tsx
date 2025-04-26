@@ -537,7 +537,7 @@ export default function ClientProfilePage({
             {/* Change Password Button */}
             <div>
               <Link
-                href="/account/change-password"
+                href="/transaction"
                 className="flex items-center gap-3 bg-white border border-[#8A7D55] text-[#8A7D55] p-4 rounded-lg hover:bg-[#f8f5f0] transition-colors group w-full"
               >
                 <div className="w-10 h-10 rounded-full bg-[#f8f5f0] flex items-center justify-center group-hover:bg-[#e9e6dd] transition-all">
@@ -552,14 +552,16 @@ export default function ClientProfilePage({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z"
                     />
                   </svg>
+                  
+
                 </div>
                 <div>
-                  <h3 className="font-medium">Change Password</h3>
+                  <h3 className="font-medium">View My Transactions</h3>
                   <p className="text-sm text-[#8A7D55] text-opacity-80">
-                    Update your account security
+                    Track your transactions history
                   </p>
                 </div>
               </Link>
