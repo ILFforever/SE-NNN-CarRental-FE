@@ -834,65 +834,146 @@ export default function CatalogPage() {
               </div>
 
               {/* Location selector - more compact */}
-              <div className="relative">
-                <div className="flex items-center">
-                  <div className="text-sm font-medium text-gray-700 mr-2 whitespace-nowrap">
-                    Location:
-                  </div>
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Enter city or provider..."
-                      value={selectedLocation}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setSelectedLocation(value);
-                        updateSearch({ location: value });
-                        // Show suggestions if there's a value
-                        setShowLocationSuggestions(value.trim() !== "");
-                      }}
-                      onFocus={(e) => {
-                        // Show suggestions if there's a value when focused
-                        if (e.target.value.trim() !== "") {
-                          setShowLocationSuggestions(true);
-                        }
-                      }}
-                      className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-sm placeholder-opacity-50 focus:placeholder-opacity-0"
-                    />
-                  </div>
-                </div>
+              {/* Search input */}
+{/* Update the searchQuery input to show suggestions
+ Find the search input in the file (second search bar)
+ ...
+ Replace the existing search input with this code: */}
+<div className="relative">
+  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-[1000]">
+    <Search className="h-4 w-4 text-gray-400" />
+  </div>
+  <input
+    type="text"
+    placeholder="Search by model, brand..."
+    value={searchQuery}
+    onChange={(e) => {
+      setSearchQuery(e.target.value);
+      setActiveDropdown("search");
+      
+    }}
+    onClick={() => {
+      if (searchQuery.trim() !== "") {
+        setActiveDropdown("search");
+      }
+    }}
+    
+    onFocus={() => {
+      if (searchQuery.trim() !== "") {
+        setActiveDropdown("search");
+      }
+    }}
+    className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-sm placeholder-opacity-50 focus:placeholder-opacity-0"
+  />
+  
+  {/* Search suggestions dropdown */}
+  {activeDropdown === "search" && searchQuery.trim() !== "" && (
+    <div 
+      ref={(el) => {
+        if (el) {
+          dropdownRefs.current["search"] = el;
+        }
+      }}
+      className="absolute z-[99] mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto"
+    >
+      {/* Show brand suggestions */}
+      {filterOptions.brand
+        .filter(brand => 
+          brand.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map((brand, index) => (
+          <div
+            key={`brand-${index}`}
+            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+            onClick={() => {
+              setSearchQuery(brand);
+              setActiveFilters(prev => ({...prev, brand}));
+              setActiveDropdown(null);
+            }}
+          >
+            <span className="text-xs text-gray-500 mr-2">Brand:</span>
+            {highlightMatch(brand, searchQuery)}
+          </div>
+        ))
+      }
+      
+      {/* Show model suggestions from cars */}
+      {cars
+        .filter(car => 
+          car.model.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 5) // Limit to 5 suggestions
+        .map((car, index) => (
+          <div
+            key={`model-${index}`}
+            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+            onClick={() => {
+              setSearchQuery(car.model);
+              setActiveDropdown(null);
+            }}
+          >
+            <span className="text-xs text-gray-500 mr-2">Model:</span>
+            {highlightMatch(car.model, searchQuery)}
+          </div>
+        ))
+      }
+      
+      {/* Show provider suggestions */}
+      {filterOptions.provider
+        .filter(provider => 
+          provider.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map((provider, index) => (
+          <div
+            key={`provider-${index}`}
+            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+            onClick={() => {
+              setSearchQuery(provider);
+              setActiveFilters(prev => ({...prev, provider}));
+              setActiveDropdown(null);
+            }}
+          >
+            <span className="text-xs text-gray-500 mr-2">Provider:</span>
+            {highlightMatch(provider, searchQuery)}
+          </div>
+        ))
+      }
+      
+      {/* Show type suggestions */}
+      {filterOptions.vehicleType
+        .filter(type => 
+          type.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map((type, index) => (
+          <div
+            key={`type-${index}`}
+            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+            onClick={() => {
+              setSearchQuery(type);
+              setActiveFilters(prev => ({...prev, vehicleType: type}));
+              setActiveDropdown(null);
+            }}
+          >
+            <span className="text-xs text-gray-500 mr-2">Type:</span>
+            {highlightMatch(type, searchQuery)}
+          </div>
+        ))
+      }
+      
+      {/* No results message */}
+      {!filterOptions.brand.some(brand => brand.toLowerCase().includes(searchQuery.toLowerCase())) &&
+       !cars.some(car => car.model.toLowerCase().includes(searchQuery.toLowerCase())) &&
+       !filterOptions.provider.some(provider => provider.toLowerCase().includes(searchQuery.toLowerCase())) &&
+       !filterOptions.vehicleType.some(type => type.toLowerCase().includes(searchQuery.toLowerCase())) && (
+        <div className="px-4 py-2 text-gray-500 italic text-sm">
+          No matching results found
+        </div>
+      )}
+    </div>
+  )}
+</div>
+</div>
 
-                {/* Location suggestions */}
-                {filterOptions.provider.length > 0 &&
-                  selectedLocation.trim() !== "" &&
-                  showLocationSuggestions && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto">
-                      {filterOptions.provider
-                        .filter((provider) =>
-                          provider
-                            .toLowerCase()
-                            .includes(selectedLocation.toLowerCase())
-                        )
-                        .map((provider, index) => (
-                          <div
-                            key={index}
-                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-                            onClick={() => {
-                              setSelectedLocation(provider);
-                              updateSearch({ location: provider });
-                              setShowLocationSuggestions(false);
-                            }}
-                          >
-                            {/* Highlight matching text */}
-                            {highlightMatch(provider, selectedLocation)}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-              </div>
 
               {/* Second row */}
               <div className="md:col-span-2">
@@ -969,61 +1050,7 @@ export default function CatalogPage() {
 
               <div>
                 {/* Search input */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search by model, brand..."
-                    value={searchQuery}
-                    onChange={(e) => 
-                       {
-                        const value = e.target.value;
-                        setSearchQuery(value);
-                        updateSearch({ location: value });
-                        // Show suggestions if there's a value
-                        setShowLocationSuggestions(value.trim() !== "");
-                      
-                    }
-                  }
-                    onFocus={(e) => {
-                      // Show suggestions if there's a value when focused
-                      if (e.target.value.trim() !== "") {
-                        setShowLocationSuggestions(true);
-                      }
-                    }}
-                    className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-sm placeholder-opacity-50 focus:placeholder-opacity-0"
-                  />
-                  {filterOptions.provider.length > 0 &&
-                  selectedLocation.trim() !== "" &&
-                  showLocationSuggestions && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto">
-                      {filterOptions.provider
-                        .filter((provider) =>
-                          provider
-                            .toLowerCase()
-                            .includes(selectedLocation.toLowerCase())
-                        )
-                        .map((provider, index) => (
-                          <div
-                            key={index}
-                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-                            onClick={() => {
-                              setSearchQuery(provider);
-                              updateSearch({ location: provider });
-                              setShowLocationSuggestions(false);
-                            }}
-                          >
-                            {/* Highlight matching text */}
-                            {highlightMatch(provider, selectedLocation)}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+
 
             {/* Filter buttons - styled better */}
             <div className="flex flex-wrap gap-2">
@@ -1273,6 +1300,8 @@ export default function CatalogPage() {
               )}
             </div>
           </div>
+          </div>
+          
         </header>
 
         {/* Authentication error (check only on press view car) */}
@@ -1536,3 +1565,4 @@ export default function CatalogPage() {
     </FavoriteCarsProvider>
   );
 }
+
