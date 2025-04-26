@@ -240,6 +240,7 @@ export default function FavoriteCars() {
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="flex items-center gap-2 px-3 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-70"
+              data-test-id="refresh-favorites"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh List'}
@@ -279,6 +280,7 @@ export default function FavoriteCars() {
               <div
                 key={car.id}
                 className={`bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 ${!car.available ? 'opacity-60' : ''}`}
+                data-test-id="favorite-car-item"
               >
                 <div className="relative h-48">
                   <FavoriteHeartButton 
@@ -378,6 +380,8 @@ export default function FavoriteCars() {
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-70"
+              data-test-id="refresh-favorites"
+
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh List Now'}
