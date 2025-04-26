@@ -8,6 +8,7 @@ import TransactionFetch, {
   TransactionResponse,
 } from "@/libs/cash/transaction_fetch";
 import CircularProgress from "@mui/material/CircularProgress";
+import { div } from "framer-motion/client";
 
 //interface Transaction
 interface Transaction {
@@ -65,7 +66,7 @@ export default function TransactionsPage() {
       console.log(response.data);
       setPagination((prev) => ({
         ...prev,
-        total: response.total as any, 
+        total: response.total as any,
       }));
     } catch (err: unknown) {
       setError((err as Error).message);
@@ -136,12 +137,14 @@ export default function TransactionsPage() {
               const id = tx._id;
               const isOpen = openIds.has(id);
               return (
-                <TransactionCard
-                  key={id}
-                  tx={tx}
-                  isOpen={isOpen}
-                  toggle={() => toggle(id)}
-                />
+                <div data-test-id="transaction-card" key={id}>
+                  <TransactionCard
+                    key={id}
+                    tx={tx}
+                    isOpen={isOpen}
+                    toggle={() => toggle(id)}
+                  />
+                </div>
               );
             })}
           </div>
