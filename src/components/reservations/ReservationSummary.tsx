@@ -27,6 +27,7 @@ import ErrorMessage from "./ErrorToAddRentMessage";
 import SuccessMessage from "./SuccessMessage";
 import { useSession } from "next-auth/react";
 import { API_BASE_URL } from "@/config/apiConfig";
+import router from "next/router";
 
 interface ReservationSummaryProps {
   car: Car;
@@ -249,23 +250,6 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
       // อัปเดตข้อมูลเครดิต
       fetchCreditData();
 
-      // ป้องกันการแสดง alert จาก onSubmit
-      if (typeof onSubmit === "function") {
-        try {
-          // แทนที่ window.alert ชั่วคราว
-          const originalAlert = window.alert;
-          window.alert = () => {}; // ฟังก์ชันว่างเพื่อไม่ให้แสดง alert
-
-          if (typeof onSubmit === "function") {
-            onSubmit();
-          }
-
-          // คืนค่า window.alert
-          window.alert = originalAlert;
-        } catch (error) {
-          console.error("Error calling onSubmit:", error);
-        }
-      }
     } catch (err) {
       // จัดการข้อผิดพลาด
       setError(
@@ -278,6 +262,23 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
 
   const handleCloseSuccessMessage = () => {
     setSuccessMessage(null);
+    
+    if (typeof onSubmit === "function") {
+      try {
+        // แทนที่ window.alert ชั่วคราว
+        const originalAlert = window.alert;
+        window.alert = () => {}; // ฟังก์ชันว่างเพื่อไม่ให้แสดง alert
+
+        if (typeof onSubmit === "function") {
+          onSubmit();
+        }
+
+        // คืนค่า window.alert
+        window.alert = originalAlert;
+      } catch (error) {
+        console.error("Error calling onSubmit:", error);
+      }
+    }
   };
 
   return (

@@ -399,7 +399,6 @@ export default function Booking() {
             services={services}
             formValid={formValid}
             isSubmitting={isSubmitting}
-            // Removed onSubmit prop
             onSuccessClose={handleSuccessClose}
             userId={session?.user?.id}
             onSubmit={handleMakeBooking}
