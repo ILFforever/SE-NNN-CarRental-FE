@@ -9,7 +9,7 @@ import { getTierName } from "@/utils/tierUtils";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { Check, X, Edit, ArrowLeft, Loader2 } from "lucide-react";
 import ProviderDetail from "@/components/provider/providerDetail";
-import RentalServices from '@/components/reservations/ShowRentalServices';
+import RentalServices from "@/components/reservations/ShowRentalServices";
 import ReservationDetailsCard from "./ReservationDetailsCard";
 
 interface UnifiedReservationDetailsProps {
@@ -37,44 +37,70 @@ export default function UnifiedReservationDetails({
 
   // State for editing notes
   const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [editedNotes, setEditedNotes] = useState("");
 
   const handleRentalUpdate = (updatedRental: Rent) => {
     setRental(updatedRental);
-    setSuccess('Reservation updated successfully');
+    setSuccess("Reservation updated successfully");
   };
 
   const fetchServices = async () => {
-    if (!rental?.service || rental.service.length === 0 || !session?.user?.token) {
+    if (
+      !rental?.service ||
+      rental.service.length === 0 ||
+      !session?.user?.token
+    ) {
       return;
     }
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/services`, {
         headers: {
-          'Authorization': `Bearer ${session.user.token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${session.user.token}`,
+          "Content-Type": "application/json",
+        },
       });
-  
+
       if (!response.ok) {
-        throw new Error('Failed to fetch services');
+        throw new Error("Failed to fetch services");
       }
-  
+
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         // Filter only the services that are in the rental's service array
-        const rentalServices = data.data.filter(
-          (service: Service) => rental.service?.includes(service._id)
+        const rentalServices = data.data.filter((service: Service) =>
+          rental.service?.includes(service._id)
         );
-        
+
         setServices(rentalServices);
       }
     } catch (err) {
-      console.error('Error fetching services:', err);
+      console.error("Error fetching services:", err);
     }
   };
+
+  useEffect(() => {
+    // ตรวจสอบ editDetails=true ใน URL
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      const editDetailsMode = url.searchParams.get('editDetails');
+      
+      if (editDetailsMode === 'true') {
+        // เปิดโหมดแก้ไขรายละเอียด
+        setIsEditingDetails(true);
+        
+        // เลื่อนไปยังส่วน Reservation Details
+        setTimeout(() => {
+          const detailsElement = document.getElementById('reservation-details');
+          if (detailsElement) {
+            detailsElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 500);
+      }
+    }
+  }, []);
 
   //Fetch Cur User
   useEffect(() => {
@@ -84,20 +110,20 @@ export default function UnifiedReservationDetails({
           const response = await fetch(`${API_BASE_URL}/auth/curuser`, {
             headers: {
               Authorization: `Bearer ${session.user.token}`,
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           });
-  
+
           if (response.ok) {
             const userData = await response.json();
             setUserTier(userData.data.tier || 0);
           }
         } catch (error) {
-          console.error('Error fetching user tier:', error);
+          console.error("Error fetching user tier:", error);
         }
       }
     };
-  
+
     fetchUserTier();
   }, [session?.user?.token]);
 
@@ -120,41 +146,47 @@ export default function UnifiedReservationDetails({
       setIsLoading(true);
       try {
         console.log(`Fetching reservation ID: ${reservationId}`);
-      
+
         // Make API call to fetch reservation details
         const response = await fetch(`${API_BASE_URL}/rents/${reservationId}`, {
           headers: {
             Authorization: `Bearer ${session.user.token}`,
-            'Content-Type': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         });
-      
+
         console.log("API Response status:", response.status);
-      
+
         if (!response.ok) {
-          console.error("Failed to fetch reservation details, status:", response.status);
+          console.error(
+            "Failed to fetch reservation details, status:",
+            response.status
+          );
           throw new Error("Failed to fetch reservation details");
         }
-      
+
         const data = await response.json();
         console.log("API Response data:", data);
-      
+
         if (!data.success || !data.data) {
           console.error("Invalid response format:", data);
           throw new Error("Received invalid data format from server");
         }
-      
+
         // Process car data if needed (only if car is just an ID)
         if (typeof data.data.car === "string") {
           console.log("Car is an ID, fetching details:", data.data.car);
           try {
-            const carResponse = await fetch(`${API_BASE_URL}/cars/${data.data.car}`, {
-              headers: {
-                Authorization: `Bearer ${session.user.token}`,
-                'Content-Type': 'application/json'
+            const carResponse = await fetch(
+              `${API_BASE_URL}/cars/${data.data.car}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${session.user.token}`,
+                  "Content-Type": "application/json",
+                },
               }
-            });
-      
+            );
+
             if (carResponse.ok) {
               const carResponseData = await carResponse.json();
               if (carResponseData.success && carResponseData.data) {
@@ -164,27 +196,40 @@ export default function UnifiedReservationDetails({
           } catch (error) {
             console.error("Error fetching car details:", error);
           }
-        }      
+        }
 
-         // Verify access based on user type
+        // Verify access based on user type
         if (userType === "provider") {
           // For providers: Check if this is their car
           const providerId = session.user.id || session.user._id;
           const carData = data.data.car;
 
-          if (typeof carData === "object" && carData.provider_id !== providerId) {
-            console.error("Provider ID mismatch:", carData.provider_id, "vs", providerId);
-            throw new Error("You do not have permission to view this reservation");
+          if (
+            typeof carData === "object" &&
+            carData.provider_id !== providerId
+          ) {
+            console.error(
+              "Provider ID mismatch:",
+              carData.provider_id,
+              "vs",
+              providerId
+            );
+            throw new Error(
+              "You do not have permission to view this reservation"
+            );
           }
         } else if (userType === "customer") {
           // For customers: Check if this is their reservation
           const userId = session.user.id || session.user._id;
           const userData = data.data.user;
-          const reservationUserId = typeof userData === "string" ? userData : userData?._id;
+          const reservationUserId =
+            typeof userData === "string" ? userData : userData?._id;
 
           if (reservationUserId !== userId) {
             console.error("User ID mismatch:", reservationUserId, "vs", userId);
-            throw new Error("You do not have permission to view this reservation");
+            throw new Error(
+              "You do not have permission to view this reservation"
+            );
           }
         }
 
@@ -194,7 +239,9 @@ export default function UnifiedReservationDetails({
         setEditedNotes(data.data.notes || "");
       } catch (err) {
         console.error("Error in fetching rental details:", err);
-        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -387,15 +434,19 @@ export default function UnifiedReservationDetails({
     // Convert to Date objects
     const start = new Date(startDate);
     const end = new Date(returnDate);
-    
+
     // Reset to midnight to ignore time components
-    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const startDay = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      start.getDate()
+    );
     const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-    
+
     // Calculate difference in days
     const timeDiff = endDay.getTime() - startDay.getTime();
     const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
+
     // Add 1 because rental period includes both start and end days
     return days + 1;
   };
@@ -404,10 +455,10 @@ export default function UnifiedReservationDetails({
   const calculateLateFees = (rentalData: Rent) => {
     if (!rentalData.actualReturnDate)
       return { daysLate: 0, lateFeePerDay: 0, totalLateFee: 0 };
-  
+
     const expectedReturnDate = new Date(rentalData.returnDate);
     const actualReturnDate = new Date(rentalData.actualReturnDate);
-  
+
     const daysLate = Math.max(
       0,
       Math.ceil(
@@ -415,30 +466,32 @@ export default function UnifiedReservationDetails({
           (1000 * 3600 * 24)
       )
     );
-  
+
     // Get tier from car if it's an object, otherwise use default
     const carTier =
       typeof rentalData.car === "object" ? rentalData.car.tier || 0 : 0;
     const lateFeePerDay = (carTier + 1) * 500;
     const totalLateFee = daysLate * lateFeePerDay;
-  
+
     return { daysLate, lateFeePerDay, totalLateFee };
   };
-  
+
   // Calculate service costs based on rental duration
   const calculateServiceCost = () => {
     if (!rental || !rental.service || rental.service.length === 0) {
       return 0;
     }
-  
+
     // Get service IDs from the rental
     const serviceIds = rental.service;
-    
+
     // Calculate rental period
     const startDate = new Date(rental.startDate);
     const endDate = new Date(rental.returnDate);
-    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
-    
+    const days = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)
+    );
+
     // Calculate total service cost
     let totalServiceCost = 0;
     for (const service of services) {
@@ -446,21 +499,20 @@ export default function UnifiedReservationDetails({
         totalServiceCost += service.rate * days;
       }
     }
-    
+
     return totalServiceCost;
   };
 
   const calculateTotalPrice = () => {
-  if (!rental) return 0;
-  
-  const baseCost = rental.price || 0;
-  const serviceCost = rental.servicePrice || 0;
-  const additionalCharges = rental.additionalCharges.lateFee || 0;
-  const lateFees = daysLate > 0 ? totalLateFee : 0;
-  
-  return baseCost + serviceCost + additionalCharges + lateFees;
-};
+    if (!rental) return 0;
 
+    const baseCost = rental.price || 0;
+    const serviceCost = rental.servicePrice || 0;
+    const additionalCharges = rental.additionalCharges.lateFee || 0;
+    const lateFees = daysLate > 0 ? totalLateFee : 0;
+
+    return baseCost + serviceCost + additionalCharges + lateFees;
+  };
 
   // Get status badge class
   const getStatusBadgeClass = (status: string) => {
@@ -762,41 +814,44 @@ export default function UnifiedReservationDetails({
           </div>
 
           {/* Customer details - only shown to admin and provider */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6" >
-              <h2 className="text-xl font-medium mb-4 text-[#8A7D55]">
-                Customer Information
-              </h2>
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 className="text-xl font-medium mb-4 text-[#8A7D55]">
+              Customer Information
+            </h2>
 
-              {user ? (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-gray-600 text-sm">Name</p>
-                    <p className="font-medium">{user.name}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-600 text-sm">Email</p>
-                    <p className="font-medium">{user.email}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-600 text-sm">Phone Number</p>
-                    <p className="font-medium">{user.telephone_number}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-600 text-sm">Customer ID</p>
-                    <p className="text-sm text-gray-500">{user._id}</p>
-                  </div>
+            {user ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-600 text-sm">Name</p>
+                  <p className="font-medium">{user.name}</p>
                 </div>
-              ) : (
-                <p className="text-gray-500 italic">
-                  Customer details not available
-                </p>
-              )}
-            </div>
-           {/* Notes card */}
-           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+
+                <div>
+                  <p className="text-gray-600 text-sm">Email</p>
+                  <p className="font-medium">{user.email}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-600 text-sm">Phone Number</p>
+                  <p className="font-medium">{user.telephone_number}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-600 text-sm">Customer ID</p>
+                  <p className="text-sm text-gray-500">{user._id}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 italic">
+                Customer details not available
+              </p>
+            )}
+          </div>
+          {/* Notes card */}
+          <div
+            id="reservation-notes"
+            className="bg-white p-6 rounded-lg shadow-md mb-6"
+          >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium text-[#8A7D55]">Notes</h2>
 
@@ -854,35 +909,41 @@ export default function UnifiedReservationDetails({
 
         {/* Right column - Rental Details and Actions */}
         <div>
-             {rental && (
-            <ReservationDetailsCard
-              rental={rental}
-              userType={userType}
-              token={session?.user?.token || ''}
-              onUpdate={handleRentalUpdate}
-              calculateRentalPeriod={calculateRentalPeriod}
-              formatCurrency={formatCurrency}
-              formatDate={formatDate}
-              formatTime={formatTime}
-              calculateServiceCost={calculateServiceCost}
-              calculateTotalPrice={calculateTotalPrice}
-              daysLate={daysLate}
-              totalLateFee={totalLateFee}
-              userTier={userTier}
-            />
+          {rental && (
+            <div id="reservation-details">
+              <ReservationDetailsCard
+                rental={rental}
+                userType={userType}
+                token={session?.user?.token || ""}
+                onUpdate={handleRentalUpdate}
+                calculateRentalPeriod={calculateRentalPeriod}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+                formatTime={formatTime}
+                calculateServiceCost={calculateServiceCost}
+                calculateTotalPrice={calculateTotalPrice}
+                daysLate={daysLate}
+                totalLateFee={totalLateFee}
+                userTier={userTier}
+                isEditing={isEditingDetails}
+                setIsEditing={setIsEditingDetails}
+              />
+            </div>
           )}
           {/* Rental Services */}
           <div className="mb-6">
             {rental.service && rental.service.length > 0 && (
-              <RentalServices 
-                token={session?.user?.token || ''} 
+              <RentalServices
+                token={session?.user?.token || ""}
                 serviceIds={rental.service}
               />
             )}
           </div>
 
-          {/* Provider Details */}  
-          <div className="mb-6"> {/* Added pb-8 for padding-bottom */}
+          {/* Provider Details */}
+          <div className="mb-6">
+            {" "}
+            {/* Added pb-8 for padding-bottom */}
             {car?.provider_id && (
               <ProviderDetail
                 providerId={car?.provider_id}
@@ -890,7 +951,6 @@ export default function UnifiedReservationDetails({
               />
             )}
           </div>
-          
 
           {/* Action buttons - dynamic based on user type and rental status */}
           <div className="bg-white p-6 rounded-lg shadow-md">
