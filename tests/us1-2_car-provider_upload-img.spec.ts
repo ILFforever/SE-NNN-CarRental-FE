@@ -33,7 +33,7 @@ test("Car Provider should adding new car normally", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as Car Provider" }).click();
   await page.getByRole("link", { name: "Provider Tools" }).click();
-  await page.getByRole("link", { name: "Manage My Cars" }).click();
+  await page.getByRole("link", { name: "Manage Cars" }).click();
   await page.getByRole("button", { name: "Add New Car" }).first().click();
   await page.getByRole("textbox", { name: "License Plate *" }).click();
   await page
@@ -78,7 +78,7 @@ test("Car Provider should not upload un-image files", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as Car Provider" }).click();
   await page.getByRole("link", { name: "Provider Tools" }).click();
-  await page.getByRole("link", { name: "Manage My Cars" }).click();
+  await page.getByRole("link", { name: "Manage Cars" }).click();
   await page.getByRole("button", { name: "Add New Car" }).first().click();
   await page.getByRole("textbox", { name: "License Plate *" }).click();
   await page
