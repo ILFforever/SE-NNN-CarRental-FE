@@ -596,10 +596,10 @@ export default function MyReservationsPage() {
                             className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
                             type="button"
                           >
-                            <div className="flex items-center justify-center space-x-1">
+                            <div className="flex items-center justify-center space-x-1" id="Review-Provider">
                               <span>Review Provider</span>
                               {/* Info Icon with tooltip */}
-                              {car?.provider_id && (
+                              {/* {car?.provider_id && (
                                 <div className="relative group">
                                   <Info className="w-3 h-3 text-gray-500" />
                                   <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
@@ -607,7 +607,7 @@ export default function MyReservationsPage() {
                                       car.provider_id}
                                   </span>
                                 </div>
-                              )}
+                              )} */}
                             </div>
                           </button>
                         ) : (
