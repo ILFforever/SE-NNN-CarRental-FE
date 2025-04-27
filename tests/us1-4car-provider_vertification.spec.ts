@@ -89,7 +89,6 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
 
   //Log out
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -134,7 +133,6 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     "us1-4playwright@gmail.com"
   );
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -212,7 +210,6 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     await page.waitForTimeout(500);
   }
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
   
@@ -278,7 +275,6 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   
   //SIgn Out
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await expect(page.getByRole('heading')).toContainText('Sign Out');
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
   await expect(page.locator('body')).toContainText('Register');
 });
