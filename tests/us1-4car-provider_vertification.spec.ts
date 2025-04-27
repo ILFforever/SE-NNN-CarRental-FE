@@ -260,10 +260,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.locator('div').filter({ hasText: /^DeactivateCancel$/ }).getByRole('button').first().click();
   await expect(page.getByRole('main')).toContainText('Car provider deactivated successfully');
 
-  await page.getByRole('button', { name: 'Admin' }).click();
-  await page.getByRole('link', { name: 'Admin Tools' }).click();
-  await page.locator('.MuiBackdrop-root').click();
-
+  await page.goto("http://localhost:3000/admin/tools");
   await page.getByRole('link', { name: 'Manage Admins Create and' }).click();
   await expect(page.getByRole('heading')).toContainText('Manage Administrators');
   await page.getByText('us1-4 playwright test').click();
