@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
@@ -14,6 +14,11 @@ import {
   Tag,
   ChevronRight,
   ChevronLeft,
+  Clock,
+  Edit2,
+  Star,
+  XCircle,
+  Check,
 } from "lucide-react";
 
 export default function MyReservationsPage() {
@@ -108,17 +113,19 @@ export default function MyReservationsPage() {
 
         if (data.success && Array.isArray(data.data)) {
           // Calculate total pages based on totalCount and itemsPerPage
-          const calculatedTotalPages = Math.ceil((data.totalCount || data.count || 0) / itemsPerPage);
-        
-          console.log('Pagination Data:', {
+          const calculatedTotalPages = Math.ceil(
+            (data.totalCount || data.count || 0) / itemsPerPage
+          );
+
+          console.log("Pagination Data:", {
             calculatedTotalPages: calculatedTotalPages,
             totalCount: data.totalCount || data.count || 0,
             currentPage: currentPage,
             itemsPerPage: itemsPerPage,
             dataLength: data.data.length,
-            hasNextPage: data.pagination?.next ? true : false
+            hasNextPage: data.pagination?.next ? true : false,
           });
-        
+
           setTotalPages(calculatedTotalPages);
           setTotalCount(data.totalCount || data.count || 0);
           setReservations(data.data);
@@ -426,19 +433,19 @@ export default function MyReservationsPage() {
     // Navigate to the reservation details page with edit mode parameter
     router.push(`/account/reservations/${reservationId}?editDetails=true`);
   };
-  
+
   const handlePayReservation = (reservationId: string): void => {
     // นำทางไปยังหน้าชำระเงิน พร้อมส่ง reservationId เพื่อใช้ในการระบุการจองที่ต้องชำระ
     router.push(`/payment?reservationId=${reservationId}`);
   };
-  
+
   return (
     <main className="py-6 md:py-10 px-4 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl md:text-3xl font-medium font-serif">
           My Reservations
         </h1>
-  
+
         <Link
           href="/catalog"
           className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors w-full sm:w-auto text-center"
@@ -446,7 +453,7 @@ export default function MyReservationsPage() {
           Make New Reservation
         </Link>
       </div>
-  
+
       {loading ? (
         <div className="flex justify-center items-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55]"></div>
@@ -574,59 +581,75 @@ export default function MyReservationsPage() {
                       </td>
                       {/* Actions column */}
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                        {reservation.status === 'pending' ? (
+                        {reservation.status === "pending" ? (
                           <button
-                            onClick={() => handleEditReservation(reservation._id)}
-                            className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                            onClick={() =>
+                              handleEditReservation(reservation._id)
+                            }
+                            className="text-[#8A7D55] hover:bg-[#8A7D55]/10 font-medium cursor-pointer 
+        flex items-center justify-center space-x-1 
+        px-3 py-1.5 rounded-full border border-[#8A7D55]/30 
+        transition-colors duration-200"
                             type="button"
                           >
-                            Edit Reservation
+                            <Edit2 className="w-4 h-4 mr-1 text-[#8A7D55]" />
+                            <span>Edit Reservation</span>
                           </button>
-                        ) : reservation.status === 'unpaid' ? (
+                        ) : reservation.status === "unpaid" ? (
                           <button
-                            onClick={() => handlePayReservation(reservation._id)}
-                            className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                            onClick={() =>
+                              handlePayReservation(reservation._id)
+                            }
+                            className="text-green-700 hover:bg-green-500/10 font-medium cursor-pointer 
+        flex items-center justify-center space-x-1 
+        px-3 py-1.5 rounded-full border border-green-500/30 
+        transition-colors duration-200"
                             type="button"
                           >
-                            Pay Now
+                            <CreditCard className="w-4 h-4 mr-1 text-green-700" />
+                            <span>Pay Now</span>
                           </button>
-                        ) : (!reservation.isRated && reservation.status === "completed") ? (
+                        ) : reservation.status === "active" ||
+                          reservation.status === "cancelled" ? (
+                          <div
+                            className="text-gray-500 font-medium flex items-center justify-center space-x-1 
+      px-3 py-1.5 rounded-full border border-gray-300/50 
+      bg-gray-100/50"
+                          >
+                            {reservation.status === "active" ? (
+                              <Clock className="w-4 h-4 mr-1 text-blue-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-1 text-red-500" />
+                            )}
+                            <span>No Actions Available</span>
+                          </div>
+                        ) : !reservation.isRated &&
+                          reservation.status === "completed" ? (
                           <button
-                            onClick={() => setActiveRatingReservation(reservation._id)}
-                            className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                            onClick={() =>
+                              setActiveRatingReservation(reservation._id)
+                            }
+                            className="text-yellow-700 hover:bg-yellow-500/10 font-medium cursor-pointer 
+        flex items-center justify-center space-x-1 
+        px-3 py-1.5 rounded-full border border-yellow-500/30 
+        transition-colors duration-200"
                             type="button"
                           >
-                            <div className="flex items-center justify-center space-x-1">
-                              <span>Review Provider</span>
-                              {/* Info Icon with tooltip */}
-                              {car?.provider_id && (
-                                <div className="relative group">
-                                  <Info className="w-3 h-3 text-gray-500" />
-                                  <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {providers[car.provider_id]?.name ||
-                                      car.provider_id}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <Star className="w-4 h-4 mr-1 text-yellow-700" />
+                            <span>Review Provider</span>
                           </button>
                         ) : (
                           <div className="flex items-center justify-center space-x-1">
-                            <span className="text-gray-400 font-medium">
-                              {reservation.isRated && reservation.status === "completed"
+                            <span
+                              className="text-gray-400 font-medium flex items-center 
+        px-3 py-1.5 rounded-full border border-gray-300/50 
+        bg-gray-100/50"
+                            >
+                              {reservation.isRated &&
+                              reservation.status === "completed"
                                 ? "Already Reviewed"
                                 : ""}
                             </span>
-                            {/* Info Icon with tooltip */}
-                            {car?.provider_id && reservation.status === "completed" && (
-                              <div className="relative group">
-                                <Info className="w-3 h-3 text-gray-500" />
-                                <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                  {providers[car.provider_id]?.name ||
-                                    car.provider_id}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         )}
                       </td>
@@ -645,7 +668,7 @@ export default function MyReservationsPage() {
               </tbody>
             </table>
           </div>
-  
+
           {/* Mobile version (cards) - shown only on small screens */}
           <div className="md:hidden space-y-4">
             {reservations.map((reservation) => {
@@ -678,7 +701,7 @@ export default function MyReservationsPage() {
                         reservation.status.slice(1)}
                     </span>
                   </div>
-  
+
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-500" />
@@ -687,7 +710,7 @@ export default function MyReservationsPage() {
                         {formatDate(reservation.returnDate)}
                       </p>
                     </div>
-  
+
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-2 text-gray-500" />
                       <div>
@@ -712,7 +735,7 @@ export default function MyReservationsPage() {
                         ) : null}
                       </div>
                     </div>
-  
+
                     {/* Provider info section */}
                     <div className="flex items-center">
                       <Tag className="w-4 h-4 mr-2 text-gray-500" />
@@ -726,40 +749,76 @@ export default function MyReservationsPage() {
                       )}
                     </div>
                   </div>
-  
+
                   <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between">
-                    {reservation.status === 'pending' ? (
+                    {reservation.status === "pending" ? (
                       <button
                         onClick={() => handleEditReservation(reservation._id)}
-                        className="text-[#8A7D55] font-medium"
+                        className="text-[#8A7D55] hover:bg-[#8A7D55]/10 font-medium cursor-pointer 
+        flex items-center justify-center space-x-1 
+        px-3 py-1.5 rounded-full border border-[#8A7D55]/30 
+        transition-colors duration-200"
                         type="button"
                       >
-                        Edit Reservation
+                        <Edit2 className="w-4 h-4 mr-1 text-[#8A7D55]" />
+                        <span>Edit Reservation</span>
                       </button>
-                    ) : reservation.status === 'unpaid' ? (
+                    ) : reservation.status === "unpaid" ? (
                       <button
                         onClick={() => handlePayReservation(reservation._id)}
-                        className="text-[#8A7D55] font-medium"
+                        className="text-green-700 hover:bg-green-500/10 font-medium cursor-pointer 
+        flex items-center justify-center space-x-1 
+        px-3 py-1.5 rounded-full border border-green-500/30 
+        transition-colors duration-200"
                         type="button"
                       >
-                        Pay Now
+                        <CreditCard className="w-4 h-4 mr-1 text-green-700" />
+                        <span>Pay Now</span>
                       </button>
-                    ) : (!reservation.isRated && reservation.status === "completed") ? (
+                    ) : reservation.status === "active" ||
+                      reservation.status === "cancelled" ? (
+                      <div
+                        className="text-gray-500 font-medium flex items-center justify-center space-x-1 
+      px-3 py-1.5 rounded-full border border-gray-300/50 
+      bg-gray-100/50"
+                      >
+                        {reservation.status === "active" ? (
+                          <Clock className="w-4 h-4 mr-1 text-blue-500" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-1 text-red-500" />
+                        )}
+                        <span>No Actions Available</span>
+                      </div>
+                    ) : !reservation.isRated &&
+                      reservation.status === "completed" ? (
                       <button
-                        onClick={() => setActiveRatingReservation(reservation._id)}
-                        className="text-[#8A7D55] font-medium"
+                        onClick={() =>
+                          setActiveRatingReservation(reservation._id)
+                        }
+                        className="text-yellow-700 hover:bg-yellow-500/10 font-medium cursor-pointer 
+        flex items-center justify-center space-x-1 
+        px-3 py-1.5 rounded-full border border-yellow-500/30 
+        transition-colors duration-200"
                         type="button"
                       >
-                        Review Provider
+                        <Star className="w-4 h-4 mr-1 text-yellow-700" />
+                        <span>Review Provider</span>
                       </button>
                     ) : (
-                      <span className="text-gray-400 font-medium">
-                        {reservation.isRated && reservation.status === "completed"
-                          ? "Already Reviewed"
-                          : ""}
-                      </span>
+                      <div className="flex items-center justify-center space-x-1">
+                        <span
+                          className="text-gray-400 font-medium flex items-center 
+        px-3 py-1.5 rounded-full border border-gray-300/50 
+        bg-gray-100/50"
+                        >
+                          {reservation.isRated &&
+                          reservation.status === "completed"
+                            ? "Already Reviewed"
+                            : ""}
+                        </span>
+                      </div>
                     )}
-  
+
                     <Link
                       href={`/account/reservations/${reservation._id}`}
                       className="flex items-center text-[#8A7D55] font-medium"
@@ -780,7 +839,7 @@ export default function MyReservationsPage() {
               {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}{" "}
               reservations
             </div>
-  
+
             {/* Pagination buttons */}
             <div className="flex items-center space-x-2">
               {/* First page button */}
@@ -803,7 +862,7 @@ export default function MyReservationsPage() {
                   />
                 </svg>
               </button>
-  
+
               {/* Previous page button */}
               <button
                 onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
@@ -813,7 +872,7 @@ export default function MyReservationsPage() {
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-  
+
               {/* Page number buttons */}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                 (page) => (
@@ -830,7 +889,7 @@ export default function MyReservationsPage() {
                   </button>
                 )
               )}
-  
+
               {/* Next page button */}
               <button
                 onClick={() =>
@@ -842,7 +901,7 @@ export default function MyReservationsPage() {
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
-  
+
               {/* Last page button */}
               <button
                 onClick={() => setCurrentPage(totalPages)}

@@ -4,12 +4,12 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { TransactionDate, TransactionTime } from "@/libs/cash/transaction_date";
 import { coinDisplay } from "@/libs/cash/coin_display";
 
-// Mirror the updated Transaction interface
+// Mirror the updated Transaction interface 
 export interface Transaction {
   _id: string;
   amount: number;
   description: string;
-  type: "deposit" | "withdrawal";
+  type: "deposit" | "withdrawal" | "payment" | "refund";
   transactionDate: string;
   reference: string;
   rental: any;

@@ -8,6 +8,7 @@ import {
   Users, 
   UserCog, 
   Car, 
+  Coins,
   Calendar, 
   Building, 
   PlusSquare, 
@@ -31,10 +32,12 @@ export default async function AdminToolsPage() {
   return (
     <main className="py-10 px-4 max-w-6xl mx-auto">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-medium mb-4 text-[#8A7D55]">Admin Dashboard</h1>
+        <h1 className="text-4xl font-medium mb-4 text-[#8A7D55]">
+          Admin Dashboard
+        </h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Welcome to the administration dashboard. Here you can manage users, car providers,
-          vehicles, reservations, and additional services.
+          Welcome to the administration dashboard. Here you can manage users,
+          car providers, vehicles, reservations, and additional services.
         </p>
       </div>
 
@@ -105,6 +108,17 @@ export default async function AdminToolsPage() {
           iconColor="text-gray-600"
           borderColor="border-gray-200"
         />
+
+        {/* Transaction Settings Panel */}
+        <AdminToolCard
+          title="Transaction Settings"
+          description="Transaction settings and transaction history"
+          icon={<Coins size={24} />}
+          link="/admin/manageTransaction"
+          color="bg-gradient-to-br from-lime-50 to-lime-100"
+          iconColor="text-lime-600"
+          borderColor="border-lime-200"
+        />
       </div>
 
       {/* Bookings Panel - Full Width */}
@@ -112,7 +126,9 @@ export default async function AdminToolsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <Calendar className="h-6 w-6 text-[#8A7D55] mr-3" />
-            <h2 className="text-xl font-medium text-[#8A7D55]">Manage Bookings</h2>
+            <h2 className="text-xl font-medium text-[#8A7D55]">
+              Manage Bookings
+            </h2>
           </div>
           <Link
             href="/admin/reservations"
@@ -124,7 +140,11 @@ export default async function AdminToolsPage() {
         <p className="text-gray-600 mb-4">
           Search, view and edit details about any booking in the system.
         </p>
-        <form action="/admin/reservations" method="GET" className="w-full relative">
+        <form
+          action="/admin/reservations"
+          method="GET"
+          className="w-full relative"
+        >
           <input
             type="text"
             name="search"

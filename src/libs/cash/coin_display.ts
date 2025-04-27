@@ -7,7 +7,7 @@
  */
 export const coinDisplay = (
   value: number,
-  type: "withdrawal" | "deposit" | "none"
+  type: "deposit" | "withdrawal" | "payment" | "refund" | "none"
 ): string => {
   const truncatedValue = Math.trunc(value * 100) / 100;
   let coinValue = Intl.NumberFormat("en-US", {
@@ -23,6 +23,6 @@ export const coinDisplay = (
   } else if (type === "none") {
     coinValue = coinValue;
   }
-  
+
   return coinValue;
 };

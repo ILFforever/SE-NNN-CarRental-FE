@@ -15,7 +15,6 @@ export default function TransactionFilters({
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [transactionType, setTransactionType] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [minAmount, setMinAmount] = useState<number | string>("");
   const [maxAmount, setMaxAmount] = useState<number | string>("");
 
@@ -24,10 +23,18 @@ export default function TransactionFilters({
       startDate,
       endDate,
       transactionType,
-      paymentMethod,
       minAmount: minAmount ? parseFloat(minAmount.toString()) : undefined,
       maxAmount: maxAmount ? parseFloat(maxAmount.toString()) : undefined,
     });
+  };
+
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+    setTransactionType("");
+    setMinAmount("");
+    setMaxAmount("");
+    onSearch({}); // Optionally trigger a fresh search with no filters
   };
 
   return (
@@ -108,22 +115,40 @@ export default function TransactionFilters({
             Withdraw
           </label>
         </div>
-      </div>
-
-      {/* Payment Method */}
-      <div className="flex-shrink-0 w-40">
-        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
-          Payment Method
-        </label>
-        <select
-          className="mt-2 h-10 block w-full border-2 border-gray-300 rounded-lg p-2 text-md"
-          value={paymentMethod}
-          onChange={(e) => setPaymentMethod(e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="qr">QR Code</option>
-          <option value="bank">Bank Transfer</option>
-        </select>
+        <div className="flex items-center">
+          <input
+            id="filter-payment"
+            name="filter-type"
+            type="radio"
+            value="payment"
+            checked={transactionType === "payment"}
+            onChange={() => setTransactionType("payment")}
+            className="h-4 w-4 border-gray-300"
+          />
+          <label
+            htmlFor="filter-payment"
+            className="ml-2 text-sm md:text-md text-gray-700"
+          >
+            Payment
+          </label>
+        </div>
+        <div className="flex items-center">
+          <input
+            id="filter-refund"
+            name="filter-type"
+            type="radio"
+            value="refund"
+            checked={transactionType === "refund"}
+            onChange={() => setTransactionType("refund")}
+            className="h-4 w-4 border-gray-300"
+          />
+          <label
+            htmlFor="filter-refund"
+            className="ml-2 text-sm md:text-md text-gray-700"
+          >
+            Refund
+          </label>
+        </div>
       </div>
 
       {/* Amount Range */}
@@ -157,13 +182,19 @@ export default function TransactionFilters({
         </div>
       </div>
 
-      {/* Search Button */}
-      <div className="flex-shrink-0 w-20 md:w-32 mt-4 md:mt-0">
+      {/* Search Button & Reset */}
+      <div className="flex-shrink-0 space-y-3 w-20 md:w-32 mt-4 md:mt-0">
         <button
           onClick={handleSearch}
           className="flex justify-center items-center item w-full h-8 py-2 bg-white text-black font-medium rounded-lg shadow hover:bg-gray-100 border border-[#8A7D55] transition duration-200 ease-in-out"
         >
           Search
+        </button>
+        <button
+          onClick={handleReset}
+          className="flex justify-center items-center w-20 md:w-32 h-8 py-2 bg-white text-red-500 font-medium rounded-lg shadow hover:bg-red-100 border border-red-400 transition duration-200 ease-in-out"
+        >
+          Reset
         </button>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import React, { ReactNode } from "react";
 import { CreditInfoCard } from "./CreditInfoCard";
 import { PaymentButton } from "./PaymentButton";
-import { PaymentInformationCard } from "./PaymentInformationCard";
 
 type PaymentSideCardProps = {
   title?: string;
@@ -42,9 +41,6 @@ export const PaymentSideCard: React.FC<PaymentSideCardProps> = ({
         processingPayment={processingPayment}
         onPayClick={onPayClick}
       />
-      
-      {/* ข้อมูลการชำระเงิน */}
-      <PaymentInformationCard />
       
       {/* ส่วนเสริมที่อาจจะมีเพิ่มเติม */}
       {children}

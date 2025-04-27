@@ -34,7 +34,7 @@ export interface TransactionSummary {
   payments: { count: number; total: number };
   refunds: { count: number; total: number };
   netFlow: number;
-} //           onChange={() => setTransactionType("refund")}
+}//           onChange={() => setTransactionType("refund")}
 
 export default function TransactionsPage() {
   const { data: session, status } = useSession();
@@ -44,7 +44,7 @@ export default function TransactionsPage() {
   const [error, setError] = useState<string>("");
   const [filters, setFilters] = useState<any>({});
   const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0 });
-  const [summary, setSummary] = useState<TransactionSummary | null>(null);
+const [summary, setSummary] = useState<TransactionSummary | null>(null);
 
   //fetchFilteredTransactions function to fetch transactions based on filters
   const fetchFilteredTransactions = async (filters: any) => {
@@ -52,7 +52,7 @@ export default function TransactionsPage() {
 
     try {
       const token = session.user.token;
-      const roles = "user";
+      const roles = "admin";
 
       const response: TransactionResponse = await TransactionFetch({
         token,
@@ -131,7 +131,7 @@ export default function TransactionsPage() {
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2">
-          All Transaction logs
+          All Transaction logs for Admin
         </h1>
         <p className="text-md lg:text-lg text-gray-700 mb-6">
           Transaction History
