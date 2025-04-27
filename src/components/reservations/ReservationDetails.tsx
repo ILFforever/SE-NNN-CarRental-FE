@@ -40,6 +40,11 @@ export default function UnifiedReservationDetails({
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [editedNotes, setEditedNotes] = useState("");
 
+  // States for modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [modalAction, setModalAction] = useState<
+    "confirm" | "complete" | "cancel" | null
+  >(null);
   const handleRentalUpdate = (updatedRental: Rent) => {
     setRental(updatedRental);
     setSuccess("Reservation updated successfully");
@@ -83,19 +88,19 @@ export default function UnifiedReservationDetails({
 
   useEffect(() => {
     // ตรวจสอบ editDetails=true ใน URL
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      const editDetailsMode = url.searchParams.get('editDetails');
-      
-      if (editDetailsMode === 'true') {
+      const editDetailsMode = url.searchParams.get("editDetails");
+
+      if (editDetailsMode === "true") {
         // เปิดโหมดแก้ไขรายละเอียด
         setIsEditingDetails(true);
-        
+
         // เลื่อนไปยังส่วน Reservation Details
         setTimeout(() => {
-          const detailsElement = document.getElementById('reservation-details');
+          const detailsElement = document.getElementById("reservation-details");
           if (detailsElement) {
-            detailsElement.scrollIntoView({ behavior: 'smooth' });
+            detailsElement.scrollIntoView({ behavior: "smooth" });
           }
         }, 500);
       }
@@ -305,7 +310,6 @@ export default function UnifiedReservationDetails({
       setIsLoading(false);
     }
   };
-
   // Handle updating rental status
   const updateRentalStatus = async (
     action: "confirm" | "complete" | "cancel"
@@ -340,16 +344,6 @@ export default function UnifiedReservationDetails({
           break;
         default:
           throw new Error(`Unknown action: ${action}`);
-      }
-
-      // Confirm with user
-      if (
-        !window.confirm(
-          `Are you sure you want to mark this reservation as ${actionText}?`
-        )
-      ) {
-        setIsLoading(false);
-        return;
       }
 
       const response = await fetch(endpoint, {
@@ -719,6 +713,130 @@ export default function UnifiedReservationDetails({
   // Calculate late fees if applicable
   const { daysLate, lateFeePerDay, totalLateFee } = calculateLateFees(rental);
 
+  const ConfirmationModal = () => {
+    if (!showConfirmModal || !modalAction) return null;
+  
+    const actionText: Record<typeof modalAction, string> = {
+      confirm: "confirm reservation",
+      complete: "complete reservation",
+      cancel: "cancel reservation"
+    };
+  
+    const actionTitle: Record<typeof modalAction, string> = {
+      confirm: "Confirm Reservation",
+      complete: "Complete Reservation",
+      cancel: "Cancel Reservation"
+    };
+  
+    const actionDescription: Record<typeof modalAction, string> = {
+      confirm: "Are you sure you want to confirm this reservation?",
+      complete: "Are you sure you want to mark this reservation as completed?",
+      cancel: "Are you sure you want to cancel this reservation? This action cannot be undone."
+    };
+  
+    const actionIcon: Record<typeof modalAction, JSX.Element> = {
+      confirm: <Check className="w-6 h-6" />,
+      complete: <Check className="w-6 h-6" />,
+      cancel: <X className="w-6 h-6" />
+    };
+  
+    const actionColor: Record<typeof modalAction, string> = {
+      confirm: "bg-blue-100 text-blue-600",
+      complete: "bg-green-100 text-green-600",
+      cancel: "bg-red-100 text-red-600"
+    };
+  
+    const buttonColor: Record<typeof modalAction, string> = {
+      confirm: "bg-blue-600 hover:bg-blue-700",
+      complete: "bg-green-600 hover:bg-green-700",
+      cancel: "bg-red-600 hover:bg-red-700"
+    };
+  
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+        <div className="bg-white rounded-xl max-w-md w-full shadow-2xl transform transition-all animate-slideUp">
+          <div className="p-6">
+            {/* Header with icon */}
+            <div className="flex items-center mb-4">
+              <div className={`w-10 h-10 rounded-full ${actionColor[modalAction]} flex items-center justify-center mr-3`}>
+                {actionIcon[modalAction]}
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {actionTitle[modalAction]}
+              </h3>
+            </div>
+            
+            {/* Description */}
+            <p className="text-gray-600 mb-6 ml-13">
+              {actionDescription[modalAction]}
+            </p>
+  
+            {/* Rental details for confirmation */}
+            {car && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 ml-13">
+                <div className="flex items-center text-sm text-gray-600">
+                  <span className="font-medium text-gray-700">Vehicle:</span>
+                  <span className="ml-2">{car.brand} {car.model}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600 mt-1">
+                  <span className="font-medium text-gray-700">License:</span>
+                  <span className="ml-2">{car.license_plate}</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Buttons */}
+            <div className="flex justify-end space-x-3 mt-8">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setModalAction(null);
+                }}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (modalAction) {
+                    updateRentalStatus(modalAction);
+                  }
+                  setShowConfirmModal(false);
+                  setModalAction(null);
+                }}
+                disabled={isLoading}
+                className={`px-5 py-2.5 rounded-lg text-white font-medium transition-all duration-200 flex items-center
+                  ${buttonColor[modalAction]}
+                  ${isLoading ? "opacity-70 cursor-not-allowed" : "hover:transform hover:scale-105"}
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 
+                  ${modalAction === "cancel" 
+                    ? "focus:ring-red-500" 
+                    : modalAction === "complete"
+                    ? "focus:ring-green-500"
+                    : "focus:ring-blue-500"
+                  }
+                `}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {actionIcon[modalAction]}
+                    <span className="ml-2">
+                      {actionText[modalAction].charAt(0).toUpperCase() + actionText[modalAction].slice(1)}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
   return (
     <main className="py-10 px-4 max-w-4xl mx-auto">
       {/* Header with back button */}
@@ -962,7 +1080,10 @@ export default function UnifiedReservationDetails({
                 <>
                   {rental.status === "pending" && (
                     <button
-                      onClick={() => updateRentalStatus("confirm")}
+                      onClick={() => {
+                        setModalAction("confirm");
+                        setShowConfirmModal(true);
+                      }}
                       disabled={isLoading}
                       className="w-full flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                     >
@@ -973,7 +1094,10 @@ export default function UnifiedReservationDetails({
 
                   {rental.status === "active" && (
                     <button
-                      onClick={() => updateRentalStatus("complete")}
+                      onClick={() => {
+                        setModalAction("complete");
+                        setShowConfirmModal(true);
+                      }}
                       disabled={isLoading}
                       className="w-full flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                     >
@@ -985,7 +1109,10 @@ export default function UnifiedReservationDetails({
                   {(rental.status === "pending" ||
                     rental.status === "active") && (
                     <button
-                      onClick={() => updateRentalStatus("cancel")}
+                      onClick={() => {
+                        setModalAction("cancel");
+                        setShowConfirmModal(true);
+                      }}
                       disabled={isLoading}
                       className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                     >
@@ -1001,7 +1128,10 @@ export default function UnifiedReservationDetails({
                 <>
                   {rental.status === "pending" && (
                     <button
-                      onClick={() => updateRentalStatus("confirm")}
+                      onClick={() => {
+                        setModalAction("confirm");
+                        setShowConfirmModal(true);
+                      }}
                       disabled={isLoading}
                       className="w-full flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                     >
@@ -1012,7 +1142,10 @@ export default function UnifiedReservationDetails({
 
                   {rental.status === "active" && (
                     <button
-                      onClick={() => updateRentalStatus("complete")}
+                      onClick={() => {
+                        setModalAction("complete");
+                        setShowConfirmModal(true);
+                      }}
                       disabled={isLoading}
                       className="w-full flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                     >
@@ -1024,7 +1157,10 @@ export default function UnifiedReservationDetails({
                   {(rental.status === "pending" ||
                     rental.status === "active") && (
                     <button
-                      onClick={() => updateRentalStatus("cancel")}
+                      onClick={() => {
+                        setModalAction("cancel");
+                        setShowConfirmModal(true);
+                      }}
                       disabled={isLoading}
                       className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                     >
@@ -1106,6 +1242,8 @@ export default function UnifiedReservationDetails({
           </div>
         </div>
       </div>
+      {/* Confirmation Modal */}
+      <ConfirmationModal />
     </main>
   );
 }
