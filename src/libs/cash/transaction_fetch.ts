@@ -2,14 +2,16 @@ import { API_BASE_URL } from "@/config/apiConfig";
 
 interface TransactionProps {
   token: string;
-  roles: "User" | "Admin";
+  roles: "user" | "admin";
   filter?: {
-    type?: "deposit" | "withdrawal";
+    type?: "deposit" | "withdrawal" | "payment" | "refund";
     status?: string;
     startDate?: string;
     endDate?: string;
     reference?: string;
     rentalId?: string;
+    minPrice?: string;
+    maxPrice?: string;
     search?: string;
   };
   pagination?: {
@@ -93,8 +95,8 @@ export default async function TransactionFetch(
 ): Promise<TransactionResponse> {
   let URL = API_BASE_URL;
   // API Endpoint that's pointed to assosicated path
-  if (props.roles === "Admin") {
-    URL += "/credits/admin/transactions?";
+  if (props.roles === "admin") {
+    URL += "/credits/transactions?";
   } else {
     URL += "/credits/history?";
   }
