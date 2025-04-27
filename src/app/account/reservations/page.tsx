@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
@@ -17,6 +18,7 @@ import {
 
 export default function MyReservationsPage() {
   useScrollToTop();
+  const router = useRouter();
   const { data: session } = useSession();
   const [reservations, setReservations] = useState<Rent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -420,13 +422,23 @@ export default function MyReservationsPage() {
     );
   };
 
+  const handleEditReservation = (reservationId: string): void => {
+    // Navigate to the reservation details page with edit mode parameter
+    router.push(`/account/reservations/${reservationId}?editDetails=true`);
+  };
+  
+  const handlePayReservation = (reservationId: string): void => {
+    // Will be implemented later
+    console.log(`Pay for reservation ${reservationId}`);
+  };
+  
   return (
     <main className="py-6 md:py-10 px-4 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl md:text-3xl font-medium font-serif">
           My Reservations
         </h1>
-
+  
         <Link
           href="/catalog"
           className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors w-full sm:w-auto text-center"
@@ -434,7 +446,7 @@ export default function MyReservationsPage() {
           Make New Reservation
         </Link>
       </div>
-
+  
       {loading ? (
         <div className="flex justify-center items-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8A7D55]"></div>
@@ -491,7 +503,7 @@ export default function MyReservationsPage() {
                     scope="col"
                     className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Review
+                    Action
                   </th>
                   <th
                     scope="col"
@@ -560,17 +572,29 @@ export default function MyReservationsPage() {
                             reservation.status.slice(1)}
                         </span>
                       </td>
-                      {/* Rating column */}
+                      {/* Actions column */}
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                        {!reservation.isRated &&
-                        reservation.status === "completed" ? (
-                          // can be rated
-                          <a
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setActiveRatingReservation(reservation._id);
-                            }}
+                        {reservation.status === 'pending' ? (
+                          <button
+                            onClick={() => handleEditReservation(reservation._id)}
                             className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                            type="button"
+                          >
+                            Edit Reservation
+                          </button>
+                        ) : reservation.status === 'unpaid' ? (
+                          <button
+                            onClick={() => handlePayReservation(reservation._id)}
+                            className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                            type="button"
+                          >
+                            Pay Now
+                          </button>
+                        ) : (!reservation.isRated && reservation.status === "completed") ? (
+                          <button
+                            onClick={() => setActiveRatingReservation(reservation._id)}
+                            className="text-[#8A7D55] hover:underline font-medium cursor-pointer"
+                            type="button"
                           >
                             <div className="flex items-center justify-center space-x-1">
                               <span>Review Provider</span>
@@ -585,17 +609,16 @@ export default function MyReservationsPage() {
                                 </div>
                               )}
                             </div>
-                          </a>
+                          </button>
                         ) : (
-                          // can't be rated
                           <div className="flex items-center justify-center space-x-1">
                             <span className="text-gray-400 font-medium">
-                              {reservation.isRated
+                              {reservation.isRated && reservation.status === "completed"
                                 ? "Already Reviewed"
-                                : "Review Provider"}
+                                : ""}
                             </span>
                             {/* Info Icon with tooltip */}
-                            {car?.provider_id && (
+                            {car?.provider_id && reservation.status === "completed" && (
                               <div className="relative group">
                                 <Info className="w-3 h-3 text-gray-500" />
                                 <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
@@ -622,7 +645,7 @@ export default function MyReservationsPage() {
               </tbody>
             </table>
           </div>
-
+  
           {/* Mobile version (cards) - shown only on small screens */}
           <div className="md:hidden space-y-4">
             {reservations.map((reservation) => {
@@ -655,7 +678,7 @@ export default function MyReservationsPage() {
                         reservation.status.slice(1)}
                     </span>
                   </div>
-
+  
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-500" />
@@ -664,7 +687,7 @@ export default function MyReservationsPage() {
                         {formatDate(reservation.returnDate)}
                       </p>
                     </div>
-
+  
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-2 text-gray-500" />
                       <div>
@@ -689,7 +712,7 @@ export default function MyReservationsPage() {
                         ) : null}
                       </div>
                     </div>
-
+  
                     {/* Provider info section */}
                     <div className="flex items-center">
                       <Tag className="w-4 h-4 mr-2 text-gray-500" />
@@ -703,26 +726,40 @@ export default function MyReservationsPage() {
                       )}
                     </div>
                   </div>
-
+  
                   <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between">
-                    {!reservation.isRated &&
-                    reservation.status === "completed" ? (
+                    {reservation.status === 'pending' ? (
                       <button
-                        onClick={() =>
-                          setActiveRatingReservation(reservation._id)
-                        }
+                        onClick={() => handleEditReservation(reservation._id)}
                         className="text-[#8A7D55] font-medium"
+                        type="button"
+                      >
+                        Edit Reservation
+                      </button>
+                    ) : reservation.status === 'unpaid' ? (
+                      <button
+                        onClick={() => handlePayReservation(reservation._id)}
+                        className="text-[#8A7D55] font-medium"
+                        type="button"
+                      >
+                        Pay Now
+                      </button>
+                    ) : (!reservation.isRated && reservation.status === "completed") ? (
+                      <button
+                        onClick={() => setActiveRatingReservation(reservation._id)}
+                        className="text-[#8A7D55] font-medium"
+                        type="button"
                       >
                         Review Provider
                       </button>
                     ) : (
                       <span className="text-gray-400 font-medium">
-                        {reservation.isRated
+                        {reservation.isRated && reservation.status === "completed"
                           ? "Already Reviewed"
-                          : "Review Provider"}
+                          : ""}
                       </span>
                     )}
-
+  
                     <Link
                       href={`/account/reservations/${reservation._id}`}
                       className="flex items-center text-[#8A7D55] font-medium"
@@ -743,7 +780,7 @@ export default function MyReservationsPage() {
               {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}{" "}
               reservations
             </div>
-
+  
             {/* Pagination buttons */}
             <div className="flex items-center space-x-2">
               {/* First page button */}
@@ -766,7 +803,7 @@ export default function MyReservationsPage() {
                   />
                 </svg>
               </button>
-
+  
               {/* Previous page button */}
               <button
                 onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
@@ -776,7 +813,7 @@ export default function MyReservationsPage() {
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-
+  
               {/* Page number buttons */}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                 (page) => (
@@ -793,7 +830,7 @@ export default function MyReservationsPage() {
                   </button>
                 )
               )}
-
+  
               {/* Next page button */}
               <button
                 onClick={() =>
@@ -805,7 +842,7 @@ export default function MyReservationsPage() {
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
-
+  
               {/* Last page button */}
               <button
                 onClick={() => setCurrentPage(totalPages)}

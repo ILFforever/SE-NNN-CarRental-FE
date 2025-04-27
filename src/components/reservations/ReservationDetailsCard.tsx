@@ -17,6 +17,8 @@ interface DetailsCardProps {
   daysLate: number;
   totalLateFee: number;
   userTier?: number; // user tier
+  isEditing?: boolean;
+  setIsEditing?: (editing: boolean) => void;
 }
 
 export default function ReservationDetailsCard({
@@ -33,9 +35,14 @@ export default function ReservationDetailsCard({
   calculateTotalPrice,
   daysLate,
   totalLateFee,
+  isEditing: isEditingProp,
+  setIsEditing: setIsEditingProp,
 }: DetailsCardProps) {
+  
   // State for edit mode
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingInternal, setIsEditingInternal] = useState(false);
+  const isEditing = isEditingProp !== undefined ? isEditingProp : isEditingInternal;
+  const setIsEditing = setIsEditingProp || setIsEditingInternal;
   const [startDate, setStartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
