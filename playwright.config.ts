@@ -15,7 +15,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */
-  timeout: 120_000,
+  timeout: 1200000,
   /*time out*/
   fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -37,26 +37,26 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    // {
-    //   name: 'chromium gui',
-    //   use: { 
-    //     ...devices['Desktop Chrome'],
-    //     headless: false,
-    //     viewport: { width: 1280, height: 720 },
-    //     launchOptions: {
-    //       slowMo: 1000,
-    //     }
-    //   },
-      
-    // },
-
     {
-      name: 'chromium cli',
+      name: 'chromium gui',
       use: { 
         ...devices['Desktop Chrome'],
+        headless: false,
         viewport: { width: 1280, height: 720 },
+        launchOptions: {
+          slowMo: 1000,
+        }
       },
+      
     },
+
+    // {
+    //   name: 'chromium cli',
+    //   use: { 
+    //     ...devices['Desktop Chrome'],
+    //     viewport: { width: 1280, height: 720 },
+    //   },
+    // },
 
     // {
     //   name: 'firefox',

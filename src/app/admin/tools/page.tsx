@@ -98,17 +98,6 @@ export default async function AdminToolsPage() {
           //highlight={true}
         />
 
-        {/* System Settings Panel */}
-        <AdminToolCard
-          title="System Settings"
-          description="Place Holder (Not implemented -H)"
-          icon={<Settings size={24} />}
-          link="/admin/settings"
-          color="bg-gradient-to-br from-gray-50 to-gray-100"
-          iconColor="text-gray-600"
-          borderColor="border-gray-200"
-        />
-
         {/* Transaction Settings Panel */}
         <AdminToolCard
           title="Transaction Settings"
