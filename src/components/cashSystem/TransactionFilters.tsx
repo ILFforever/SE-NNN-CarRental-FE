@@ -28,6 +28,15 @@ export default function TransactionFilters({
     });
   };
 
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+    setTransactionType("");
+    setMinAmount("");
+    setMaxAmount("");
+    onSearch({}); // Optionally trigger a fresh search with no filters
+  };
+
   return (
     <div
       className={`
@@ -173,13 +182,19 @@ export default function TransactionFilters({
         </div>
       </div>
 
-      {/* Search Button */}
-      <div className="flex-shrink-0 w-20 md:w-32 mt-4 md:mt-0">
+      {/* Search Button & Reset */}
+      <div className="flex-shrink-0 space-y-3 w-20 md:w-32 mt-4 md:mt-0">
         <button
           onClick={handleSearch}
           className="flex justify-center items-center item w-full h-8 py-2 bg-white text-black font-medium rounded-lg shadow hover:bg-gray-100 border border-[#8A7D55] transition duration-200 ease-in-out"
         >
           Search
+        </button>
+        <button
+          onClick={handleReset}
+          className="flex justify-center items-center w-20 md:w-32 h-8 py-2 bg-white text-red-500 font-medium rounded-lg shadow hover:bg-red-100 border border-red-400 transition duration-200 ease-in-out"
+        >
+          Reset
         </button>
       </div>
     </div>

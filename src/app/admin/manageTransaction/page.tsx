@@ -8,6 +8,7 @@ import TransactionFetch, {
   TransactionResponse,
 } from "@/libs/cash/transaction_fetch";
 import CircularProgress from "@mui/material/CircularProgress";
+import { summary } from "framer-motion/client";
 
 //interface Transaction
 interface Transaction {
@@ -27,6 +28,14 @@ interface Transaction {
   __v: number;
 }
 
+export interface TransactionSummary {
+  deposits: { count: number; total: number };
+  withdrawals: { count: number; total: number };
+  payments: { count: number; total: number };
+  refunds: { count: number; total: number };
+  netFlow: number;
+}//           onChange={() => setTransactionType("refund")}
+
 export default function TransactionsPage() {
   const { data: session, status } = useSession();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -35,6 +44,7 @@ export default function TransactionsPage() {
   const [error, setError] = useState<string>("");
   const [filters, setFilters] = useState<any>({});
   const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0 });
+const [summary, setSummary] = useState<TransactionSummary | null>(null);
 
   //fetchFilteredTransactions function to fetch transactions based on filters
   const fetchFilteredTransactions = async (filters: any) => {
@@ -64,6 +74,7 @@ export default function TransactionsPage() {
         },
       });
       setTransactions(response.data.transactions);
+      setSummary(response.summary);
       console.log(filters.minAmount);
       setPagination((prev) => ({
         ...prev,
@@ -126,8 +137,70 @@ export default function TransactionsPage() {
           Transaction History
         </p>
 
+        <div className="bg-white p-6 rounded-lg shadow-lg space-y-6">
+          <h2 className="text-xl md:text-3xl font-bold text-gray-800 mb-4">
+            Transaction Summary
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-blue-50 hover:bg-blue-100 p-4 rounded-lg shadow-sm">
+              <h3 className="text-sm font-semibold text-blue-600">Deposits</h3>
+              <p className="text-lg font-medium text-gray-800">
+                {summary?.deposits?.count || 0}{" "}
+                <span className="text-sm text-gray-500">
+                  (Total:{" "}
+                  {summary?.deposits?.total
+                    ? summary.deposits.total.toFixed(2)
+                    : 0}
+                  )
+                </span>
+              </p>
+            </div>
+            <div className="bg-green-50 hover:bg-green-100 p-4 rounded-lg shadow-sm">
+              <h3 className="text-sm font-semibold text-green-600">Payments</h3>
+              <p className="text-lg font-medium text-gray-800">
+                {summary?.payments?.count || 0}{" "}
+                <span className="text-sm text-gray-500">
+                  (Total:{" "}
+                  {summary?.payments?.total
+                    ? summary.payments.total.toFixed(2)
+                    : 0}
+                  )
+                </span>
+              </p>
+            </div>
+            <div className="bg-red-50 hover:bg-red-100 p-4 rounded-lg shadow-sm">
+              <h3 className="text-sm font-semibold text-red-600">Refunds</h3>
+              <p className="text-lg font-medium text-gray-800">
+                {summary?.refunds?.count || 0}{" "}
+                <span className="text-sm text-gray-500">
+                  (Total:{" "}
+                  {summary?.refunds?.total
+                    ? summary.refunds.total.toFixed(2)
+                    : 0}
+                  )
+                </span>
+              </p>
+            </div>
+            <div className="bg-yellow-50 hover:bg-yellow-100 p-4 rounded-lg shadow-sm">
+              <h3 className="text-sm font-semibold text-yellow-600">
+                Withdrawals
+              </h3>
+              <p className="text-lg font-medium text-gray-800">
+                {summary?.withdrawals?.count || 0}{" "}
+                <span className="text-sm text-gray-500">
+                  (Total:{" "}
+                  {summary?.withdrawals?.total
+                    ? summary.withdrawals.total.toFixed(2)
+                    : 0}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Content Filter & Transaction list */}
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6 mt-8">
           {/* Filter */}
           <div className="w-full md:w-[30%] xl:w-[20%]">
             <TransactionFilters onSearch={setFilters} />
