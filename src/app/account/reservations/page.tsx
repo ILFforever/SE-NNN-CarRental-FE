@@ -428,8 +428,8 @@ export default function MyReservationsPage() {
   };
   
   const handlePayReservation = (reservationId: string): void => {
-    // Will be implemented later
-    console.log(`Pay for reservation ${reservationId}`);
+    // นำทางไปยังหน้าชำระเงิน พร้อมส่ง reservationId เพื่อใช้ในการระบุการจองที่ต้องชำระ
+    router.push(`/payment?reservationId=${reservationId}`);
   };
   
   return (
