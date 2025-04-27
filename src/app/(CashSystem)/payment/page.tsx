@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { formatDate, calculateDays } from "@/utils/dateUtils";
+import { getAllServices } from "@/libs/getAllServices"; // Import the getAllServices function
 
 // Import components
 import { LoadingState } from "@/components/payment/LoadingState";
@@ -28,6 +29,13 @@ export default function PaymentPage() {
 
   // รับ reservationId จาก URL query parameters
   const reservationId = searchParams.get("reservationId");
+
+  // ใช้ getAllServices hook เพื่อดึงข้อมูลบริการทั้งหมด
+  const { 
+    services, 
+    isLoading: servicesLoading, 
+    error: servicesError 
+  } = session?.user?.token ? getAllServices(session.user.token) : { services: [], isLoading: false, error: "" };
 
   // ดึงข้อมูลการจองและเครดิตของผู้ใช้
   useEffect(() => {
@@ -188,13 +196,13 @@ export default function PaymentPage() {
   };
 
   // แสดง loading
-  if (loading) {
+  if (loading || servicesLoading) {
     return <LoadingState />;
   }
 
   // แสดงข้อความข้อผิดพลาด
-  if (error) {
-    return <ErrorState error={error} />;
+  if (error || servicesError) {
+    return <ErrorState error={error || servicesError} />;
   }
 
   // แสดงข้อความเมื่อชำระเงินสำเร็จ
@@ -228,7 +236,8 @@ export default function PaymentPage() {
 
   // ดึงข้อมูล services และ selectedServiceIds
   const selectedServiceIds = reservation.service || [];
-  const allServices = reservation.allServices || [];
+  // ใช้ services จาก getAllServices แทน reservation.allServices
+  const allServices = services;
 
   // หน้าชำระเงินหลัก
   return (
