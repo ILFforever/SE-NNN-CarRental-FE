@@ -89,6 +89,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
 
   //Log out
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -133,6 +134,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     "us1-4playwright@gmail.com"
   );
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -210,6 +212,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     await page.waitForTimeout(500);
   }
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
   
@@ -260,7 +263,10 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.locator('div').filter({ hasText: /^DeactivateCancel$/ }).getByRole('button').first().click();
   await expect(page.getByRole('main')).toContainText('Car provider deactivated successfully');
 
-  await page.goto("http://localhost:3000/admin/tools");
+  await page.getByRole('button', { name: 'Admin' }).click();
+  await page.getByRole('link', { name: 'Admin Tools' }).click();
+  await page.locator('.MuiBackdrop-root').click();
+
   await page.getByRole('link', { name: 'Manage Admins Create and' }).click();
   await expect(page.getByRole('heading')).toContainText('Manage Administrators');
   await page.getByText('us1-4 playwright test').click();
@@ -272,10 +278,10 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   
   //SIgn Out
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await expect(page.getByRole('heading')).toContainText('Sign Out');
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
   await expect(page.locator('body')).toContainText('Register');
 });
-
 
 test("New Provider unverified", async ({ page }) => {
   await page.goto("http://localhost:3000/");
@@ -347,6 +353,7 @@ test("New Provider unverified", async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
   await page.getByRole('button', { name: 'Sign In as User' }).click();
+  await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Admin' }).click();
   await page.getByRole('link', { name: 'Admin Tools' }).click();
   await page.locator('.MuiBackdrop-root').click();
