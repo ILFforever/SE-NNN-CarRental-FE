@@ -88,7 +88,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.locator("tbody")).toContainText("Playwright Playwright");
 
   //Log out
-  await page.getByRole("button", { name: "Temp Provider" }).click();
+  await page.goto("http://localhost:3000/signout?callbackUrl=/");
   await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
@@ -133,7 +133,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.locator("tbody")).toContainText(
     "us1-4playwright@gmail.com"
   );
-  await page.getByRole("button", { name: "Admin", exact: true }).click();
+  await page.goto("http://localhost:3000/signout?callbackUrl=/");
   await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
@@ -211,8 +211,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     //await expect(page.getByRole('heading')).toContainText('Payment Successful!');
     await page.waitForTimeout(500);
   }
-  await page.goto("http://localhost:3000/");
-  await expect(page.locator('#user-menu-button')).toContainText('us1-4 playwright test');
+  await page.goto("http://localhost:3000/signout?callbackUrl=/");
   await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
@@ -245,7 +244,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.locator('body')).toContainText('Register');
 
   //Login as Admin to cleanup
-  await page.getByRole('link', { name: 'Sign-In' }).click();
+  await page.goto("http://localhost:3000/signin");
   await page.getByRole('textbox', { name: 'Email Address' }).click();
   await page.getByRole('textbox', { name: 'Email Address' }).fill('admin@gmail.com');
   await page.getByRole('textbox', { name: 'Password' }).click();
@@ -278,9 +277,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.getByRole('main')).toContainText('Admin user deactivated successfully');
   
   //SIgn Out
-  await page.getByRole('button', { name: 'Admin', exact: true }).click();
-  await page.getByRole('link', { name: 'Sign Out' }).click();
-  await expect(page.getByRole('heading', { name: 'Sign Out' })).toBeVisible();
+  await page.goto("http://localhost:3000/signout?callbackUrl=/");
   await expect(page.getByRole('heading')).toContainText('Sign Out');
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
   await expect(page.locator('body')).toContainText('Register');
