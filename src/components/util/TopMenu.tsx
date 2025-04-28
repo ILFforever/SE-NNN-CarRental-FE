@@ -448,7 +448,24 @@ export default function TopMenu() {
                           Admin Tools
                         </button>
                       )}
-
+                      {session.user.role === "provider" && (
+                        <button
+                          onClick={() => handleNavigation("/provider/tools")}
+                          className="w-full text-left px-3 py-2 text-blue-600 font-semibold rounded-lg transition-all duration-200 hover:bg-red-50 mb-1 flex items-center"
+                        >
+                          <AdminIcon className="w-5 h-5 mr-2" />
+                          Provider Tools
+                        </button>
+                      )}
+                      {session.user.role === "provider" && (
+                        <button
+                          onClick={() => handleNavigation("/provider/dashboard")}
+                          className="w-full text-left px-3 py-2 text-gray-600 font-semibold rounded-lg transition-all duration-200 hover:bg-red-50 mb-1 flex items-center"
+                        >
+                          <ReservationsIcon className="w-5 h-5 mr-2" />
+                          My Dashboard
+                        </button>
+                      )}
                       {/* My Profile */}
                       <button
                         onClick={() =>
