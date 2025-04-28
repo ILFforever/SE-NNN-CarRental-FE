@@ -67,7 +67,12 @@ export default function ReservationManagement({
   const [providers, setProviders] = useState<{ [key: string]: Provider }>({});
 
   const [status, setStatus] = useState<string | undefined>(initialStatus);
-
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentCount, setCurrentCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [nextPage, setNextPage] = useState(0);
+  const [prevPage, setPrevPage] = useState(0);
   // Fetch all rentals data
   useEffect(() => {
     const fetchRentals = async () => {
@@ -88,7 +93,7 @@ export default function ReservationManagement({
           queryParams.append("status", status);
         }
 
-        // Add page to query
+        // Add pagination parameters
         queryParams.append("page", currentPage.toString());
         queryParams.append("limit", itemsPerPage.toString());
 
@@ -129,7 +134,7 @@ export default function ReservationManagement({
         }
 
         // Process the rental data
-        const rentals = data.data;
+        const rentals = data.data || [];
 
         // Create maps for cars and users from the populated data
         const carMap: { [key: string]: Car } = {};
@@ -165,7 +170,6 @@ export default function ReservationManagement({
 
               if (providersData.success && Array.isArray(providersData.data)) {
                 providersData.data.forEach((provider: Provider) => {
-                  // Fix: Check that _id exists before using it as an index
                   if (provider._id) {
                     providerMap[provider._id] = provider;
                   }
@@ -185,13 +189,38 @@ export default function ReservationManagement({
         setRentals(rentals);
         setFilteredRentals(rentals);
 
-        // Update total pages based on server-side pagination
-        setTotalPages(data.pagination?.totalPages || 1);
+        // Update pagination information from server response
+        // Calculate total pages based on totalCount and itemsPerPage
+        const totalItems = data.totalCount || 0;
+        setTotalPages(Math.ceil(totalItems / itemsPerPage));
+
+        // Store count information
+        setTotalCount(data.totalCount || 0);
+        setCurrentCount(data.count || 0);
+
+        // Store pagination info for next/prev
+        if (data.pagination) {
+          setHasNextPage(!!data.pagination.next);
+          setHasPrevPage(!!data.pagination.prev);
+
+          // Optionally store the next/prev page info
+          if (data.pagination.next) {
+            setNextPage(data.pagination.next.page);
+          }
+          if (data.pagination.prev) {
+            setPrevPage(data.pagination.prev.page);
+          }
+        } else {
+          setHasNextPage(false);
+          setHasPrevPage(false);
+        }
       } catch (err) {
         console.error("Error fetching rentals:", err);
         setError(
           err instanceof Error ? err.message : "Failed to fetch rental data"
         );
+        setRentals([]);
+        setFilteredRentals([]);
       } finally {
         setIsLoading(false);
       }
@@ -455,7 +484,6 @@ export default function ReservationManagement({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
   // Execute actions on rentals
   const executeAction = (
     action:
@@ -1184,38 +1212,116 @@ export default function ReservationManagement({
             </table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-6">
-              <nav className="flex items-center">
+          {filteredRentals.length > 0 && (
+            <div className="mt-6 flex flex-col items-center space-y-4">
+              {/* Pagination Controls */}
+              <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg shadow-sm p-1">
+                {/* First Page */}
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                  aria-label="First page"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+
+                {/* Previous Page */}
                 <button
                   onClick={() =>
-                    setCurrentPage((page) => Math.max(page - 1, 1))
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
-                  disabled={currentPage <= 1}
-                  className="px-3 py-1 rounded-md mr-2 bg-white border border-gray-300 disabled:opacity-50"
+                  disabled={!hasPrevPage}
+                  className="p-2 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                  aria-label="Previous page"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
 
-                <span className="text-sm text-gray-700">
+                {/* Page Indicator */}
+                <div className="px-4 py-2 bg-gray-100 rounded-md text-gray-700 text-sm font-medium">
                   Page {currentPage} of {totalPages}
-                </span>
+                </div>
 
+                {/* Next Page */}
                 <button
-                  onClick={() =>
-                    setCurrentPage((page) => Math.min(page + 1, totalPages))
-                  }
-                  disabled={currentPage >= totalPages}
-                  className="px-3 py-1 rounded-md ml-2 bg-white border border-gray-300 disabled:opacity-50"
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  disabled={!hasNextPage}
+                  className="p-2 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                  aria-label="Next page"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
-              </nav>
+
+                {/* Last Page */}
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={!hasNextPage}
+                  className="p-2 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+                  aria-label="Last page"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+              {/* Pagination Information */}
+              <div className="text-sm text-gray-600">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(
+                  (currentPage - 1) * itemsPerPage + currentCount,
+                  totalCount
+                )}{" "}
+                of {totalCount} reservations
+              </div>
+              {/* Page Size Selector */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Rows per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    const newSize = parseInt(e.target.value);
+                    setItemsPerPage(newSize);
+                    setCurrentPage(1); // Reset to first page when changing page size
+                  }}
+                  className="border border-gray-300 rounded-md text-sm px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                >
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
             </div>
           )}
         </>
       )}
+
       {/* Confirmation Modal */}
       {selectedRental && (
         <ConfirmationModal
