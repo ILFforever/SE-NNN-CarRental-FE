@@ -1,60 +1,69 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DatePicker } from '@mui/x-date-pickers';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Dayjs } from 'dayjs';
-import { useRouter } from 'next/navigation';
-import {
-  MapPin,
-  Calendar,
-  Clock,
-  Search,
-  ChevronDown,
-} from 'lucide-react';
-import SimpleTimePicker from './timePicker';
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { DatePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Dayjs } from "dayjs";
+import { useRouter } from "next/navigation";
+import { MapPin, Calendar, Clock, Search, ChevronDown } from "lucide-react";
+import SimpleTimePicker from "./timePicker";
 
-type SearchField = 'location' | 'pickup-date' | 'pickup-time' | 'return-date' | 'return-time' | null;
+type SearchField =
+  | "location"
+  | "pickup-date"
+  | "pickup-time"
+  | "return-date"
+  | "return-time"
+  | null;
 
 export default function BannerSearch() {
   const router = useRouter();
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState("");
   const [pickupDate, setPickupDate] = useState<Dayjs | null>(null);
   const [returnDate, setReturnDate] = useState<Dayjs | null>(null);
   const [activeField, setActiveField] = useState<SearchField>(null);
-  const [pickupTime, setPickupTime] = useState('10:00 AM');
-  const [returnTime, setReturnTime] = useState('10:00 AM');
+  const [pickupTime, setPickupTime] = useState("10:00 AM");
+  const [returnTime, setReturnTime] = useState("10:00 AM");
   const [isPickupDateOpen, setIsPickupDateOpen] = useState(false);
   const [isReturnDateOpen, setIsReturnDateOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const locations = [
-    { name: 'London', type: 'City', icon: '🏙️' },
-    { name: 'Heathrow Airport', type: 'Airport', icon: '✈️' },
-    { name: 'Manchester', type: 'City', icon: '🏙️' },
-    { name: 'Edinburgh', type: 'City', icon: '🏙️' },
+    { name: "London", type: "City", icon: "🏙️" },
+    { name: "Heathrow Airport", type: "Airport", icon: "✈️" },
+    { name: "Manchester", type: "City", icon: "🏙️" },
+    { name: "Edinburgh", type: "City", icon: "🏙️" },
   ];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setActiveField(null);
         setIsPickupDateOpen(false);
         setIsReturnDateOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSearch = () => {
-    const pickupFormatted = pickupDate ? pickupDate.format('YYYY-MM-DD') : '';
-    const returnFormatted = returnDate ? returnDate.format('YYYY-MM-DD') : '';
+    const pickupFormatted = pickupDate ? pickupDate.format("YYYY-MM-DD") : "";
+    const returnFormatted = returnDate ? returnDate.format("YYYY-MM-DD") : "";
     router.push(
-      `/catalog?location=${encodeURIComponent(location)}&startDate=${pickupFormatted}&pickupTime=${encodeURIComponent(pickupTime)}&endDate=${returnFormatted}&returnTime=${encodeURIComponent(returnTime)}`
+      `/catalog?location=${encodeURIComponent(
+        location
+      )}&startDate=${pickupFormatted}&pickupTime=${encodeURIComponent(
+        pickupTime
+      )}&endDate=${returnFormatted}&returnTime=${encodeURIComponent(
+        returnTime
+      )}`
     );
   };
 
@@ -69,7 +78,7 @@ export default function BannerSearch() {
         <div
           className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
           onClick={() => {
-            setLocation('Current Location');
+            setLocation("Current Location");
             setActiveField(null);
           }}
         >
@@ -77,7 +86,9 @@ export default function BannerSearch() {
           <span>Current Location</span>
         </div>
         <div className="border-t my-2"></div>
-        <div className="text-xs text-gray-500 px-4 mb-2">Popular Locations (Beta)</div>
+        <div className="text-xs text-gray-500 px-4 mb-2">
+          Popular Locations (Beta)
+        </div>
         {locations.map((loc, index) => (
           <div
             key={index}
@@ -99,7 +110,7 @@ export default function BannerSearch() {
   );
 
   const renderDateTimeField = (
-    type: 'pickup' | 'return',
+    type: "pickup" | "return",
     date: Dayjs | null,
     time: string,
     setDate: (d: Dayjs | null) => void,
@@ -110,7 +121,7 @@ export default function BannerSearch() {
     <div className="relative flex-1 border-l border-gray-200 pl-2">
       <div className="flex flex-col px-3 py-2">
         {/* Date section */}
-        <div 
+        <div
           className="flex items-center space-x-2 group cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
@@ -118,7 +129,10 @@ export default function BannerSearch() {
             setIsDatePickerOpen(!isDatePickerOpen);
           }}
         >
-          <Calendar className="text-gray-500 group-hover:text-black" size={18} />
+          <Calendar
+            className="text-gray-500 group-hover:text-black"
+            size={18}
+          />
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               value={date}
@@ -130,31 +144,29 @@ export default function BannerSearch() {
               onClose={() => setIsDatePickerOpen(false)}
               slotProps={{
                 textField: {
-                  variant: 'standard',
-                  InputProps: { 
+                  variant: "standard",
+                  InputProps: {
                     disableUnderline: true,
                     endAdornment: null, // removes calendar icon
-                    className: 'text-sm cursor-pointer',
+                    className: "text-sm cursor-pointer",
                     readOnly: true,
                   },
-                  placeholder: `${type === 'pickup' ? 'Pickup' : 'Return'} Date`,
+                  placeholder: `${
+                    type === "pickup" ? "Pickup" : "Return"
+                  } Date`,
                   onClick: (e) => {
                     e.stopPropagation();
                     setIsDatePickerOpen(!isDatePickerOpen);
-                  }
-                }
+                  },
+                },
               }}
             />
           </LocalizationProvider>
         </div>
-        
+
         {/* Time section - using our custom time picker */}
         <div className="mt-2">
-          <SimpleTimePicker
-            value={time}
-            onChange={setTime}
-            use12Hours={true}
-          />
+          <SimpleTimePicker value={time} onChange={setTime} use12Hours={true} />
         </div>
       </div>
     </div>
@@ -163,7 +175,7 @@ export default function BannerSearch() {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-x-0 top-[30%] md:top-[10%] z-40 flex justify-center px-4"
+      className="absolute inset-x-0 top-[30%] md:top-[10%] z-40 flex justify-center items-center px-4 hidden md:flex" // Added hidden md:block
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -188,9 +200,9 @@ export default function BannerSearch() {
             background: #b1b1b1;
           }
         `}</style>
-        
-        {/* Location */}
-        <div className="relative flex-1">
+
+         {/* Location */}
+         <div className="relative flex-1">
           <div
             className="flex items-center p-3 cursor-pointer group"
             onClick={() => {
