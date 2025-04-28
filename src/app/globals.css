@@ -151,3 +151,62 @@ button {
 .animate-slideUp {
   animation: slideUp 0.3s ease-out;
 }
+
+/* Prevent layout shifts from scrollbar changes */
+html.layout-stable {
+  /* Modern approach - tell browser to always reserve space for scrollbar */
+  scrollbar-gutter: stable;
+  /* Always show the scrollbar to prevent layout shifts */
+  overflow-y: scroll;
+}
+
+/* Create a CSS variable for scrollbar width that can be referenced in JS and CSS */
+:root {
+  --scrollbar-width: 0px;
+}
+
+/* When body is locked due to menu being open */
+body.body-locked {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Animation for dropdown menus */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Apply animation to dropdown content */
+.dropdown-menu {
+  animation: fadeInScale 0.2s ease-out forwards;
+}
+
+/* Make sure scrollbar width compensation is applied correctly */
+@media screen and (min-width: 768px) {
+  body.body-locked .fixed-header {
+    padding-right: var(--scrollbar-width);
+  }
+}
+
+.top-menu-container {
+  width: 100%; 
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+/* When menu is open */
+.menu-open .top-menu-container {
+  padding-right: var(--scrollbar-width, 17px);
+}
