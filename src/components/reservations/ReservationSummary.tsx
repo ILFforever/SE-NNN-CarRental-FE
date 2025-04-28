@@ -167,22 +167,21 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   }, [session]);
 
   // Handle reservation submission with deposit
-
   const handleSubmitWithDeposit = async (
     e?: React.MouseEvent<HTMLButtonElement>
   ) => {
-    // ป้องกันการทำงานปกติของฟอร์ม
+    // Prevent default form action
     if (e && e.preventDefault) {
       e.preventDefault();
     }
 
-    // ล้างข้อความแจ้งเตือนเก่า
+    // Clear previous messages
     setError(null);
     setSuccessMessage(null);
     setIsProcessing(true);
     setReservationId(null);
 
-    // ตรวจสอบว่ามีเครดิตเพียงพอหรือไม่
+    // Check if user has sufficient credits
     if (creditData.credits < depositAmount) {
       setError(
         `Insufficient credits. You need ${formatCurrency(
@@ -196,23 +195,23 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
     }
 
     try {
-      // เตรียมข้อมูลการเช่า
+      // Prepare rental data with pickup and return times
       const rentalData = {
         car: car._id,
         startDate: pickupDate?.toISOString(),
         returnDate: returnDate?.toISOString(),
-        pickupTime: pickupTime,
-        returnTime: returnTime,
+        pickupTime: pickupTime, // Send pickup time to API
+        returnTime: returnTime, // Send return time to API
         price: roundedCarCost,
         service: selectedServices,
         servicePrice: roundedServicesCost,
         discountAmount: roundedDiscountAmount,
         finalPrice: roundedFinalPrice,
         user: userId,
-        payDeposit: true
+        payDeposit: true,
       };
 
-      // เรียก API เพื่อสร้างการจองพร้อมเงินมัดจำ
+      // Send API request
       if (!session?.user?.token) {
         throw new Error("No authentication token available");
       }
@@ -232,26 +231,22 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         throw new Error(data.message || "Failed to create reservation");
       }
 
-      // บันทึก reservation ID ถ้ามี
+      // Save reservation ID if available
       if (data._id) {
         setReservationId(data._id);
       }
 
-      // ลดเครดิตและแสดงข้อความสำเร็จ
-      const remainingCredits = creditData.credits - depositAmount;
-
-      // แสดงข้อความสำเร็จ
+      // Show success message
       setSuccessMessage(
         `Reservation created successfully! Deposit of ${formatCurrency(
           depositAmount
         )} has been paid.`
       );
 
-      // อัปเดตข้อมูลเครดิต
+      // Update credit data
       fetchCreditData();
-
     } catch (err) {
-      // จัดการข้อผิดพลาด
+      // Handle errors
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred"
       );
@@ -262,7 +257,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
 
   const handleCloseSuccessMessage = () => {
     setSuccessMessage(null);
-    
+
     if (typeof onSubmit === "function") {
       try {
         // แทนที่ window.alert ชั่วคราว
