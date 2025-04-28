@@ -1,202 +1,301 @@
-"use client";
-import React, {useState} from "react";
+import React, { useState, useEffect } from 'react';
+import { 
+  Filter, 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  RefreshCw, 
+  ShoppingCart, 
+  Check, 
+  Clock,
+  X,
+  Calendar,
+  Search,
+  DollarSign,
+  Hash
+} from 'lucide-react';
 
-/**
- * A responsive filter panel for transactions.
- * - Mobile: wraps items horizontally
- * - Desktop (lg+): vertical sidebar
- */
-export default function TransactionFilters({
-  onSearch,
-}: {
+interface FilterProps {
   onSearch: (filters: any) => void;
-}) {
-  // State variables for filter inputs
+}
+
+const EnhancedTransactionFilters: React.FC<FilterProps> = ({ onSearch }) => {
+  // State for all filter options
+  const [transactionType, setTransactionType] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [transactionType, setTransactionType] = useState<string>("");
-  const [minAmount, setMinAmount] = useState<number | string>("");
-  const [maxAmount, setMaxAmount] = useState<number | string>("");
-
-  const handleSearch = () => {
-    onSearch({
+  const [reference, setReference] = useState<string>("");
+  const [rentalId, setRentalId] = useState<string>("");
+  const [minAmount, setMinAmount] = useState<string>("");
+  const [maxAmount, setMaxAmount] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+  
+  // Apply filters when any filter changes
+  useEffect(() => {
+    const filters = {
+      transactionType,
+      status,
       startDate,
       endDate,
-      transactionType,
-      minAmount: minAmount ? parseFloat(minAmount.toString()) : undefined,
-      maxAmount: maxAmount ? parseFloat(maxAmount.toString()) : undefined,
-    });
-  };
-
-  const handleReset = () => {
+      reference,
+      rentalId,
+      minAmount,
+      maxAmount,
+      search,
+    };
+    
+    onSearch(filters);
+  }, [transactionType, status, reference, rentalId, search]);
+  
+  // Debounce date and amount filters to avoid too many API calls
+  useEffect(() => {
+    const dateAmountTimer = setTimeout(() => {
+      onSearch({
+        transactionType,
+        status,
+        startDate,
+        endDate,
+        reference,
+        rentalId,
+        minAmount,
+        maxAmount,
+        search,
+      });
+    }, 800);
+    
+    return () => clearTimeout(dateAmountTimer);
+  }, [startDate, endDate, minAmount, maxAmount]);
+  
+  // Handle filter reset
+  const resetFilters = () => {
+    setTransactionType("");
+    setStatus("");
     setStartDate("");
     setEndDate("");
-    setTransactionType("");
+    setReference("");
+    setRentalId("");
     setMinAmount("");
     setMaxAmount("");
-    onSearch({}); // Optionally trigger a fresh search with no filters
+    setSearch("");
   };
 
   return (
-    <div
-      className={`
-      bg-white border border-gray-200 rounded-2xl p-4 md:p-6
-        justify-center items-center
-
-      /* Mobile: wrap horizontally */
-      flex flex-row flex-wrap gap-3 
-
-      /* Desktop: vertical list */
-      lg:flex-col lg:flex-nowrap lg:gap-6 lg:w-64 
-      `}
-    >
-      {/* Start Date */}
-      <div className="flex-shrink-0 w-40">
-        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
-          Start Date
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-800 flex items-center">
+          <Filter className="w-5 h-5 mr-2 text-[#8A7D55]" />
+          Filters
+        </h3>
+        <button 
+          onClick={resetFilters}
+          className="text-sm text-[#8A7D55] hover:text-[#766b48] transition-colors"
+        >
+          Reset All
+        </button>
+      </div>
+      
+      {/* Search */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center">
+          <Search className="w-4 h-4 mr-1 text-gray-400" />
+          Search
         </label>
         <input
-          type="date"
-          className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search in all fields"
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
         />
       </div>
-
-      {/* End Date */}
-      <div className="flex-shrink-0 w-40">
-        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
-          End Date
-        </label>
-        <input
-          type="date"
-          className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-        />
-      </div>
-
+      
       {/* Transaction Type */}
-      <div className="flex-shrink-0 w-40 space-y-2">
-        <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
-          Transaction Type
-        </label>
-        <div className="flex items-center">
-          <input
-            id="filter-deposit"
-            name="filter-type"
-            type="radio"
-            value="deposit"
-            checked={transactionType === "deposit"}
-            onChange={() => setTransactionType("deposit")}
-            className="h-4 w-4 border-gray-300"
-          />
-          <label
-            htmlFor="filter-deposit"
-            className="ml-2 text-sm md:text-md text-gray-700"
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 block mb-1">Transaction Type</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setTransactionType(transactionType === "deposit" ? "" : "deposit")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              transactionType === "deposit"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
           >
+            <ArrowUpRight className="w-4 h-4 mr-1" />
             Deposit
-          </label>
-        </div>
-        <div className="flex items-center">
-          <input
-            id="filter-withdraw"
-            name="filter-type"
-            type="radio"
-            value="withdrawal"
-            checked={transactionType === "withdrawal"}
-            onChange={() => setTransactionType("withdrawal")}
-            className="h-4 w-4 border-gray-300"
-          />
-          <label
-            htmlFor="filter-withdraw"
-            className="ml-2 text-sm md:text-md text-gray-700"
+          </button>
+          <button
+            type="button"
+            onClick={() => setTransactionType(transactionType === "withdrawal" ? "" : "withdrawal")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              transactionType === "withdrawal"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
           >
-            Withdraw
-          </label>
-        </div>
-        <div className="flex items-center">
-          <input
-            id="filter-payment"
-            name="filter-type"
-            type="radio"
-            value="payment"
-            checked={transactionType === "payment"}
-            onChange={() => setTransactionType("payment")}
-            className="h-4 w-4 border-gray-300"
-          />
-          <label
-            htmlFor="filter-payment"
-            className="ml-2 text-sm md:text-md text-gray-700"
+            <ArrowDownLeft className="w-4 h-4 mr-1" />
+            Withdrawal
+          </button>
+          <button
+            type="button"
+            onClick={() => setTransactionType(transactionType === "payment" ? "" : "payment")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              transactionType === "payment"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
           >
+            <ShoppingCart className="w-4 h-4 mr-1" />
             Payment
-          </label>
-        </div>
-        <div className="flex items-center">
-          <input
-            id="filter-refund"
-            name="filter-type"
-            type="radio"
-            value="refund"
-            checked={transactionType === "refund"}
-            onChange={() => setTransactionType("refund")}
-            className="h-4 w-4 border-gray-300"
-          />
-          <label
-            htmlFor="filter-refund"
-            className="ml-2 text-sm md:text-md text-gray-700"
+          </button>
+          <button
+            type="button"
+            onClick={() => setTransactionType(transactionType === "refund" ? "" : "refund")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              transactionType === "refund"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
           >
+            <RefreshCw className="w-4 h-4 mr-1" />
             Refund
-          </label>
+          </button>
         </div>
       </div>
-
-      {/* Amount Range */}
-      <div className="flex flex-col align-center items-center w-40 space-y-2">
-        <div className="block text-sm md:text-md font-bold text-[#8A7D55]">
-          Range of Amount
+      
+      {/* Status */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 block mb-1">Status</label>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setStatus(status === "completed" ? "" : "completed")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              status === "completed"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
+          >
+            <Check className="w-4 h-4 mr-1" />
+            Completed
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus(status === "pending" ? "" : "pending")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              status === "pending"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            Pending
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus(status === "failed" ? "" : "failed")}
+            className={`flex items-center justify-center p-2 rounded-md text-sm ${
+              status === "failed"
+                ? "bg-[#8A7D55] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            } transition-colors`}
+          >
+            <X className="w-4 h-4 mr-1" />
+            Failed
+          </button>
         </div>
-        <div className="flex flex-row gap-3">
-          <div className="flex-shrink-0 w-20">
-            <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
-              Min
-            </label>
+      </div>
+      
+      {/* Date Range */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center">
+          <Calendar className="w-4 h-4 mr-1 text-gray-400" />
+          Date Range
+        </label>
+        <div className="grid grid-cols-1 gap-2">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">From</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">To</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Amount Range */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center">
+          <DollarSign className="w-4 h-4 mr-1 text-gray-400" />
+          Amount Range
+        </label>
+        <div className="grid grid-cols-1 gap-2">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Min Amount</label>
             <input
               type="number"
-              className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
               value={minAmount}
               onChange={(e) => setMinAmount(e.target.value)}
+              placeholder="0"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
             />
           </div>
-          <div className="flex-shrink-0 w-20">
-            <label className="block text-sm md:text-md font-bold text-[#8A7D55]">
-              Max
-            </label>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Max Amount</label>
             <input
               type="number"
-              className="mt-2 h-8 md:h-10 block w-full border-2 border-gray-300 rounded-lg p-2"
               value={maxAmount}
               onChange={(e) => setMaxAmount(e.target.value)}
+              placeholder="Any"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
             />
           </div>
         </div>
       </div>
-
-      {/* Search Button & Reset */}
-      <div className="flex-shrink-0 space-y-3 w-20 md:w-32 mt-4 md:mt-0">
-        <button
-          onClick={handleSearch}
-          className="flex justify-center items-center item w-full h-8 py-2 bg-white text-black font-medium rounded-lg shadow hover:bg-gray-100 border border-[#8A7D55] transition duration-200 ease-in-out"
-        >
-          Search
-        </button>
-        <button
-          onClick={handleReset}
-          className="flex justify-center items-center w-20 md:w-32 h-8 py-2 bg-white text-red-500 font-medium rounded-lg shadow hover:bg-red-100 border border-red-400 transition duration-200 ease-in-out"
-        >
-          Reset
-        </button>
+      
+      {/* Reference ID */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center">
+          <Hash className="w-4 h-4 mr-1 text-gray-400" />
+          Reference ID
+        </label>
+        <input
+          type="text"
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+          placeholder="Transaction reference"
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
+        />
+      </div>
+      
+      {/* Rental ID */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center">
+          <Hash className="w-4 h-4 mr-1 text-gray-400" />
+          Rental ID
+        </label>
+        <input
+          type="text"
+          value={rentalId}
+          onChange={(e) => setRentalId(e.target.value)}
+          placeholder="Related booking ID"
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#8A7D55] focus:border-transparent outline-none"
+        />
       </div>
     </div>
   );
-}
+};
+
+export default EnhancedTransactionFilters;

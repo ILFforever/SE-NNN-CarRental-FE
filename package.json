@@ -17,6 +17,7 @@
     "@mui/x-date-pickers": "^7.13.0",
     "@reduxjs/toolkit": "^2.2.8",
     "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.9.0",
     "lucide-react": "^0.483.0",
