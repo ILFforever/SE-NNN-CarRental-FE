@@ -89,7 +89,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
 
   //Log out
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  //await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -134,12 +134,11 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     "us1-4playwright@gmail.com"
   );
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
-  const responsePromise = page.waitForResponse(response => 
-    response.url().startsWith('https://droplet.ngixx.in.th/api/v1/qrcode/')
+  const responsePromise = page.waitForResponse((response) =>
+    response.url().startsWith("https://droplet.ngixx.in.th/api/v1/qrcode/")
   );
 
   //Log in as the new account and add funds
@@ -167,18 +166,18 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.getByRole("button", { name: "Confirm" }).click();
   //const qrCodeId = await qrCodePromise;
   const response = await responsePromise;
-  const qrCodeId = response.url().split('/').pop();
+  const qrCodeId = response.url().split("/").pop();
 
   if (qrCodeId) {
     const retrieveUrl = `https://se-nnn-carrental-be.fly.dev/api/v1/credits/topup/retrieve?trans_id=${qrCodeId}`;
     await page.goto(retrieveUrl);
   }
   //Back to home
+  console.log("Starting populate rentals");
   for (let i = 0; i < 10; i++) {
     await page.goto("http://localhost:3000/");
-    console.log(i +": pass");
     await page.waitForTimeout(500);
-    await page.getByRole('link', { name: 'Catalog' }).click();
+    await page.getByRole("link", { name: "Catalog" }).click();
     await page
       .locator('[data-test-id="catalog"] div')
       .filter({ hasText: "$11.00/daysedanPlaywright" })
@@ -197,25 +196,33 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     await expect(page.getByRole("main")).toContainText("Playwright Playwright");
     await page.getByText("Close").click();
     await page.getByRole("link", { name: "View Details" }).first().click();
-    await page.getByRole('button', { name: 'Confirm Reservation' }).click();
-    await page.getByRole('button', { name: 'Confirm reservation', exact: true }).click();
+    await page.getByRole("button", { name: "Confirm Reservation" }).click();
+    await page
+      .getByRole("button", { name: "Confirm reservation", exact: true })
+      .click();
     await page.waitForTimeout(500);
-    await page.getByRole('button', { name: 'Complete Reservation' }).click();
-    await page.getByRole('button', { name: 'Complete reservation', exact: true }).click();
+    await page.getByRole("button", { name: "Complete Reservation" }).click();
+    await page
+      .getByRole("button", { name: "Complete reservation", exact: true })
+      .click();
     await page.waitForTimeout(500);
-    await expect(page.getByRole('main')).toContainText('Reservation completed successfully');
-    await page.getByRole('link', { name: 'Back to All Reservations' }).click();
+    await expect(page.getByRole("main")).toContainText(
+      "Reservation completed successfully"
+    );
+    await page.getByRole("link", { name: "Back to All Reservations" }).click();
     await page.getByRole("button", { name: "Pay Now" }).click();
-    await expect(page.locator('h1')).toContainText('Complete Your Payment');
+    await expect(page.locator("h1")).toContainText("Complete Your Payment");
     await page.getByRole("button", { name: "Pay $" }).click();
     //await expect(page.getByRole('heading')).toContainText('Payment Successful!');
+    console.log(i + ": pass");
     await page.waitForTimeout(500);
   }
+  await page.getByRole("button", { name: "us1-4 playwright test" }).click();
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  // await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
-  
+
   //Log back in as Car Provider
   await page.goto("http://localhost:3000/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
@@ -237,53 +244,80 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   );
 
   //Now Vertified
-  await expect(page.getByRole('main')).toContainText('Verified');
-  await page.getByRole('button', { name: 'Temp Provider' }).click();
-  await page.getByRole('link', { name: 'Sign Out' }).click();
-  await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
-  await expect(page.locator('body')).toContainText('Register');
+  await expect(page.getByRole("main")).toContainText("Verified");
+  await page.getByRole("button", { name: "Temp Provider" }).click();
+  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Yes, Sign Out" }).click();
+  await expect(page.locator("body")).toContainText("Register");
 
   //Login as Admin to cleanup
   await page.goto("http://localhost:3000/signin");
-  await page.getByRole('textbox', { name: 'Email Address' }).click();
-  await page.getByRole('textbox', { name: 'Email Address' }).fill('admin@gmail.com');
-  await page.getByRole('textbox', { name: 'Password' }).click();
-  await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
-  await page.getByRole('button', { name: 'Sign In as User' }).click();
-  await page.getByRole('button', { name: 'Admin' }).click();
-  await page.getByRole('link', { name: 'Admin Tools' }).click();
-  await page.locator('.MuiBackdrop-root').click();
+  await page.getByRole("textbox", { name: "Email Address" }).click();
+  await page
+    .getByRole("textbox", { name: "Email Address" })
+    .fill("admin@gmail.com");
+  await page.getByRole("textbox", { name: "Password" }).click();
+  await page.getByRole("textbox", { name: "Password" }).fill("12345678");
+  await page.getByRole("button", { name: "Sign In as User" }).click();
+  await page.getByRole("button", { name: "Admin" }).click();
+  await page.getByRole("link", { name: "Admin Tools" }).click();
+  await page.locator(".MuiBackdrop-root").click();
 
-  await expect(page.locator('h1')).toContainText('Admin Dashboard');
-  await page.getByRole('link', { name: 'Manage Car Providers Add or' }).click();
-  await expect(page.locator('tbody')).toContainText('Temp Provider');
-  await page.getByRole('cell', { name: 'playwright.temp@gmail.com' }).click();
-  await expect(page.locator('tbody')).toContainText('playwright.temp@gmail.com');
-  await page.getByRole('row', { name: 'Temp Provider playwright.temp' }).getByRole('button').nth(1).click();
-  await page.locator('div').filter({ hasText: /^DeactivateCancel$/ }).getByRole('button').first().click();
-  await expect(page.getByRole('main')).toContainText('Car provider deactivated successfully');
+  await expect(page.locator("h1")).toContainText("Admin Dashboard");
+  await page.getByRole("link", { name: "Manage Car Providers Add or" }).click();
+  await expect(page.locator("tbody")).toContainText("Temp Provider");
+  await page.getByRole("cell", { name: "playwright.temp@gmail.com" }).click();
+  await expect(page.locator("tbody")).toContainText(
+    "playwright.temp@gmail.com"
+  );
+  await page
+    .getByRole("row", { name: "Temp Provider playwright.temp" })
+    .getByRole("button")
+    .nth(1)
+    .click();
+  await page
+    .locator("div")
+    .filter({ hasText: /^DeactivateCancel$/ })
+    .getByRole("button")
+    .first()
+    .click();
+  await expect(page.getByRole("main")).toContainText(
+    "Car provider deactivated successfully"
+  );
 
-  await page.getByRole('button', { name: 'Admin' }).click();
-  await page.getByRole('link', { name: 'Admin Tools' }).click();
-  await page.locator('.MuiBackdrop-root').click();
+  await page
+    .getByRole("button", { name: "Admin", exact: true })
+    .first()
+    .click();
+  await page.getByRole("link", { name: "Admin Tools" }).click();
+  await page.locator(".MuiBackdrop-root").click();
 
-  await page.getByRole('link', { name: 'Manage Admins Create and' }).click();
-  await expect(page.getByRole('heading')).toContainText('Manage Administrators');
-  await page.getByText('us1-4 playwright test').click();
-  await expect(page.locator('tbody')).toContainText('us1-4 playwright test');
-  await expect(page.locator('tbody')).toContainText('us1-4playwright@gmail.com');
-  await page.getByRole('row', { name: 'us1-4 playwright test us1-' }).getByRole('button').click();
-  await page.getByRole('button', { name: 'Deactivate' }).first().click();
-  await expect(page.getByRole('main')).toContainText('Admin user deactivated successfully');
-  
+  await page.getByRole("link", { name: "Manage Admins Create and" }).click();
+  await expect(page.getByRole("heading")).toContainText(
+    "Manage Administrators"
+  );
+  await page.getByText("us1-4 playwright test").click();
+  await expect(page.locator("tbody")).toContainText("us1-4 playwright test");
+  await expect(page.locator("tbody")).toContainText(
+    "us1-4playwright@gmail.com"
+  );
+  await page
+    .getByRole("row", { name: "us1-4 playwright test us1-" })
+    .getByRole("button")
+    .click();
+  await page.getByRole("button", { name: "Deactivate" }).first().click();
+  await expect(page.getByRole("main")).toContainText(
+    "Admin user deactivated successfully"
+  );
+
   //SIgn Out
   await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  await expect(page.getByRole('heading')).toContainText('Sign Out');
-  await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
-  await expect(page.locator('body')).toContainText('Register');
+  //await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Yes, Sign Out" }).click();
+  await expect(page.locator("body")).toContainText("Register");
 });
 
-test("New Provider unverified", async ({ page }) => {
+test("Admin verified provider", async ({ page }) => {
   await page.goto("http://localhost:3000/");
   await page.getByRole("link", { name: "Register" }).click();
   await page.getByRole("button", { name: "Car Provider" }).click();
@@ -368,7 +402,7 @@ test("New Provider unverified", async ({ page }) => {
   await page.getByRole('link', { name: 'Sign Out' }).click();
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
   console.log("Admin Set Complete");
-  
+
   //Sign back in as Car Provider
   await page.waitForTimeout(500);
   await page.goto("http://localhost:3000/signin");
