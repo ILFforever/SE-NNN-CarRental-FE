@@ -1,6 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-// ค่าคงที่สำหรับข้อมูลการทดสอบตามที่ระบุ
 const serviceName = 'Service_temp';
 const carLicensePlate = 'CarWithServiceTemp';
 const carBrand = 'CU';
@@ -10,13 +9,10 @@ const carRate = '10';
 const serviceRate = '10';
 let reservationId: string | null = null;
 
-// ฟังก์ชันช่วยในการล็อกอิน
 async function loginAsAdmin(page: Page) {
-  // ไปที่หน้าล็อกอิน
   await page.goto('http://localhost:3000/');
   await page.getByRole('link', { name: 'Sign-In' }).click();
-  
-  // กรอกข้อมูลล็อกอิน
+
   await page.getByRole('textbox', { name: 'Email Address' }).click();
   await page.getByRole('textbox', { name: 'Email Address' }).fill('admin_playwright@gmail.com');
   await page.getByRole('textbox', { name: 'Password' }).click();
@@ -25,21 +21,19 @@ async function loginAsAdmin(page: Page) {
   // กดปุ่มล็อกอิน
   await page.getByRole('button', { name: 'Sign In as User' }).click();
   
-  // รอให้ล็อกอินสำเร็จ
+  //รอ
   await page.waitForTimeout(2000);
   
   console.log('Admin login successful');
 }
 
 async function loginAsProvider(page: Page) {
-  // ไปที่หน้าล็อกอิน
   await page.goto('http://localhost:3000/');
   await page.getByRole('link', { name: 'Sign-In' }).click();
   
   // คลิกเลือก Car Provider
   await page.getByRole('button', { name: 'Car Provider' }).click();
   
-  // กรอกข้อมูลล็อกอิน
   await page.getByRole('textbox', { name: 'Email Address' }).click();
   await page.getByRole('textbox', { name: 'Email Address' }).fill('playwright@gmail.com');
   await page.getByRole('textbox', { name: 'Password' }).click();
@@ -48,18 +42,16 @@ async function loginAsProvider(page: Page) {
   // กดปุ่มล็อกอิน
   await page.getByRole('button', { name: 'Sign In as Car Provider' }).click();
   
-  // รอให้ล็อกอินสำเร็จ
+  // รอ
   await page.waitForTimeout(2000);
   
   console.log('Provider login successful');
 }
 
 async function loginAsCustomer(page: Page) {
-  // ไปที่หน้าล็อกอิน
   await page.goto('http://localhost:3000/');
   await page.getByRole('link', { name: 'Sign-In' }).click();
   
-  // กรอกข้อมูลล็อกอิน
   await page.getByRole('textbox', { name: 'Email Address' }).click();
   await page.getByRole('textbox', { name: 'Email Address' }).fill('playwright@gmail.com');
   await page.getByRole('textbox', { name: 'Password' }).click();
@@ -68,7 +60,7 @@ async function loginAsCustomer(page: Page) {
   // กดปุ่มล็อกอิน
   await page.getByRole('button', { name: 'Sign In as User' }).click();
   
-  // รอให้ล็อกอินสำเร็จ
+  // รอ
   await page.waitForTimeout(2000);
   
   console.log('Customer login successful');
@@ -91,47 +83,23 @@ test('Admin can create a new service', async ({ page }) => {
   // 3. คลิกปุ่ม Add New Service
   await page.getByRole('button', { name: 'Add New Service' }).click();
   
-  // 4. กรอกข้อมูล service ตามที่ระบุใน Test Case
+  // 4. กรอกข้อมูล service ตามใน Test Case
   await page.getByRole('textbox', { name: 'Service Name *' }).click();
   await page.getByRole('textbox', { name: 'Service Name *' }).fill(serviceName);
   await page.getByRole('textbox', { name: 'Rate *' }).click();
   await page.getByRole('textbox', { name: 'Rate *' }).fill(serviceRate);
   
-  // เลือก Rate Type: perday ตามที่ระบุ
-  // หมายเหตุ: อาจต้องปรับตาม UI จริง ว่าใช้ checkbox หรือ dropdown
-  // ถ้าใช้ checkbox ตรวจสอบว่าค่าเริ่มต้นเป็น Daily (perday) อยู่แล้วหรือไม่
-  try {
-    // ลองเลือกจาก dropdown หรือ radio เริ่มแรก
-    const rateTypeElement = page.getByLabel('Rate Type *');
-    if (await rateTypeElement.isVisible()) {
-      await rateTypeElement.selectOption('perday');
-    } else {
-      // ถ้าเป็น checkbox แบบเดิม ให้ตรวจสอบก่อนว่าจำเป็นต้องเปลี่ยนหรือไม่
-      const dailyCheckbox = page.getByRole('checkbox', { name: /Daily|Per Day/i });
-      if (await dailyCheckbox.isVisible() && !(await dailyCheckbox.isChecked())) {
-        await dailyCheckbox.check();
-      }
-    }
-  } catch (e) {
-    console.log('Rate type selection might be different, using fallback method');
-    // ถ้า UI ต่างจากที่คาด ให้ลองเลือกโดยการคลิกที่ข้อความ
-    try {
-      await page.getByText(/daily|per day/i).click();
-    } catch (e2) {
-      console.log('Could not set rate type, using default');
-    }
-  }
+  await page.getByRole('checkbox', { name: 'Billing Type:One Time' }).check();
   
-  // กรอกคำอธิบาย
   await page.getByRole('textbox', { name: 'Description *' }).click();
-  await page.getByRole('textbox', { name: 'Description *' }).fill('test');
+  await page.getByRole('textbox', { name: 'Description *' }).fill('Test service description');
   
-  // 5. บันทึก
+  // 5. กด create
   await page.getByRole('button', { name: 'Create Service' }).click();
   
   // 6. ตรวจสอบว่าสร้างสำเร็จ
-  await expect(page.getByText('Service created successfully')).toBeVisible({ timeout: 5000 });
-  await expect(page.getByRole('cell', { name: serviceName })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText('Service created successfully')).toBeVisible();
+  await expect(page.getByRole('cell', { name: serviceName })).toBeVisible();
   
   console.log(`Created service: ${serviceName}`);
 });
@@ -151,7 +119,7 @@ test('Provider can add a car with additional service', async ({ page }) => {
   // 3. คลิกปุ่ม Add New Car
   await page.getByRole('button', { name: 'Add New Car' }).click();
   
-  // 4. กรอกข้อมูลรถตามที่ระบุใน Test Case
+  // 4. กรอกข้อมูลรถตามใน Test Case
   await page.getByRole('textbox', { name: 'License Plate *' }).click();
   await page.getByRole('textbox', { name: 'License Plate *' }).fill(carLicensePlate);
   await page.getByRole('textbox', { name: 'Brand *' }).click();
@@ -159,11 +127,9 @@ test('Provider can add a car with additional service', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Model *' }).click();
   await page.getByRole('textbox', { name: 'Model *' }).fill(carModel);
   
-  // เลือกประเภทและสี
   await page.getByLabel('Type *').selectOption('sedan');
   await page.getByLabel('Color *').selectOption(carColor);
   
-  // กรอกราคา
   await page.getByRole('spinbutton', { name: 'Daily Rate (USD) *' }).click();
   await page.getByRole('spinbutton', { name: 'Daily Rate (USD) *' }).fill(carRate);
   
@@ -171,10 +137,10 @@ test('Provider can add a car with additional service', async ({ page }) => {
   // คลิกที่ service ที่มีชื่อและราคาตามที่กำหนด
   await page.locator('div').filter({ hasText: new RegExp(`${serviceName}.*\\$${serviceRate}`, 'i') }).first().click();
   
-  // 6. บันทึก
+  // 6. กดเพิ่มรถ
   await page.getByRole('button', { name: 'Add Car' }).click();
   
-  // 7. ตรวจสอบว่าเพิ่มรถสำเร็จ - รอให้หน้าโหลดเสร็จ
+  // 7. ตรวจสอบว่าเพิ่มรถสำเร็จ - รอ
   await page.waitForTimeout(2000);
   
   // ตรวจสอบว่ารถถูกสร้างและแสดงในตาราง
@@ -276,158 +242,158 @@ test('Customer can book a car with additional service', async ({ page }) => {
   await expect(page.getByText(/10\s*\$|10\.00/)).toBeVisible({ timeout: 5000 });
 });
 
-/**
- * ทำความสะอาดหลังการทดสอบ
- */
-test.afterAll(async ({ browser }) => {
-  console.log('Starting cleanup process...');
+// /**
+//  * ทำความสะอาดหลังการทดสอบ
+//  */
+// test.afterAll(async ({ browser }) => {
+//   console.log('Starting cleanup process...');
   
-  const context = await browser.newContext();
-  const page = await context.newPage();
+//   const context = await browser.newContext();
+//   const page = await context.newPage();
   
-  try {
-    // 1. ยกเลิกการจอง
-    if (reservationId) {
-      console.log(`Cleaning up reservation: ${reservationId}`);
+//   try {
+//     // 1. ยกเลิกการจอง
+//     if (reservationId) {
+//       console.log(`Cleaning up reservation: ${reservationId}`);
       
-      // ล็อกอินเป็น admin
-      await loginAsAdmin(page);
+//       // ล็อกอินเป็น admin
+//       await loginAsAdmin(page);
       
-      // ไปที่หน้ารายการจอง
-      await page.goto(`http://localhost:3000/admin/reservations`);
+//       // ไปที่หน้ารายการจอง
+//       await page.goto(`http://localhost:3000/admin/reservations`);
       
-      try {
-        // รอให้หน้าโหลดเสร็จ
-        await page.waitForTimeout(3000);
+//       try {
+//         // รอให้หน้าโหลดเสร็จ
+//         await page.waitForTimeout(3000);
         
-        // ค้นหาการจองที่เกี่ยวข้องกับรถของเรา
-        const reservationRow = page.getByRole('row', { name: new RegExp(carLicensePlate, 'i') }).first();
+//         // ค้นหาการจองที่เกี่ยวข้องกับรถของเรา
+//         const reservationRow = page.getByRole('row', { name: new RegExp(carLicensePlate, 'i') }).first();
         
-        if (await reservationRow.isVisible()) {
-          // คลิกดูรายละเอียด
-          await reservationRow.getByRole('link').click();
+//         if (await reservationRow.isVisible()) {
+//           // คลิกดูรายละเอียด
+//           await reservationRow.getByRole('link').click();
           
-          // รอให้หน้ารายละเอียดโหลด
-          await page.waitForTimeout(2000);
+//           // รอให้หน้ารายละเอียดโหลด
+//           await page.waitForTimeout(2000);
           
-          // ค้นหาปุ่มยกเลิก
-          const cancelButton = page.getByRole('button', { name: /cancel reservation/i });
-          if (await cancelButton.isVisible()) {
-            await cancelButton.click();
+//           // ค้นหาปุ่มยกเลิก
+//           const cancelButton = page.getByRole('button', { name: /cancel reservation/i });
+//           if (await cancelButton.isVisible()) {
+//             await cancelButton.click();
             
-            // จัดการกับ dialog ยืนยัน (ถ้ามี)
-            page.on('dialog', async dialog => {
-              await dialog.accept();
-            });
+//             // จัดการกับ dialog ยืนยัน (ถ้ามี)
+//             page.on('dialog', async dialog => {
+//               await dialog.accept();
+//             });
             
-            // หรือคลิกปุ่มยืนยันในโมดัล
-            try {
-              const confirmButton = page.getByRole('button', { name: /yes|confirm|cancel/i }).first();
-              if (await confirmButton.isVisible({ timeout: 2000 })) {
-                await confirmButton.click();
-              }
-            } catch (e) {
-              console.log('No confirmation modal found');
-            }
+//             // หรือคลิกปุ่มยืนยันในโมดัล
+//             try {
+//               const confirmButton = page.getByRole('button', { name: /yes|confirm|cancel/i }).first();
+//               if (await confirmButton.isVisible({ timeout: 2000 })) {
+//                 await confirmButton.click();
+//               }
+//             } catch (e) {
+//               console.log('No confirmation modal found');
+//             }
             
-            console.log('Reservation cancelled');
-          } else {
-            console.log('No cancel button found, reservation may already be cancelled');
-          }
-        } else {
-          console.log('Reservation not found in list');
-        }
-      } catch (e) {
-        console.log('Error cancelling reservation:', e);
-      }
-    }
+//             console.log('Reservation cancelled');
+//           } else {
+//             console.log('No cancel button found, reservation may already be cancelled');
+//           }
+//         } else {
+//           console.log('Reservation not found in list');
+//         }
+//       } catch (e) {
+//         console.log('Error cancelling reservation:', e);
+//       }
+//     }
     
-    // 2. ลบรถ
-    try {
-      console.log(`Cleaning up car: ${carLicensePlate}`);
+//     // 2. ลบรถ
+//     try {
+//       console.log(`Cleaning up car: ${carLicensePlate}`);
       
-      // ไปที่หน้าจัดการรถ
-      await page.goto('http://localhost:3000/admin/manageCars');
+//       // ไปที่หน้าจัดการรถ
+//       await page.goto('http://localhost:3000/admin/manageCars');
       
-      // รอให้หน้าโหลดเสร็จ
-      await page.waitForTimeout(3000);
+//       // รอให้หน้าโหลดเสร็จ
+//       await page.waitForTimeout(3000);
       
-      // ค้นหาแถวที่มีรถของเรา
-      const carRow = page.getByRole('row', { name: new RegExp(carLicensePlate, 'i') }).first();
+//       // ค้นหาแถวที่มีรถของเรา
+//       const carRow = page.getByRole('row', { name: new RegExp(carLicensePlate, 'i') }).first();
       
-      if (await carRow.isVisible()) {
-        // คลิกปุ่มลบ (เป็นไอคอน svg ที่อยู่ตัวสุดท้าย)
-        const deleteButton = carRow.locator('svg').last();
-        await deleteButton.click();
+//       if (await carRow.isVisible()) {
+//         // คลิกปุ่มลบ (เป็นไอคอน svg ที่อยู่ตัวสุดท้าย)
+//         const deleteButton = carRow.locator('svg').last();
+//         await deleteButton.click();
         
-        // จัดการกับ dialog ยืนยัน
-        page.on('dialog', async dialog => {
-          await dialog.accept();
-        });
+//         // จัดการกับ dialog ยืนยัน
+//         page.on('dialog', async dialog => {
+//           await dialog.accept();
+//         });
         
-        // หรือคลิกปุ่มยืนยันในโมดัล
-        try {
-          const confirmButton = page.getByRole('button', { name: /ok|confirm|yes|delete/i }).first();
-          if (await confirmButton.isVisible({ timeout: 2000 })) {
-            await confirmButton.click();
-          }
-        } catch (e) {
-          console.log('No confirmation modal found');
-        }
+//         // หรือคลิกปุ่มยืนยันในโมดัล
+//         try {
+//           const confirmButton = page.getByRole('button', { name: /ok|confirm|yes|delete/i }).first();
+//           if (await confirmButton.isVisible({ timeout: 2000 })) {
+//             await confirmButton.click();
+//           }
+//         } catch (e) {
+//           console.log('No confirmation modal found');
+//         }
         
-        console.log('Car deleted');
-      } else {
-        console.log('Car not found for deletion');
-      }
-    } catch (e) {
-      console.log('Error deleting car:', e);
-    }
+//         console.log('Car deleted');
+//       } else {
+//         console.log('Car not found for deletion');
+//       }
+//     } catch (e) {
+//       console.log('Error deleting car:', e);
+//     }
     
-    // 3. ลบ service
-    try {
-      console.log(`Cleaning up service: ${serviceName}`);
+//     // 3. ลบ service
+//     try {
+//       console.log(`Cleaning up service: ${serviceName}`);
       
-      // ไปที่หน้าจัดการ services
-      await page.goto('http://localhost:3000/admin/manageServices');
+//       // ไปที่หน้าจัดการ services
+//       await page.goto('http://localhost:3000/admin/manageServices');
       
-      // รอให้หน้าโหลดเสร็จ
-      await page.waitForTimeout(3000);
+//       // รอให้หน้าโหลดเสร็จ
+//       await page.waitForTimeout(3000);
       
-      // ค้นหาแถวที่มี service ของเรา
-      const serviceRow = page.getByRole('row', { name: new RegExp(serviceName, 'i') }).first();
+//       // ค้นหาแถวที่มี service ของเรา
+//       const serviceRow = page.getByRole('row', { name: new RegExp(serviceName, 'i') }).first();
       
-      if (await serviceRow.isVisible()) {
-        // คลิกปุ่มลบ (เป็นไอคอน svg ที่อยู่ตัวสุดท้าย)
-        const deleteButton = serviceRow.locator('svg').last();
-        await deleteButton.click();
+//       if (await serviceRow.isVisible()) {
+//         // คลิกปุ่มลบ (เป็นไอคอน svg ที่อยู่ตัวสุดท้าย)
+//         const deleteButton = serviceRow.locator('svg').last();
+//         await deleteButton.click();
         
-        // จัดการกับ dialog ยืนยัน
-        page.on('dialog', async dialog => {
-          await dialog.accept();
-        });
+//         // จัดการกับ dialog ยืนยัน
+//         page.on('dialog', async dialog => {
+//           await dialog.accept();
+//         });
         
-        // หรือคลิกปุ่มยืนยันในโมดัล
-        try {
-          const confirmButton = page.getByRole('button', { name: /ok|confirm|yes|delete/i }).first();
-          if (await confirmButton.isVisible({ timeout: 2000 })) {
-            await confirmButton.click();
-          }
-        } catch (e) {
-          console.log('No confirmation modal found');
-        }
+//         // หรือคลิกปุ่มยืนยันในโมดัล
+//         try {
+//           const confirmButton = page.getByRole('button', { name: /ok|confirm|yes|delete/i }).first();
+//           if (await confirmButton.isVisible({ timeout: 2000 })) {
+//             await confirmButton.click();
+//           }
+//         } catch (e) {
+//           console.log('No confirmation modal found');
+//         }
         
-        console.log('Service deleted');
-      } else {
-        console.log('Service not found for deletion');
-      }
-    } catch (e) {
-      console.log('Error deleting service:', e);
-    }
+//         console.log('Service deleted');
+//       } else {
+//         console.log('Service not found for deletion');
+//       }
+//     } catch (e) {
+//       console.log('Error deleting service:', e);
+//     }
     
-    console.log('Cleanup completed');
-  } catch (e) {
-    console.error('Error during cleanup:', e);
-  } finally {
-    await context.close();
-  }
-});
+//     console.log('Cleanup completed');
+//   } catch (e) {
+//     console.error('Error during cleanup:', e);
+//   } finally {
+//     await context.close();
+//   }
+// });
