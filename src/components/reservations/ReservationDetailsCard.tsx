@@ -38,13 +38,15 @@ export default function ReservationDetailsCard({
   isEditing: isEditingProp,
   setIsEditing: setIsEditingProp,
 }: DetailsCardProps) {
-  
   // State for edit mode
   const [isEditingInternal, setIsEditingInternal] = useState(false);
-  const isEditing = isEditingProp !== undefined ? isEditingProp : isEditingInternal;
+  const isEditing =
+    isEditingProp !== undefined ? isEditingProp : isEditingInternal;
   const setIsEditing = setIsEditingProp || setIsEditingInternal;
   const [startDate, setStartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [returnTime, setReturnTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -96,6 +98,22 @@ export default function ReservationDetailsCard({
       setStartDate(dayjs(rental.startDate).format("YYYY-MM-DD"));
       setReturnDate(dayjs(rental.returnDate).format("YYYY-MM-DD"));
 
+      // Initialize time fields
+      // First check if the rental has dedicated time fields
+      if (rental.pickupTime) {
+        setPickupTime(rental.pickupTime);
+      } else {
+        // Fall back to extracting time from startDate
+        setPickupTime(dayjs(rental.startDate).format("HH:mm"));
+      }
+
+      if (rental.returnTime) {
+        setReturnTime(rental.returnTime);
+      } else {
+        // Fall back to extracting time from returnDate
+        setReturnTime(dayjs(rental.returnDate).format("HH:mm"));
+      }
+
       // Initialize selected services
       if (rental.service && Array.isArray(rental.service)) {
         setSelectedServices([...rental.service]);
@@ -111,7 +129,7 @@ export default function ReservationDetailsCard({
     }
   }, [rental, token]);
 
-  //use effect for updating discount
+  // Also update the discount calculation useEffect
   useEffect(() => {
     if (isEditing && rental) {
       const dynamicDiscountAmount = calculateDynamicDiscount();
@@ -123,7 +141,16 @@ export default function ReservationDetailsCard({
           dynamicDiscountAmount
       );
     }
-  }, [isEditing, startDate, returnDate, selectedServices, rental, userTier]);
+  }, [
+    isEditing,
+    startDate,
+    returnDate,
+    pickupTime,
+    returnTime,
+    selectedServices,
+    rental,
+    userTier,
+  ]);
 
   // Fetch car data for availability checks
   const fetchCarData = async (carId: string) => {
@@ -285,7 +312,6 @@ export default function ReservationDetailsCard({
     });
   };
 
-  // Handle save changes
   const handleSaveChanges = async () => {
     // Validate dates
     const newStartDate = dayjs(startDate);
@@ -298,6 +324,13 @@ export default function ReservationDetailsCard({
 
     if (newReturnDate.isBefore(newStartDate)) {
       setError("Return date cannot be before start date");
+      return;
+    }
+
+    // Validate time format
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(pickupTime) || !timeRegex.test(returnTime)) {
+      setError("Invalid time format. Please use HH:MM format (24-hour)");
       return;
     }
 
@@ -318,23 +351,41 @@ export default function ReservationDetailsCard({
 
       // Dynamic discount calculation
       const tierDiscounts = [0, 5, 10, 15, 20];
-      const userTier = rental.user?.tier || 0;
       const discountPercentage = tierDiscounts[userTier] || 0;
       const dynamicDiscountAmount = calculateDynamicDiscount();
 
       const newFinalPrice =
         subtotal - dynamicDiscountAmount + (rental.additionalCharges || 0);
 
-      // Create update payload
+      // แปลงเวลาจาก UTC+7 เป็น UTC+0
+      // สร้าง datetime object โดยรวมวันที่และเวลาเข้าด้วยกัน
+      // แล้วลบ 7 ชั่วโมงเพื่อแปลงจาก UTC+7 เป็น UTC+0
+      const pickupDateTimeLocal = dayjs(`${startDate}T${pickupTime}`);
+      const returnDateTimeLocal = dayjs(`${returnDate}T${returnTime}`);
+
+      // ลบ 7 ชั่วโมงเพื่อแปลงเป็น UTC+0
+      const pickupDateTimeUTC = pickupDateTimeLocal.subtract(7, "hour");
+      const returnDateTimeUTC = returnDateTimeLocal.subtract(7, "hour");
+
+      // ดึงเฉพาะเวลาในรูปแบบ HH:mm
+      const pickupTimeUTC = pickupDateTimeUTC.format("HH:mm");
+      const returnTimeUTC = returnDateTimeUTC.format("HH:mm");
+
+      // Create update payload with time values - ตัด property ที่อาจจะก่อให้เกิดปัญหาในการอัพเดท
       const updateData = {
         startDate: newStartDate.toISOString(),
         returnDate: newReturnDate.toISOString(),
+        pickupTime: pickupTimeUTC, // เวลาที่แปลงเป็น UTC แล้ว
+        returnTime: returnTimeUTC, // เวลาที่แปลงเป็น UTC แล้ว
         service: selectedServices,
         price: newBasePrice,
         servicePrice: newServicePrice,
-        discountAmount: dynamicDiscountAmount, // Use dynamically calculated discount
+        discountAmount: dynamicDiscountAmount,
         finalPrice: newFinalPrice,
       };
+
+      // สร้างข้อมูลเฉพาะฟิลด์ที่ต้องการอัพเดต ไม่ส่งออบเจ็กต์ซับซ้อนที่อาจมีปัญหา
+      console.log("Sending update data:", JSON.stringify(updateData));
 
       // Make API call to update reservation
       const response = await fetch(`${API_BASE_URL}/rents/${rental._id}`, {
@@ -346,50 +397,37 @@ export default function ReservationDetailsCard({
         body: JSON.stringify(updateData),
       });
 
+      // ลองดูข้อมูลดิบที่ได้รับกลับมาก่อน
+      const responseText = await response.text();
+      console.log("Raw API response:", responseText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update reservation");
+        throw new Error(`Failed to update reservation: ${responseText}`);
       }
 
-      // Get the updated data
-      const data = await response.json();
-
-      // Fetch the full reservation details with populated references
+      // พยายามแปลงเป็น JSON ถ้าเป็นไปได้
+      let data;
       try {
-        const fullDataResponse = await fetch(
-          `${API_BASE_URL}/rents/${rental._id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Error parsing response as JSON:", parseError);
+        throw new Error(`Invalid JSON response from server: ${responseText}`);
+      }
 
-        if (fullDataResponse.ok) {
-          const fullData = await fullDataResponse.json();
-          if (fullData.success && fullData.data) {
-            // Update with complete data
-            if (onUpdate) {
-              onUpdate(fullData.data);
-            }
-          } else {
-            throw new Error("Invalid response format");
-          }
-        } else {
-          throw new Error("Failed to fetch updated rental details");
-        }
-      } catch (err) {
-        console.warn("Error fetching complete rental data:", err);
-        // Fall back to the partial data from the update
+      // ถ้าอัพเดตสำเร็จ
+      if (data.success) {
+        // ถ้ามีการส่งข้อมูลกลับมาในฟิลด์ data ให้ใช้
         if (onUpdate && data.data) {
           onUpdate(data.data);
         }
-      }
 
-      setSuccess("Reservation updated successfully");
-      setIsEditing(false);
-      setShowServiceSelector(false);
+        setSuccess("Reservation updated successfully");
+        setIsEditing(false);
+        setShowServiceSelector(false);
+      } else {
+        // ถ้า API ส่งสถานะ success เป็น false
+        throw new Error(data.message || "Unknown error updating reservation");
+      }
     } catch (err) {
       console.error("Error updating reservation:", err);
       setError(
@@ -405,6 +443,19 @@ export default function ReservationDetailsCard({
     // Reset to original values
     setStartDate(dayjs(rental.startDate).format("YYYY-MM-DD"));
     setReturnDate(dayjs(rental.returnDate).format("YYYY-MM-DD"));
+
+    // Reset time values
+    if (rental.pickupTime) {
+      setPickupTime(rental.pickupTime);
+    } else {
+      setPickupTime(dayjs(rental.startDate).format("HH:mm"));
+    }
+
+    if (rental.returnTime) {
+      setReturnTime(rental.returnTime);
+    } else {
+      setReturnTime(dayjs(rental.returnDate).format("HH:mm"));
+    }
 
     // Reset selected services to original
     if (rental.service && Array.isArray(rental.service)) {
@@ -608,7 +659,7 @@ export default function ReservationDetailsCard({
 
         <div className="grid grid-cols-2 gap-4">
           {isEditing ? (
-            // Editable date fields
+            // Editable date and time fields
             <>
               <div>
                 <p className="text-gray-600 text-sm">Start Date</p>
@@ -619,6 +670,15 @@ export default function ReservationDetailsCard({
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
                   min={dayjs().format("YYYY-MM-DD")} // Can't select dates in the past
                 />
+                <div className="mt-2">
+                  <p className="text-gray-600 text-sm">Pickup Time</p>
+                  <input
+                    type="time"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                  />
+                </div>
               </div>
 
               <div>
@@ -630,19 +690,34 @@ export default function ReservationDetailsCard({
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
                   min={startDate} // Return date must be after start date
                 />
+                <div className="mt-2">
+                  <p className="text-gray-600 text-sm">Return Time</p>
+                  <input
+                    type="time"
+                    value={returnTime}
+                    onChange={(e) => setReturnTime(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                  />
+                </div>
               </div>
             </>
           ) : (
-            // Read-only date fields
+            // Read-only date and time fields
             <>
               <div>
-                <p className="text-gray-600 text-sm">Start Date</p>
-                <p className="font-medium">{formatDate(rental.startDate)}</p>
+                <p className="text-gray-600 text-sm">Start Date & Time</p>
+                <p className="font-medium">
+                  {formatDate(rental.startDate)}{" "}
+                  {rental.pickupTime || formatTime(rental.startDate)}
+                </p>
               </div>
 
               <div>
-                <p className="text-gray-600 text-sm">Return Date</p>
-                <p className="font-medium">{formatDate(rental.returnDate)}</p>
+                <p className="text-gray-600 text-sm">Return Date & Time</p>
+                <p className="font-medium">
+                  {formatDate(rental.returnDate)}{" "}
+                  {rental.returnTime || formatTime(rental.returnDate)}
+                </p>
               </div>
             </>
           )}

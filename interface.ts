@@ -71,7 +71,7 @@ interface Rent {
   status: 'pending' | 'active' | 'completed' | 'cancelled' | 'unpaid';
   price: number;
   servicePrice?: number;
-  additionalCharges: AdditionalCharges;
+  additionalCharges?: AdditionalCharges;
   notes?: string;
   car: string | Car;
   user: string | User;
