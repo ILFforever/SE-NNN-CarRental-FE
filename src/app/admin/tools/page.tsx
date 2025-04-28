@@ -100,7 +100,7 @@ export default async function AdminToolsPage() {
 
         {/* Transaction Settings Panel */}
         <AdminToolCard
-          title="Transaction Settings"
+          title="Transaction Histories"
           description="Transaction settings and transaction history"
           icon={<Coins size={24} />}
           link="/admin/manageTransaction"

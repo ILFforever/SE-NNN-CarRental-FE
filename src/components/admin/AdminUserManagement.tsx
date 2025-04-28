@@ -5,7 +5,7 @@ import { API_BASE_URL, createAuthHeader } from "@/config/apiConfig";
 import { User, ApiResponse } from "@/types/dataTypes";
 import { useSession } from "next-auth/react";
 import TierBadge from "@/components/util/TierBadge";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface AdminUserManagementProps {
   token: string;
@@ -30,6 +30,7 @@ export default function AdminUserManagement({
   const [success, setSuccess] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [formData, setFormData] = useState<AdminUserFormData>({
     name: "",
     email: "",
@@ -39,7 +40,7 @@ export default function AdminUserManagement({
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState<User | null>(null);
-  
+
   // Open delete modal
   const openDeleteModal = (admin: User) => {
     setAdminToDelete(admin);
@@ -98,6 +99,7 @@ export default function AdminUserManagement({
   }, [token]);
 
   const fetchAdminUsers = async () => {
+    setIsRefreshing(true);
     setIsLoading(true);
     setError("");
 
@@ -129,6 +131,7 @@ export default function AdminUserManagement({
       setError("Could not load admin users. Please try again later.");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -390,7 +393,19 @@ export default function AdminUserManagement({
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-[#8A7D55] transition-all duration-300 ease-in-out"
           />
         </div>
-
+        {/* Refresh button */}
+        <button
+          onClick={fetchAdminUsers}
+          disabled={isRefreshing}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
+          title="Refresh admin list"
+        >
+          <RefreshCw
+            className={`h-5 w-5 text-gray-500 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+          />
+        </button>
         {/* Create Admin Button with Icon */}
         <button
           onClick={() => {

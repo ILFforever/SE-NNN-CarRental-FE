@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { API_BASE_URL, createAuthHeader } from "@/config/apiConfig";
-import { CheckCircle, XCircle, Trash2, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Trash2,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
 
 // Comprehensive type definitions
 interface CarProviderData {
@@ -39,6 +45,7 @@ export default function CarProvider({ token }: CarProviderProps) {
   const [success, setSuccess] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [formData, setFormData] = useState<CarProviderFormData>({
     name: "",
     address: "",
@@ -160,6 +167,7 @@ export default function CarProvider({ token }: CarProviderProps) {
 
   // Fetch car providers
   const fetchCarProviders = async () => {
+    setIsRefreshing(true);
     setIsLoading(true);
     setError("");
 
@@ -189,6 +197,7 @@ export default function CarProvider({ token }: CarProviderProps) {
       );
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -539,7 +548,19 @@ export default function CarProvider({ token }: CarProviderProps) {
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-[#8A7D55] transition-all duration-300 ease-in-out"
           />
         </div>
-
+        {/* Refresh button */}
+        <button
+          onClick={fetchCarProviders}
+          disabled={isRefreshing}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
+          title="Refresh admin list"
+        >
+          <RefreshCw
+            className={`h-5 w-5 text-gray-500 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+          />
+        </button>
         {/* Create Provider Button with Icon */}
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -777,7 +798,9 @@ export default function CarProvider({ token }: CarProviderProps) {
                       onClick={() => openVerifyModal(provider)}
                       data-testid={`verify-button-${provider.name}`}
                       data-provider-name={provider.name}
-                      aria-label={`${provider.verified ? 'Unverify' : 'Verify'} ${provider.name}`}
+                      aria-label={`${
+                        provider.verified ? "Unverify" : "Verify"
+                      } ${provider.name}`}
                       className={`
     group relative w-full px-4 py-2 rounded-lg font-medium text-sm
     transition-all duration-300 ease-in-out

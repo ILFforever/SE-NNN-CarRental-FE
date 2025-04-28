@@ -472,17 +472,22 @@ export default function ReservationManagement({
 
     const rentalId = rental._id;
 
-    // Direct navigation actions - no confirmation needed
-    if (action === "view") {
-      const basePath =
-        session?.user?.userType === "provider"
-          ? "/provider/reservations"
-          : "/admin/reservations";
-      router.push(`${basePath}/${rentalId}`);
-      return;
-    }
+    // For view and edit actions, check if critical data is available
+    if (action === "view" || action === "edit") {
+      // Get the car details
+      const car =
+        typeof rental.car === "string" ? cars[rental.car] : rental.car;
 
-    if (action === "edit") {
+      // Check for missing critical data
+      if (!car || (typeof car === "object" && !car.brand)) {
+        // Show an error message
+        setError(
+          `Cannot ${action} this reservation - Vehicle information is missing or incomplete.`
+        );
+        return;
+      }
+
+      // Now proceed with navigation
       const basePath =
         session?.user?.userType === "provider"
           ? "/provider/reservations"
@@ -495,6 +500,20 @@ export default function ReservationManagement({
     if (
       ["confirm", "unpaid", "complete", "cancel", "delete"].includes(action)
     ) {
+      // Validate that we have the necessary data before allowing the action
+      const car =
+        typeof rental.car === "string" ? cars[rental.car] : rental.car;
+
+      if (
+        action !== "delete" &&
+        (!car || (typeof car === "object" && !car.brand))
+      ) {
+        setError(
+          `Cannot ${action} this reservation - Vehicle information is missing or incomplete.`
+        );
+        return;
+      }
+
       setSelectedRental(rental);
       setModalAction(
         action as "confirm" | "unpaid" | "complete" | "cancel" | "delete"
@@ -946,19 +965,18 @@ export default function ReservationManagement({
                           {formatDate(rental.createdAt).time}
                         </div>
                       </td>
-
                       {/* Customer Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {user ? (
+                        {user && user.name ? (
                           <div>
                             <div className="text-sm font-medium text-gray-900">
                               {user.name}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {user.email}
+                              {user.email || "No email provided"}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {user.telephone_number}
+                              {user.telephone_number || "No phone provided"}
                             </div>
                           </div>
                         ) : (
@@ -967,7 +985,6 @@ export default function ReservationManagement({
                           </div>
                         )}
                       </td>
-
                       {/* Vehicle Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         {car ? (
@@ -986,8 +1003,11 @@ export default function ReservationManagement({
                               {car.license_plate}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {car.type.charAt(0).toUpperCase() +
-                                car.type.slice(1)}{" "}
+                              {car && car.type
+                                ? `${car.type
+                                    .charAt(0)
+                                    .toUpperCase()}${car.type.slice(1)}`
+                                : "Unknown Car"}{" "}
                               • {car.color}
                             </div>
                           </div>
@@ -997,7 +1017,6 @@ export default function ReservationManagement({
                           </div>
                         )}
                       </td>
-
                       {/* Provider Column */}
                       {session?.user?.userType !== "provider" && (
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1006,7 +1025,6 @@ export default function ReservationManagement({
                           </div>
                         </td>
                       )}
-
                       {/* Dates Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -1034,7 +1052,6 @@ export default function ReservationManagement({
                           )}
                         </div>
                       </td>
-
                       {/* Price Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
@@ -1049,7 +1066,6 @@ export default function ReservationManagement({
                             </div>
                           )}
                       </td>
-
                       {/* Status Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

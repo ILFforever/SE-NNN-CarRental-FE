@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '@/config/apiConfig';
-import { User, ApiResponse } from '@/types/dataTypes';
-import { useSession } from 'next-auth/react';
-import { getTierName, getTierColorClass } from '@/utils/tierUtils';
-import TierBadge from '@/components/util/TierBadge';
-
+import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/config/apiConfig";
+import { User, ApiResponse } from "@/types/dataTypes";
+import { useSession } from "next-auth/react";
+import { getTierName, getTierColorClass } from "@/utils/tierUtils";
+import TierBadge from "@/components/util/TierBadge";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 interface UserManagementProps {
   token: string;
 }
@@ -24,26 +24,26 @@ export default function UserManagement({ token }: UserManagementProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState<UserFormData>({
-    name: '',
-    email: '',
-    telephone_number: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    telephone_number: "",
+    password: "",
+    confirmPassword: "",
   });
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   // Reset form fields function
   const resetFormFields = () => {
     setFormData({
-      name: '',
-      email: '',
-      telephone_number: '',
-      password: '',
-      confirmPassword: '',
+      name: "",
+      email: "",
+      telephone_number: "",
+      password: "",
+      confirmPassword: "",
     });
   };
 
@@ -53,9 +53,10 @@ export default function UserManagement({ token }: UserManagementProps) {
     setSearchQuery(query);
 
     // Filter users based on name or email
-    const filtered = users.filter(user => 
-      user.name.toLowerCase().includes(query) || 
-      user.email.toLowerCase().includes(query)
+    const filtered = users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query)
     );
 
     setFilteredUsers(filtered);
@@ -69,78 +70,88 @@ export default function UserManagement({ token }: UserManagementProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Fetch all users on component mount
   useEffect(() => {
-    console.log('UserManagement mounted with token available:', !!token);
+    console.log("UserManagement mounted with token available:", !!token);
     if (!token) {
-      setError('No authentication token available. Please log in again.');
+      setError("No authentication token available. Please log in again.");
     } else {
       fetchUsers();
     }
   }, [token]);
 
   const fetchUsers = async () => {
+    setIsRefreshing(true);
     setIsLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       const response = await fetch(`${API_BASE_URL}/auth/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        console.error('Users fetch failed with status:', response.status);
+        console.error("Users fetch failed with status:", response.status);
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error("Error response:", errorText);
         throw new Error(`Failed to fetch users: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('User data received:', data);
-      
+      console.log("User data received:", data);
+
       // Handle the response format
       if (data.success && Array.isArray(data.data)) {
         setUsers(data.data);
         setFilteredUsers(data.data); // Initialize filtered users with all users
       } else {
-        throw new Error('Unexpected response format from server');
+        throw new Error("Unexpected response format from server");
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
-      setError('Could not load users. Please try again later.');
+      console.error("Error fetching users:", error);
+      setError("Could not load users. Please try again later.");
     } finally {
+      setIsRefreshing(false);
       setIsLoading(false);
     }
   };
 
   const validateForm = () => {
-    if (!formData.name || !formData.email || !formData.telephone_number || !formData.password || !formData.confirmPassword) {
-      setError('All fields are required');
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.telephone_number ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      setError("All fields are required");
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return false;
     }
 
     // Validate phone format according to the example (XXX-XXXXXXX)
     const phoneRegex = /^\d{3}-\d{7}$/;
     if (!phoneRegex.test(formData.telephone_number)) {
-      setError('Phone number must be in format XXX-XXXXXXX (e.g., 123-4567890)');
+      setError(
+        "Phone number must be in format XXX-XXXXXXX (e.g., 123-4567890)"
+      );
       return false;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       return false;
     }
 
@@ -149,8 +160,8 @@ export default function UserManagement({ token }: UserManagementProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (!validateForm()) {
       return;
@@ -160,39 +171,39 @@ export default function UserManagement({ token }: UserManagementProps) {
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           password: formData.password,
           telephone_number: formData.telephone_number,
-          role: "user" // Regular user role
-        })
+          role: "user", // Regular user role
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.msg || 'Failed to create user');
+        throw new Error(data.message || data.msg || "Failed to create user");
       }
 
       // Reset form and show success message
       resetFormFields();
-      setSuccess('User created successfully');
+      setSuccess("User created successfully");
       setShowCreateForm(false);
-      
+
       // Refresh the users list
       fetchUsers();
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error("Error creating user:", error);
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('An unexpected error occurred');
+        setError("An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -202,42 +213,44 @@ export default function UserManagement({ token }: UserManagementProps) {
   const handleDeactivateUser = async (userId: string) => {
     // Prevent deleting themselves
     if (userId === session?.user?._id) {
-      setError('You cannot delete your own account');
+      setError("You cannot delete your own account");
       return;
     }
 
-    if (!confirm('Are you sure you want to deactivate this user?')) {
+    if (!confirm("Are you sure you want to deactivate this user?")) {
       return;
     }
 
     setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || data.msg || 'Failed to deactivate user');
+        throw new Error(
+          data.message || data.msg || "Failed to deactivate user"
+        );
       }
 
-      setSuccess('User deactivated successfully');
-      
+      setSuccess("User deactivated successfully");
+
       // Update the users list
-      setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
+      setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
     } catch (error) {
-      console.error('Error deactivating user:', error);
+      console.error("Error deactivating user:", error);
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('An unexpected error occurred');
+        setError("An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -251,11 +264,13 @@ export default function UserManagement({ token }: UserManagementProps) {
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
           <p className="font-medium">Error:</p>
           <p>{error}</p>
-          {error.includes('401') && (
+          {error.includes("401") && (
             <div className="mt-2 p-2 bg-yellow-50 rounded text-sm">
               <p className="font-medium">Troubleshooting tips:</p>
               <ul className="list-disc pl-5 mt-1">
-                <li>Your session might have expired. Try signing out and back in.</li>
+                <li>
+                  Your session might have expired. Try signing out and back in.
+                </li>
                 <li>Make sure you have admin privileges.</li>
                 <li>Check if your backend API is running correctly.</li>
               </ul>
@@ -263,20 +278,31 @@ export default function UserManagement({ token }: UserManagementProps) {
           )}
         </div>
       )}
-      
+
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
           {success}
         </div>
       )}
 
-    {/* Search and Create Section */}
-    <div className="flex items-center justify-between mb-6 space-x-4">
+      {/* Search and Create Section */}
+      <div className="flex items-center justify-between mb-6 space-x-4">
         {/* Search Input with Icon */}
         <div className="flex-grow relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
           <input
@@ -287,40 +313,75 @@ export default function UserManagement({ token }: UserManagementProps) {
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:border-[#8A7D55] transition-all duration-300 ease-in-out"
           />
         </div>
-    {/* Create User Button with Icon */}
-    <button
-            onClick={() => {
-                if (showCreateForm) {
-                handleCancelCreate();
-                } else {
-                setShowCreateForm(true);
-                }
-            }}
-            className="flex items-center justify-center px-4 py-2 bg-[#8A7D55] text-white rounded-lg hover:bg-[#766b48] transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
-            >
-            {showCreateForm ? (
-                <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Cancel
-                </>
-            ) : (
-                <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create New User
-                </>
-            )}
-            </button>
-        </div>
+        {/* Refresh button */}
+        <button
+          onClick={fetchUsers}
+          disabled={isRefreshing}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
+          title="Refresh admin list"
+        >
+          <RefreshCw
+            className={`h-5 w-5 text-gray-500 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+          />
+        </button>
+        {/* Create User Button with Icon */}
+        <button
+          onClick={() => {
+            if (showCreateForm) {
+              handleCancelCreate();
+            } else {
+              setShowCreateForm(true);
+            }
+          }}
+          className="flex items-center justify-center px-4 py-2 bg-[#8A7D55] text-white rounded-lg hover:bg-[#766b48] transition-colors focus:outline-none focus:ring-2 focus:ring-[#8A7D55] focus:ring-opacity-50"
+        >
+          {showCreateForm ? (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              Cancel
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Create New User
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Create User Form */}
       {showCreateForm && (
         <div className="mb-8 p-5 border border-gray-200 rounded-lg">
           <h2 className="text-xl font-medium mb-4">Create New User</h2>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -336,7 +397,7 @@ export default function UserManagement({ token }: UserManagementProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="email" className="block text-gray-700 mb-1">
                   Email Address
@@ -350,9 +411,12 @@ export default function UserManagement({ token }: UserManagementProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="telephone_number" className="block text-gray-700 mb-1">
+                <label
+                  htmlFor="telephone_number"
+                  className="block text-gray-700 mb-1"
+                >
                   Telephone (XXX-XXXXXXX)
                 </label>
                 <input
@@ -365,7 +429,7 @@ export default function UserManagement({ token }: UserManagementProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="password" className="block text-gray-700 mb-1">
                   Password
@@ -379,9 +443,12 @@ export default function UserManagement({ token }: UserManagementProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="confirmPassword" className="block text-gray-700 mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-gray-700 mb-1"
+                >
                   Confirm Password
                 </label>
                 <input
@@ -394,7 +461,7 @@ export default function UserManagement({ token }: UserManagementProps) {
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
@@ -408,7 +475,7 @@ export default function UserManagement({ token }: UserManagementProps) {
                 disabled={isLoading}
                 className="px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] transition-colors disabled:opacity-50"
               >
-                {isLoading ? 'Creating...' : 'Create User'}
+                {isLoading ? "Creating..." : "Create User"}
               </button>
             </div>
           </form>
@@ -425,25 +492,46 @@ export default function UserManagement({ token }: UserManagementProps) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Name
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Email
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Telephone
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Role
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Created
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Tier
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Actions
                 </th>
               </tr>
@@ -452,18 +540,26 @@ export default function UserManagement({ token }: UserManagementProps) {
               {filteredUsers.map((user) => (
                 <tr key={user._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {user.name}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{user.email}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{user.telephone_number}</div>
+                    <div className="text-sm text-gray-500">
+                      {user.telephone_number}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.role === "admin"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-green-100 text-green-800"
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
@@ -480,7 +576,7 @@ export default function UserManagement({ token }: UserManagementProps) {
                       <span className="text-gray-400 cursor-not-allowed">
                         Current User
                       </span>
-                    ) : user.role === 'admin' ? (
+                    ) : user.role === "admin" ? (
                       <span className="text-gray-400 cursor-not-allowed">
                         Admin
                       </span>
