@@ -25,7 +25,7 @@ export default async function CustomerReservationDetailsPage({ params }: PagePro
   }
   
   // Determine user type based on session
-  const userType = session.user.role === 'admin' ? 'admin' : 'customer';
+  const userType = session.user.role === 'admin' ? 'admin' : 'user';
   
   return (
     <UnifiedReservationDetails 
