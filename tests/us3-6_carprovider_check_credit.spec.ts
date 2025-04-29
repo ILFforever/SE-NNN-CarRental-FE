@@ -9,12 +9,12 @@ await page.getByRole('textbox', { name: 'Password' }).click();
 await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
 await page.getByRole('button', { name: 'Sign In as User' }).click();
 await page.getByRole('link', { name: 'Catalog' }).click();
-await page.locator('div').filter({ hasText: /^KIA ev52025 • carprovider1Rated by 0 people0\.0\$50 \/day5 seatsGrayTier 0View Car$/ }).getByRole('button').click();
+await page.locator('[data-test-id="catalog"] div').filter({ hasText: '$50.00/daysedanKIA ev52025 •' }).getByRole('button').nth(1).click();
 await page.locator('div').filter({ hasText: /^Pickup Date$/ }).getByRole('textbox').fill('2025-05-01');
 await page.locator('div').filter({ hasText: /^Return Date$/ }).getByRole('textbox').fill('2025-05-03');
 await page.getByText('Click to add services').click();
 await page.locator('.mt-1 > div > div > div > .relative').click();
-await page.getByRole('button', { name: 'Confirm & Pay $25.93 Deposit' }).click();
+await page.getByRole('button', { name: 'Confirm & Pay $25.93 Deposit' }).click();await page.locator('[data-test-id="catalog"] div').filter({ hasText: '$50.00/daysedanKIA ev52025 •' }).getByRole('button').nth(1).click();
 await page.getByText('Close').click();
 await page.getByRole('button', { name: 'Playwright Man' }).click();
 await page.getByRole('button', { name: 'Sign Out' }).click();
@@ -46,8 +46,7 @@ await page.getByRole('button', { name: 'Playwright Man' }).click();
 await page.getByRole('button', { name: 'My Reservations' }).click();
 await page.getByRole('button', { name: 'Pay Now' }).click();
 await page.getByRole('button', { name: 'Pay $' }).click();
-await page.getByRole('button', { name: 'Playwright Man' }).click();
-})
+await page.getByRole('button', { name: 'Playwright Man' }).click();})
 
 test('Car Provider check credit', async ({ page }) => {
 await page.goto('http://localhost:3000/');
