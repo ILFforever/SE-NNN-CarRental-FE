@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
-  await page.goto("http://localhost:3000/");
+  await page.goto("https://se-cedt-rentals.vercel.app/");
   await page.getByRole("link", { name: "Register" }).click();
   await page.getByRole("button", { name: "Car Provider" }).click();
   await page.waitForTimeout(1000);
@@ -35,7 +35,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.getByRole("heading")).toContainText(
     "Provider Registration Successful"
   );
-  await page.goto("http://localhost:3000/signin");
+  await page.goto("https://se-cedt-rentals.vercel.app/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
@@ -47,8 +47,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     .getByRole("button", { name: "Sign In as Car Provider", exact: true })
     .click();
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "My Profile" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "My Profile" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await expect(page.getByRole("main")).toContainText("Temp Provider");
   await expect(page.getByRole("main")).toContainText(
     "playwright.temp@gmail.com"
@@ -58,8 +58,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.getByRole("main")).toContainText("123-4567890");
 
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "Provider Tools" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "Provider Tools" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await page.getByRole("link", { name: "Manage Cars Add, update, or" }).click();
   await page.waitForTimeout(2000);
   await page
@@ -88,7 +88,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.locator("tbody")).toContainText("Playwright Playwright");
 
   //Log out
-  await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await page.goto("https://se-cedt-rentals.vercel.app/signout?callbackUrl=/");
   //await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
@@ -103,8 +103,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as User" }).click();
   await page.getByRole("button", { name: "Admin" }).click();
-  await page.getByRole("link", { name: "Admin Tools" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "Admin Tools" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await page.getByRole("link", { name: "Manage Admins Create and" }).click();
   await page.getByRole("button", { name: "Create New Admin" }).click();
   await page.getByRole("textbox", { name: "Full Name" }).click();
@@ -133,7 +133,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await expect(page.locator("tbody")).toContainText(
     "us1-4playwright@gmail.com"
   );
-  await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await page.goto("https://se-cedt-rentals.vercel.app/signout?callbackUrl=/");
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -154,9 +154,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.getByRole("button", { name: "0", exact: true }).click();
   await page.getByRole("button", { name: "Topup" }).click();
   await expect(page.locator("h1")).toContainText("Top Up Your Balance");
-  await expect(page.locator("#user-menu-button")).toContainText(
-    "us1-4 playwright test"
-  );
+  //await expect(page.locator("#user-menu-button")).toContainText("us1-4 playwright test"); //OLD NOT WORK
+  await expect(page.getByRole('navigation')).toContainText('us1-4 playwright test'); // NEW WORK
   await page.getByRole("button", { name: "Custom Amount" }).click();
   await page.getByPlaceholder("Enter amount").click();
   await page.getByPlaceholder("Enter amount").fill("99999");
@@ -175,7 +174,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   //Back to home
   console.log("Starting populate rentals");
   for (let i = 0; i < 10; i++) {
-    await page.goto("http://localhost:3000/");
+    await page.goto("https://se-cedt-rentals.vercel.app/");
     await page.waitForTimeout(500);
     await page.getByRole("link", { name: "Catalog" }).click();
     await page
@@ -218,13 +217,13 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     await page.waitForTimeout(500);
   }
   await page.getByRole("button", { name: "us1-4 playwright test" }).click();
-  await page.goto("http://localhost:3000/signout?callbackUrl=/");
+  await page.goto("https://se-cedt-rentals.vercel.app/signout?callbackUrl=/");
   // await page.getByRole("link", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
   //Log back in as Car Provider
-  await page.goto("http://localhost:3000/signin");
+  await page.goto("https://se-cedt-rentals.vercel.app/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
@@ -236,8 +235,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     .getByRole("button", { name: "Sign In as Car Provider", exact: true })
     .click();
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "My Profile" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "My Profile" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await expect(page.getByRole("main")).toContainText("Temp Provider");
   await expect(page.getByRole("main")).toContainText(
     "playwright.temp@gmail.com"
@@ -246,12 +245,12 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   //Now Vertified
   await expect(page.getByRole("main")).toContainText("Verified");
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
   //Login as Admin to cleanup
-  await page.goto("http://localhost:3000/signin");
+  await page.goto("https://se-cedt-rentals.vercel.app/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
@@ -260,8 +259,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as User" }).click();
   await page.getByRole("button", { name: "Admin" }).click();
-  await page.getByRole("link", { name: "Admin Tools" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "Admin Tools" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
 
   await expect(page.locator("h1")).toContainText("Admin Dashboard");
   await page.getByRole("link", { name: "Manage Car Providers Add or" }).click();
@@ -289,8 +288,8 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     .getByRole("button", { name: "Admin", exact: true })
     .first()
     .click();
-  await page.getByRole("link", { name: "Admin Tools" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "Admin Tools" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
 
   await page.getByRole("link", { name: "Manage Admins Create and" }).click();
   await expect(page.getByRole("heading")).toContainText(
@@ -311,14 +310,14 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   );
 
   //SIgn Out
-  await page.goto("http://localhost:3000/signout?callbackUrl=/");
-  //await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.goto("https://se-cedt-rentals.vercel.app/signout?callbackUrl=/");
+  //await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 });
 
 test("Admin verified provider", async ({ page }) => {
-  await page.goto("http://localhost:3000/");
+  await page.goto("https://se-cedt-rentals.vercel.app/");
   await page.getByRole("link", { name: "Register" }).click();
   await page.getByRole("button", { name: "Car Provider" }).click();
   await page.waitForTimeout(1000);
@@ -364,8 +363,8 @@ test("Admin verified provider", async ({ page }) => {
     .getByRole("button", { name: "Sign In as Car Provider", exact: true })
     .click();
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "My Profile" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "My Profile" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await expect(page.getByRole("main")).toContainText("Temp Provider");
   await expect(page.getByRole("main")).toContainText(
     "playwright.temp@gmail.com"
@@ -389,7 +388,7 @@ test("Admin verified provider", async ({ page }) => {
   await page.getByRole('button', { name: 'Sign In as User' }).click();
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Admin' }).click();
-  await page.getByRole('link', { name: 'Admin Tools' }).click();
+  await page.getByRole('button', { name: 'Admin Tools' }).click();
   await page.locator('.MuiBackdrop-root').click();
 
   await expect(page.locator('h1')).toContainText('Admin Dashboard');
@@ -399,7 +398,7 @@ test("Admin verified provider", async ({ page }) => {
   await page.waitForTimeout(500);
   await page.getByRole('button', { name: 'Verify', exact: true }).click();
   await page.getByRole('button', { name: 'Admin', exact: true }).click();
-  await page.getByRole('link', { name: 'Sign Out' }).click();
+  await page.getByRole('button', { name: 'Sign Out' }).click();
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
   console.log("Admin Set Complete");
 
@@ -417,8 +416,8 @@ test("Admin verified provider", async ({ page }) => {
     .getByRole("button", { name: "Sign In as Car Provider", exact: true })
     .click();
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "My Profile" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "My Profile" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await expect(page.getByRole("main")).toContainText("Temp Provider");
   await expect(page.getByRole("main")).toContainText(
     "playwright.temp@gmail.com"
@@ -441,13 +440,13 @@ test("Admin verified provider", async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
   await page.getByRole('button', { name: 'Sign In as User' }).click();
   await page.getByRole('button', { name: 'Admin' }).click();
-  await page.getByRole('link', { name: 'Admin Tools' }).click();
+  await page.getByRole('button', { name: 'Admin Tools' }).click();
   await page.locator('.MuiBackdrop-root').click();
   await page.getByRole('link', { name: 'Manage Car Providers Add or' }).click();
   await page.getByRole('row', { name: 'Temp Provider playwright.temp' }).getByRole('button').nth(1).click();
   await page.locator('div').filter({ hasText: /^DeactivateCancel$/ }).getByRole('button').first().click();
   await expect(page.getByRole('main')).toContainText('Car provider deactivated successfully');
   await page.getByRole('button', { name: 'Admin', exact: true }).click();
-  await page.getByRole('link', { name: 'Sign Out' }).click();
+  await page.getByRole('button', { name: 'Sign Out' }).click();
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
 });

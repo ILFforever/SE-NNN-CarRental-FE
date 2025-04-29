@@ -94,7 +94,7 @@ test("Create New Provider", async ({ page }) => {
   );
   await expect(page.getByRole("main")).toContainText("123-4567890");
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -108,10 +108,10 @@ test("Create New Provider", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).click();
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as User" }).click();
-  await expect(page.locator("#user-menu-button")).toContainText("Admin");
+  await expect(page.getByRole("navigation")).toContainText("Admin");
   await page.getByRole("button", { name: "Admin" }).click();
-  await page.getByRole("link", { name: "Admin Tools" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "Admin Tools" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await page.getByRole("link", { name: "Manage Car Providers Add or" }).click();
   await page.waitForTimeout(2000);
   await expect(page.getByRole("heading")).toContainText("Manage Car Providers");
