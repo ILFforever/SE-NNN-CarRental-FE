@@ -23,8 +23,8 @@ export default function BookingCTA() {
     <motion.section 
       ref={containerRef}
       style={{ opacity, y }}
-      className="relative py-16 md:py-24 overflow-hidden mx-auto w-full max-w-7xl px-4 sm:px-6"
-    >
+      className="relative py-2 md:py-4 overflow-hidden mx-auto w-full max-w-7xl px-4 sm:px-6" // Reduced padding
+      >
       {/* Container with background and custom pattern */}
       <div className={styles.ctaContainer}>
         <div className={styles.ctaContent}>
