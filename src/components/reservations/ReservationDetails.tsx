@@ -14,7 +14,7 @@ import ReservationDetailsCard from "./ReservationDetailsCard";
 
 interface UnifiedReservationDetailsProps {
   reservationId: string;
-  userType: "customer" | "provider" | "admin";
+  userType: "user" | "provider" | "admin";
   backUrl?: string;
 }
 
@@ -281,7 +281,7 @@ export default function UnifiedReservationDetails({
               "You do not have permission to view this reservation"
             );
           }
-        } else if (userType === "customer") {
+        } else if (userType === "user") {
           // For customers: Check if this is their reservation
           const userId = session.user.id || session.user._id;
           const userData = data.data.user;
@@ -638,7 +638,7 @@ export default function UnifiedReservationDetails({
 
     try {
       // Customer can only cancel pending reservations
-      if (rental?.status !== "pending" && userType === "customer") {
+      if (rental?.status !== "pending" && userType === "user") {
         throw new Error("You can only cancel pending reservations");
       }
 
@@ -664,7 +664,7 @@ export default function UnifiedReservationDetails({
       }
 
       // If this is a customer cancellation, we need to update the car availability
-      if (userType === "customer") {
+      if (userType === "user") {
         try {
           const carId =
             typeof rental?.car === "string" ? rental.car : rental?.car._id;
@@ -695,7 +695,7 @@ export default function UnifiedReservationDetails({
       setSuccess("Reservation cancelled successfully");
 
       // Redirect for customers after cancellation
-      if (userType === "customer") {
+      if (userType === "user") {
         setTimeout(() => {
           router.push("/account/reservations");
         }, 2000);
@@ -1034,7 +1034,7 @@ export default function UnifiedReservationDetails({
               {/* Edit button - only shown for appropriate user types */}
               {((userType === "provider" && rental.status !== "cancelled") ||
                 userType === "admin" ||
-                (userType === "customer" && rental.status === "pending")) &&
+                (userType === "user" && rental.status === "pending")) &&
                 !isEditingNotes && (
                   <button
                     onClick={() => setIsEditingNotes(true)}
@@ -1230,7 +1230,7 @@ export default function UnifiedReservationDetails({
               )}
 
               {/* Customer-specific actions */}
-              {userType === "customer" && (
+              {userType === "user" && (
                 <>
                   {rental.status === "pending" && (
                     <button
