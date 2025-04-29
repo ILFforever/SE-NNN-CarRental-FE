@@ -45,9 +45,67 @@ export default function UnifiedReservationDetails({
   const [modalAction, setModalAction] = useState<
     "confirm" | "complete" | "cancel" | null
   >(null);
-  const handleRentalUpdate = (updatedRental: Rent) => {
-    setRental(updatedRental);
-    setSuccess("Reservation updated successfully");
+  const handleRentalUpdate = async (updatedRental: Rent) => {
+    try {
+      // เก็บข้อมูลรถยนต์และลูกค้าจากข้อมูลเดิม
+      const carData = typeof rental?.car === 'object' ? rental.car : null;
+      const userData = typeof rental?.user === 'object' ? rental.user : null;
+      
+      // สร้างอ็อบเจกต์ใหม่สำหรับการอัพเดต
+      let processedRental = { ...updatedRental };
+      
+      // ตรวจสอบว่าข้อมูลรถยนต์เป็น ID หรือไม่
+      if (updatedRental.car && typeof updatedRental.car === 'string' && session?.user?.token) {
+        if (carData) {
+          // ถ้ามีข้อมูลรถยนต์เดิม ให้ใช้ข้อมูลเดิมไปก่อน
+          processedRental.car = carData;
+        } else {
+          // ถ้าไม่มีข้อมูลรถยนต์เดิม ให้ดึงข้อมูลใหม่
+          try {
+            const carResponse = await fetch(
+              `${API_BASE_URL}/cars/${updatedRental.car}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${session.user.token}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+  
+            if (carResponse.ok) {
+              const carResponseData = await carResponse.json();
+              if (carResponseData.success && carResponseData.data) {
+                processedRental.car = carResponseData.data;
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching car details after update:", error);
+          }
+        }
+      }
+      
+      // ตรวจสอบข้อมูลผู้ใช้
+      if (updatedRental.user && typeof updatedRental.user === 'string') {
+        if (userData) {
+          // ถ้ามีข้อมูลผู้ใช้เดิม ให้ใช้ข้อมูลเดิม
+          processedRental.user = userData;
+        }
+      }
+      
+      // อัพเดต state ด้วยข้อมูลที่ประมวลผลแล้ว
+      setRental(processedRental);
+      setSuccess("Reservation updated successfully");
+      
+      // รีเฟรชข้อมูลบริการหากมีการเปลี่ยนแปลง
+      if (processedRental.service && processedRental.service.length > 0) {
+        fetchServices();
+      }
+    } catch (err) {
+      console.error("Error processing updated rental:", err);
+      // อัพเดตข้อมูลดิบในกรณีที่มีข้อผิดพลาด
+      setRental(updatedRental);
+      setSuccess("Reservation updated but some details may be incomplete");
+    }
   };
 
   const fetchServices = async () => {

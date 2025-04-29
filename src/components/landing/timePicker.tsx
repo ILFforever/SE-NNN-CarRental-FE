@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, ChevronDown, Clock, X } from "lucide-react";
+import { roundToNearestTen } from "@/libs/timePickerUtils";
 
 interface SimpleTimePickerProps {
   value: string;
   onChange: (value: string) => void;
   use12Hours?: boolean;
   className?: string;
-  fieldLabel?: string; // เพิ่ม prop สำหรับชื่อฟิลด์ (optional)
+  fieldLabel?: string;
 }
 
 const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
@@ -23,19 +24,11 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
   const pickerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const mobilePickerRef = useRef<HTMLDivElement>(null);
-
-  // State to store the picker unique identifier
-  const [pickerID] = useState(() => {
-    // Generate unique ID for each time picker instance
-    return `time-picker-${Math.random().toString(36).substring(2, 9)}`;
-  });
-
-  // State for dropdown position
-  const [dropdownPosition, setDropdownPosition] = useState<React.CSSProperties>(
-    {}
-  );
-
-  // Parse the current value
+  const initializedRef = useRef<boolean>(false);
+  const [pickerID] = useState(() => `time-picker-${Math.random().toString(36).substring(2, 9)}`);
+  const [dropdownPosition, setDropdownPosition] = useState<React.CSSProperties>({});
+  
+  // Parse the current time value
   const parseTime = (timeString: string) => {
     let hour = 10;
     let minute = 0;
@@ -75,30 +68,38 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
 
   // State for selected values
   const [selectedHour, setSelectedHour] = useState(hour);
-  const [selectedMinute, setSelectedMinute] = useState(
-    roundToNearestTen(minute)
-  );
+  const [selectedMinute, setSelectedMinute] = useState(roundToNearestTen(minute));
   const [selectedPeriod, setSelectedPeriod] = useState(period);
 
-  // บันทึกค่าเวลาปัจจุบันลง sessionStorage เมื่อมีการเปลี่ยนแปลง
+  // MODIFIED: Mark as initialized after first render
   useEffect(() => {
-    // บันทึกค่าลง sessionStorage ด้วย ID ที่ไม่ซ้ำกัน
-    if (fieldLabel) {
-      sessionStorage.setItem(`${pickerID}-${fieldLabel}`, value);
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      console.log(`TimePicker ${fieldLabel} initialized with value:`, value);
+    }
+  }, []);
+
+  // MODIFIED: Save current time to sessionStorage when changed, but only if initialized
+  useEffect(() => {
+    if (initializedRef.current && fieldLabel && value) {
+      const storedValue = sessionStorage.getItem(`${pickerID}-${fieldLabel}`);
+      
+      // Only update sessionStorage if value has actually changed
+      if (storedValue !== value) {
+        sessionStorage.setItem(`${pickerID}-${fieldLabel}`, value);
+        console.log(`Saved ${fieldLabel} to sessionStorage:`, value);
+      }
     }
   }, [value, pickerID, fieldLabel]);
 
-  // Helper function to round minutes to nearest 10
-  function roundToNearestTen(minutes: number): number {
-    return (Math.round(minutes / 10) * 10) % 60;
-  }
-
-  // Update state when props change
+  // MODIFIED: Update state when props change, but only if value is valid
   useEffect(() => {
-    const { hour, minute, period } = parseTime(value);
-    setSelectedHour(hour);
-    setSelectedMinute(roundToNearestTen(minute));
-    setSelectedPeriod(period);
+    if (value) {
+      const { hour, minute, period } = parseTime(value);
+      setSelectedHour(hour);
+      setSelectedMinute(roundToNearestTen(minute));
+      setSelectedPeriod(period);
+    }
   }, [value]);
 
   // Generate minute options in steps of 10 (0, 10, 20, 30, 40, 50)
@@ -116,10 +117,25 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     if (isOpen) {
       const handlePositionChange = () => {
         updateDropdownPosition();
+        
+        // Check if button is still in viewport
+        if (buttonRef.current) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          const isInViewport = 
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= window.innerHeight &&
+            rect.right <= window.innerWidth;
+            
+          // Close picker if button is out of viewport
+          if (!isInViewport) {
+            setIsOpen(false);
+          }
+        }
       };
 
       window.addEventListener("resize", handlePositionChange);
-      window.addEventListener("scroll", handlePositionChange, true); // Use capture phase to catch all scroll events
+      window.addEventListener("scroll", handlePositionChange, true); 
 
       return () => {
         window.removeEventListener("resize", handlePositionChange);
@@ -128,39 +144,44 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     }
   }, [isOpen]);
 
-  // Subscribe to visibility change event to handle tab switching
+  // MODIFIED: Better visibility change handler to prevent value resets
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && fieldLabel) {
-        // When tab becomes visible again, check if the stored value matches current value
         const storedValue = sessionStorage.getItem(`${pickerID}-${fieldLabel}`);
-
-        // ตรวจสอบว่ามีค่าที่เก็บไว้ใน sessionStorage หรือไม่และแตกต่างจากค่าปัจจุบันหรือไม่
+        
+        // Only update if there's a stored value and it's different from current value
         if (storedValue && storedValue !== value) {
+          console.log(`Tab visible: Restoring ${fieldLabel} from sessionStorage:`, storedValue);
           onChange(storedValue);
         }
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [value, onChange, pickerID, fieldLabel]);
 
-  // Handle page load to restore values from sessionStorage
+  // MODIFIED: Handle page load to restore values from sessionStorage only once
   useEffect(() => {
-    if (fieldLabel) {
+    if (fieldLabel && !initializedRef.current) {
       const storedValue = sessionStorage.getItem(`${pickerID}-${fieldLabel}`);
-      // หากมีค่าที่บันทึกไว้และไม่ตรงกับค่าปัจจุบัน ให้ใช้ค่าที่บันทึกไว้
-      if (storedValue && storedValue !== value) {
-        onChange(storedValue);
-      }
-      // หากไม่มีค่าที่บันทึกไว้ ให้บันทึกค่าปัจจุบันลง sessionStorage
-      else if (!storedValue && value) {
+      
+      if (storedValue) {
+        // If we have a stored value and it's different from the prop value
+        if (storedValue !== value) {
+          console.log(`Loading ${fieldLabel} from sessionStorage:`, storedValue);
+          onChange(storedValue);
+        }
+      } else if (value) {
+        // If we don't have a stored value but we do have a prop value
         sessionStorage.setItem(`${pickerID}-${fieldLabel}`, value);
+        console.log(`Initializing ${fieldLabel} in sessionStorage:`, value);
       }
+      
+      initializedRef.current = true;
     }
   }, []);
 
@@ -177,21 +198,19 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
 
     setDropdownPosition({
       top: isNearBottom ? "auto" : rect.bottom + window.scrollY + 8,
-      bottom: isNearBottom
-        ? window.innerHeight - rect.top + window.scrollY + 8
-        : "auto",
+      bottom: isNearBottom ? window.innerHeight - rect.top + window.scrollY + 8 : "auto",
       left: rect.left + window.scrollX,
       maxWidth: `${Math.min(350, window.innerWidth - 20)}px`, // Responsive width
     });
   };
 
-  // Modal overlay effect - เมื่อเปิด TimePicker ให้ทำให้พื้นหลังจางลง
+  // Modal overlay effect when TimePicker is open
   useEffect(() => {
     if (isOpen) {
-      // เพิ่ม class overlay ให้กับ body เพื่อปรับ style ของทั้งหน้า
+      // Add overlay class to body
       document.body.classList.add("time-picker-active");
 
-      // ไฮไลท์เฉพาะช่อง input ไม่รวมข้อความ label
+      // Highlight only the input field, not the label text
       if (buttonRef.current) {
         buttonRef.current.classList.add("active-time-input");
       }
@@ -203,7 +222,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
       document.body.style.top = `-${scrollY}px`;
       document.body.style.overflow = "hidden";
 
-      // เพิ่ม CSS ใน runtime
+      // Add CSS in runtime
       const style = document.createElement("style");
       style.id = "time-picker-overlay-style";
       style.innerHTML = `
@@ -240,7 +259,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
           }
         }
         
-        /* ทำให้ข้อความส่วนอื่นจางลง */
+        /* Fade other text */
         body.time-picker-active .time-field-container:not(:has(.active-time-input)) {
           opacity: 0.5;
           filter: grayscale(30%);
@@ -271,9 +290,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
         window.scrollTo(0, scrollY);
 
         // Remove runtime CSS
-        const styleElement = document.getElementById(
-          "time-picker-overlay-style"
-        );
+        const styleElement = document.getElementById("time-picker-overlay-style");
         if (styleElement) {
           styleElement.remove();
         }
@@ -285,10 +302,8 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
   useEffect(() => {
     const handleMouseClickOutside = (event: MouseEvent) => {
       const isClickInsidePicker =
-        (pickerRef.current &&
-          pickerRef.current.contains(event.target as Node)) ||
-        (mobilePickerRef.current &&
-          mobilePickerRef.current.contains(event.target as Node));
+        (pickerRef.current && pickerRef.current.contains(event.target as Node)) ||
+        (mobilePickerRef.current && mobilePickerRef.current.contains(event.target as Node));
 
       const isClickOnButton =
         buttonRef.current && buttonRef.current.contains(event.target as Node);
@@ -318,7 +333,6 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     };
 
     if (isOpen) {
-      // Use capture phase to handle event before it reaches other handlers
       document.addEventListener("mousedown", handleMouseClickOutside, true);
       document.addEventListener("touchstart", handleTouchOutside, true);
     }
@@ -334,20 +348,18 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     if (use12Hours) {
       return `${hour}:${minute < 10 ? "0" + minute : minute} ${period}`;
     } else {
-      return `${hour < 10 ? "0" + hour : hour}:${
-        minute < 10 ? "0" + minute : minute
-      }`;
+      return `${hour < 10 ? "0" + hour : hour}:${minute < 10 ? "0" + minute : minute}`;
     }
   };
 
-  // Update the time when selections change
+  // MODIFIED: Update the time when selections change, with sessionStorage sync
   const updateTime = (hour: number, minute: number, period: string) => {
     const newValue = formatTime(hour, minute, period);
     onChange(newValue);
 
-    // บันทึกค่าใหม่ลงใน sessionStorage
     if (fieldLabel) {
       sessionStorage.setItem(`${pickerID}-${fieldLabel}`, newValue);
+      console.log(`Time updated ${fieldLabel}:`, newValue);
     }
   };
 
@@ -356,9 +368,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     setIsOpen(!isOpen);
   };
 
-  // =========== Mobile Controls with Improved Event Handling ===========
-
-  // These functions explicitly stop propagation and prevent default to fix mobile issues
+  // =========== Time Control Functions ===========
 
   // Hour control functions
   const incrementHour = (e: React.MouseEvent | React.TouchEvent) => {
@@ -388,8 +398,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     e.stopPropagation();
     e.preventDefault();
 
-    const nextIndex =
-      (minuteOptions.indexOf(selectedMinute) + 1) % minuteOptions.length;
+    const nextIndex = (minuteOptions.indexOf(selectedMinute) + 1) % minuteOptions.length;
     const newMinute = minuteOptions[nextIndex];
     setSelectedMinute(newMinute);
     updateTime(selectedHour, newMinute, selectedPeriod);
@@ -400,8 +409,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
     e.preventDefault();
 
     const currentIndex = minuteOptions.indexOf(selectedMinute);
-    const prevIndex =
-      currentIndex === 0 ? minuteOptions.length - 1 : currentIndex - 1;
+    const prevIndex = currentIndex === 0 ? minuteOptions.length - 1 : currentIndex - 1;
     const newMinute = minuteOptions[prevIndex];
     setSelectedMinute(newMinute);
     updateTime(selectedHour, newMinute, selectedPeriod);
@@ -418,10 +426,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
   };
 
   return (
-    <div
-      className={`relative time-field-container ${className}`}
-      data-picker-id={pickerID}
-    >
+    <div className={`relative time-field-container ${className}`} data-picker-id={pickerID}>
       {/* Label for the field if provided */}
       {fieldLabel && (
         <p className="text-sm font-medium text-gray-700 mb-1.5">{fieldLabel}</p>
@@ -438,10 +443,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
             : "border-gray-300"
         } rounded-md px-3 py-2.5 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8A7D55]/30 text-gray-700 w-full transition-all duration-200`}
       >
-        <Clock
-          size={16}
-          className={isOpen ? "text-[#8A7D55]" : "text-gray-500"}
-        />
+        <Clock size={16} className={isOpen ? "text-[#8A7D55]" : "text-gray-500"} />
         <span className="flex-1 text-left">
           {formatTime(selectedHour, selectedMinute, selectedPeriod)}
         </span>
@@ -528,9 +530,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
                         <ChevronUp size={24} className="text-gray-500" />
                       </button>
                       <div className="my-3 text-3xl font-semibold w-16 text-center bg-[#8A7D55]/10 rounded-lg py-2">
-                        {selectedMinute < 10
-                          ? `0${selectedMinute}`
-                          : selectedMinute}
+                        {selectedMinute < 10 ? `0${selectedMinute}` : selectedMinute}
                       </div>
                       <button
                         type="button"
@@ -664,9 +664,7 @@ const SimpleTimePicker: React.FC<SimpleTimePickerProps> = ({
                       <ChevronUp size={20} className="text-gray-500" />
                     </button>
                     <div className="my-2 text-2xl font-semibold w-14 text-center bg-[#8A7D55]/10 rounded-lg py-1">
-                      {selectedMinute < 10
-                        ? `0${selectedMinute}`
-                        : selectedMinute}
+                      {selectedMinute < 10 ? `0${selectedMinute}` : selectedMinute}
                     </div>
                     <button
                       type="button"

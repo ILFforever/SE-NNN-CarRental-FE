@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Edit, Loader2, Save, X, Plus, Minus } from "lucide-react";
 import { API_BASE_URL } from "@/config/apiConfig";
 import dayjs from "dayjs";
+import SimpleTimePicker from "@/components/landing/timePicker"; // Import the new TimePicker component
 
 interface DetailsCardProps {
   rental: any;
@@ -312,6 +313,27 @@ export default function ReservationDetailsCard({
     });
   };
 
+  // Convert 12-hour time format to 24-hour format
+  const convert12To24Format = (timeStr: string): string => {
+    // Check if the time is already in 24-hour format (no AM/PM)
+    if (!timeStr.match(/AM|PM|am|pm/i)) {
+      return timeStr;
+    }
+
+    const [timePart, period] = timeStr.split(/\s+/);
+    let [hours, minutes] = timePart.split(":").map(Number);
+
+    if (period.toLowerCase() === "pm" && hours < 12) {
+      hours += 12;
+    } else if (period.toLowerCase() === "am" && hours === 12) {
+      hours = 0;
+    }
+
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
   const handleSaveChanges = async () => {
     // Validate dates
     const newStartDate = dayjs(startDate);
@@ -327,9 +349,16 @@ export default function ReservationDetailsCard({
       return;
     }
 
-    // Validate time format
+    // Convert time formats if they're in 12-hour format (from SimpleTimePicker)
+    const formattedPickupTime = convert12To24Format(pickupTime);
+    const formattedReturnTime = convert12To24Format(returnTime);
+
+    // Validate time format for 24-hour time (HH:MM)
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(pickupTime) || !timeRegex.test(returnTime)) {
+    if (
+      !timeRegex.test(formattedPickupTime) ||
+      !timeRegex.test(formattedReturnTime)
+    ) {
       setError("Invalid time format. Please use HH:MM format (24-hour)");
       return;
     }
@@ -360,8 +389,8 @@ export default function ReservationDetailsCard({
       // แปลงเวลาจาก UTC+7 เป็น UTC+0
       // สร้าง datetime object โดยรวมวันที่และเวลาเข้าด้วยกัน
       // แล้วลบ 7 ชั่วโมงเพื่อแปลงจาก UTC+7 เป็น UTC+0
-      const pickupDateTimeLocal = dayjs(`${startDate}T${pickupTime}`);
-      const returnDateTimeLocal = dayjs(`${returnDate}T${returnTime}`);
+      const pickupDateTimeLocal = dayjs(`${startDate}T${formattedPickupTime}`);
+      const returnDateTimeLocal = dayjs(`${returnDate}T${formattedReturnTime}`);
 
       // ลบ 7 ชั่วโมงเพื่อแปลงเป็น UTC+0
       const pickupDateTimeUTC = pickupDateTimeLocal.subtract(7, "hour");
@@ -581,6 +610,29 @@ export default function ReservationDetailsCard({
     return isDaily ? `+$${rate}/day` : `+$${rate} (once)`;
   };
 
+  // Helper function to convert 24h time to 12h format for TimePicker display
+  const formatTimeFor12HourDisplay = (time24h: string): string => {
+    // If the time is already in 12-hour format, return it
+    if (time24h.match(/AM|PM|am|pm/i)) return time24h;
+
+    try {
+      // Parse hours and minutes
+      const [hours, minutes] = time24h.split(":").map(Number);
+
+      // Determine period
+      const period = hours >= 12 ? "PM" : "AM";
+
+      // Convert hours to 12-hour format
+      const hours12 = hours % 12 || 12;
+
+      // Format with leading zeros for minutes
+      return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
+    } catch (err) {
+      console.error("Error formatting time:", err);
+      return time24h; // Return original if parsing fails
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="flex justify-between items-center mb-4">
@@ -644,111 +696,136 @@ export default function ReservationDetailsCard({
         </div>
       )}
 
-      <div className="space-y-3">
-        <div>
-          <p className="text-gray-600 text-sm">Reservation ID</p>
-          <p className="font-medium text-sm">{rental._id}</p>
-        </div>
-
-        <div>
-          <p className="text-gray-600 text-sm">Created On</p>
-          <p className="font-medium">
-            {formatDate(rental.createdAt)} {formatTime(rental.createdAt)}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {isEditing ? (
-            // Editable date and time fields
-            <>
-              <div>
-                <p className="text-gray-600 text-sm">Start Date</p>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  min={dayjs().format("YYYY-MM-DD")} // Can't select dates in the past
-                />
-                <div className="mt-2">
-                  <p className="text-gray-600 text-sm">Pickup Time</p>
-                  <input
-                    type="time"
-                    value={pickupTime}
-                    onChange={(e) => setPickupTime(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-gray-600 text-sm">Return Date</p>
-                <input
-                  type="date"
-                  value={returnDate}
-                  onChange={(e) => setReturnDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  min={startDate} // Return date must be after start date
-                />
-                <div className="mt-2">
-                  <p className="text-gray-600 text-sm">Return Time</p>
-                  <input
-                    type="time"
-                    value={returnTime}
-                    onChange={(e) => setReturnTime(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            // Read-only date and time fields
-            <>
-              <div>
-                <p className="text-gray-600 text-sm">Start Date & Time</p>
-                <p className="font-medium">
-                  {formatDate(rental.startDate)}{" "}
-                  {rental.pickupTime || formatTime(rental.startDate)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-600 text-sm">Return Date & Time</p>
-                <p className="font-medium">
-                  {formatDate(rental.returnDate)}{" "}
-                  {rental.returnTime || formatTime(rental.returnDate)}
-                </p>
-              </div>
-            </>
-          )}
-
-          {rental.actualReturnDate && (
-            <div>
-              <p className="text-gray-600 text-sm">Actual Return</p>
-              <p className="font-medium">
-                {formatDate(rental.actualReturnDate)}
-              </p>
-            </div>
-          )}
+      <div className="space-y-5">
+        {/* Basic Information */}
+        <div className="space-y-3 pb-4 border-b border-gray-100">
+          <div>
+            <p className="text-gray-600 text-sm">Reservation ID</p>
+            <p className="font-medium text-sm">{rental._id}</p>
+          </div>
 
           <div>
-            <p className="text-gray-600 text-sm">Duration</p>
+            <p className="text-gray-600 text-sm">Created On</p>
             <p className="font-medium">
-              {isEditing
-                ? `${dayjs(returnDate).diff(dayjs(startDate), "day") + 1} days`
-                : `${calculateRentalPeriod(
-                    rental.startDate,
-                    rental.returnDate
-                  )} days`}
+              {formatDate(rental.createdAt)} {formatTime(rental.createdAt)}
             </p>
           </div>
         </div>
 
-        <hr className="my-3" />
+        {/* Rental Dates and Times */}
+        <div className="pb-4 border-b border-gray-100">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">
+            Rental Period
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {isEditing ? (
+              // Editable date and time fields
+              <>
+                <div>
+                  <p className="text-gray-600 text-sm mb-1.5">Start Date</p>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                    min={dayjs().format("YYYY-MM-DD")} // Can't select dates in the past
+                  />
+                  <div className="mt-3">
+                    {/* Replace standard time input with SimpleTimePicker */}
+                    <SimpleTimePicker
+                      value={formatTimeFor12HourDisplay(pickupTime)}
+                      onChange={setPickupTime}
+                      use12Hours={true}
+                      fieldLabel="Pickup Time"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-gray-600 text-sm mb-1.5">Return Date</p>
+                  <input
+                    type="date"
+                    value={returnDate}
+                    onChange={(e) => setReturnDate(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A7D55]"
+                    min={startDate} // Return date must be after start date
+                  />
+                  <div className="mt-3">
+                    {/* Replace standard time input with SimpleTimePicker */}
+                    <SimpleTimePicker
+                      value={formatTimeFor12HourDisplay(returnTime)}
+                      onChange={setReturnTime}
+                      use12Hours={true}
+                      fieldLabel="Return Time"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Read-only date and time fields
+              <>
+                <div>
+                  <div className="mb-3">
+                    <p className="text-gray-600 text-sm">Start Date</p>
+                    <p className="font-medium">
+                      {formatDate(rental.startDate)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 text-sm">Pickup Time</p>
+                    <p className="font-medium">
+                      {rental.pickupTime || formatTime(rental.startDate)}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-3">
+                    <p className="text-gray-600 text-sm">Return Date</p>
+                    <p className="font-medium">
+                      {formatDate(rental.returnDate)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 text-sm">Return Time</p>
+                    <p className="font-medium">
+                      {rental.returnTime || formatTime(rental.returnDate)}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-4">
+            {rental.actualReturnDate && (
+              <div>
+                <p className="text-gray-600 text-sm">Actual Return</p>
+                <p className="font-medium">
+                  {formatDate(rental.actualReturnDate)}
+                </p>
+              </div>
+            )}
+
+            <div>
+              <p className="text-gray-600 text-sm">Duration</p>
+              <p className="font-medium">
+                {isEditing
+                  ? `${
+                      dayjs(returnDate).diff(dayjs(startDate), "day") + 1
+                    } days`
+                  : `${calculateRentalPeriod(
+                      rental.startDate,
+                      rental.returnDate
+                    )} days`}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Services Section */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
+        <div className="pb-4 border-b border-gray-100">
+          <div className="flex justify-between items-center mb-3">
             <p className="text-gray-600 text-sm font-medium">
               Additional Services
             </p>
@@ -928,7 +1005,7 @@ export default function ReservationDetailsCard({
           )}
         </div>
 
-        {/* Price Column */}
+        {/* Price Section */}
         <div className="space-y-1">
           <div className="flex justify-between items-center">
             <span className="text-gray-600 text-sm">Base Rental</span>
