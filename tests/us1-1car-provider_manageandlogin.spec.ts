@@ -54,7 +54,7 @@ test("Create New Provider", async ({ page }) => {
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
-    .fill("playwright.temp@gmail.com");
+    .fill("playwright.temp2@gmail.com");
   await page.getByRole("textbox", { name: "Company Address" }).click();
   await page.getByRole("textbox", { name: "Company Address" }).fill("BKK");
   await page.getByRole("textbox", { name: "Telephone (XXX-XXXXXXX)" }).click();
@@ -78,7 +78,7 @@ test("Create New Provider", async ({ page }) => {
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
-    .fill("playwright.temp@gmail.com");
+    .fill("playwright.temp2@gmail.com");
   await page.getByRole("textbox", { name: "Password" }).click();
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Car Provider", exact: true }).click();
@@ -90,7 +90,7 @@ test("Create New Provider", async ({ page }) => {
   //await page.locator(".MuiBackdrop-root").click();
   await expect(page.getByRole("main")).toContainText("Temp Provider");
   await expect(page.getByRole("main")).toContainText(
-    "playwright.temp@gmail.com"
+    "playwright.temp2@gmail.com"
   );
   await expect(page.getByRole("main")).toContainText("123-4567890");
   await page.getByRole("button", { name: "Temp Provider" }).click();
@@ -117,10 +117,10 @@ test("Create New Provider", async ({ page }) => {
   await expect(page.getByRole("heading")).toContainText("Manage Car Providers");
   await expect(page.locator("tbody")).toContainText("Temp Provider");
   await expect(page.locator("tbody")).toContainText(
-    "playwright.temp@gmail.com"
+    "playwright.temp2@gmail.com"
   );
   await page
-    .getByRole("row", { name: "Temp Provider playwright.temp" })
+    .getByRole("row", { name: "Temp Provider playwright.temp2" })
     .getByRole("button")
     .nth(1)
     .click();
