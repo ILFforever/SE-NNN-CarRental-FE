@@ -51,13 +51,16 @@ export const timeOptions = [
 
 // Helper function to convert time string to dayjs object with date
 export const createDateTimeObject = (date: Dayjs | null, timeStr: string) => {
-  if (!date) return null;
+  if (!date || !timeStr) return null;
 
   const isPM = timeStr.toLowerCase().includes("pm");
-  let [hours, minutes] = timeStr
-    .replace(/\s*(AM|PM|am|pm)\s*/, "")
-    .split(":")
-    .map(Number);
+  const timePattern = /(\d{1,2}):(\d{2})/;
+  const match = timeStr.match(timePattern);
+
+  if (!match) return null;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
 
   if (isPM && hours < 12) {
     hours += 12;
@@ -95,7 +98,10 @@ export const getRentalPeriod = (
 // คำนวณจำนวนวันเช่ารถตามเงื่อนไขที่กำหนด - เหมือนกับ getRentalPeriod เพื่อความเข้ากันได้กับโค้ดเดิม
 export const calculateRentalDays = getRentalPeriod;
 
-// ตรวจสอบว่าการจองใช้เวลาอย่างน้อย 2 ชั่วโมงหรือไม่
+/**
+ * ตรวจสอบว่าการจองใช้เวลาอย่างน้อย 2 ชั่วโมงหรือไม่
+ * ฟังก์ชันนี้ยังคงใช้ได้แต่ควรใช้ validateBookingDuration แทนเพื่อข้อความที่เป็นประโยชน์กว่า
+ */
 export const isBookingAtLeastTwoHours = (
   pickupDateTime: Dayjs | null,
   returnDateTime: Dayjs | null
@@ -196,3 +202,112 @@ export const getTotalCost = (
   return subtotal - discount;
 };
 
+/**
+ * ฟังก์ชันใหม่เพื่อตรวจสอบเงื่อนไขเวลาจองขั้นต่ำ (2 ชั่วโมงสำหรับการจองในวันเดียวกัน)
+ * @param pickupDateTime เวลารับรถ
+ * @param returnDateTime เวลาคืนรถ
+ * @returns ผลลัพธ์การตรวจสอบพร้อมข้อความแสดงผล
+ */
+export const validateBookingDuration = (
+  pickupDateTime: Dayjs | null,
+  returnDateTime: Dayjs | null
+): { isValid: boolean; errorMessage: string | null } => {
+  // ถ้าวันที่ใดวันที่หนึ่งเป็น null
+  if (!pickupDateTime || !returnDateTime) {
+    return {
+      isValid: false,
+      errorMessage: "Please select both pickup and return date and time.",
+    };
+  }
+
+  // คำนวณความแตกต่างในนาที
+  const diffMinutes = returnDateTime.diff(pickupDateTime, "minute");
+
+  // ตรวจสอบว่าเวลารับอยู่ก่อนเวลาคืน
+  if (diffMinutes <= 0) {
+    return {
+      isValid: false,
+      errorMessage: "Return time must be after pickup time.",
+    };
+  }
+
+  // ตรวจสอบว่าเป็นการจองในวันเดียวกันหรือไม่
+  const isSameDay = pickupDateTime.isSame(returnDateTime, "day");
+
+  // ถ้าเป็นวันเดียวกัน ตรวจสอบเงื่อนไขขั้นต่ำ 2 ชั่วโมง (120 นาที)
+  if (isSameDay && diffMinutes < 120) {
+    const hours = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+    return {
+      isValid: false,
+      errorMessage: `Same-day bookings require a minimum of 2 hours. Current duration: ${hours} hour${
+        hours !== 1 ? "s" : ""
+      } and ${mins} minute${mins !== 1 ? "s" : ""}.`,
+    };
+  }
+
+  return { isValid: true, errorMessage: null };
+};
+/**
+ * แปลงเวลาในรูปแบบ "10:00 AM" เป็นนาทีตั้งแต่เที่ยงคืน
+ * @param timeStr เวลาในรูปแบบ string
+ * @returns นาทีตั้งแต่เที่ยงคืน
+ */
+export const convertTimeToMinutes = (timeStr: string): number => {
+  const isPM = timeStr.toLowerCase().includes("pm");
+  const timePattern = /(\d{1,2}):(\d{2})/;
+  const match = timeStr.match(timePattern);
+
+  if (!match) return 0;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+
+  if (isPM && hours < 12) hours += 12;
+  else if (!isPM && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+};
+
+/**
+ * แสดงระยะเวลาในรูปแบบที่อ่านง่าย
+ * @param minutes ระยะเวลาเป็นนาที
+ * @returns ข้อความแสดงระยะเวลา เช่น "2 hours and 30 minutes"
+ */
+export const formatDuration = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hours === 0) {
+    return `${mins} minute${mins !== 1 ? "s" : ""}`;
+  } else if (mins === 0) {
+    return `${hours} hour${hours !== 1 ? "s" : ""}`;
+  } else {
+    return `${hours} hour${hours !== 1 ? "s" : ""} and ${mins} minute${
+      mins !== 1 ? "s" : ""
+    }`;
+  }
+};
+
+/**
+ * คำนวณและแสดงระยะเวลาจองที่แม่นยำ
+ * @param pickupDateTime เวลารับรถ
+ * @param returnDateTime เวลาคืนรถ
+ * @returns ข้อความแสดงระยะเวลาที่แม่นยำ
+ */
+export const getRentalDurationText = (
+  pickupDateTime: Dayjs | null,
+  returnDateTime: Dayjs | null
+): string => {
+  if (!pickupDateTime || !returnDateTime) {
+    return "";
+  }
+
+  const diffMinutes = returnDateTime.diff(pickupDateTime, "minute");
+
+  if (diffMinutes <= 0) {
+    return "Invalid duration";
+  }
+
+  return formatDuration(diffMinutes);
+};

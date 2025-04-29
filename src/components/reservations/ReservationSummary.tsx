@@ -76,6 +76,9 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [reservationId, setReservationId] = useState<string | null>(null);
 
+  // เพิ่มตัวแปรสำหรับเก็บความผิดพลาดเกี่ยวกับการจองอย่างน้อย 2 ชั่วโมง
+  const [minimumTimeError, setMinimumTimeError] = useState<string | null>(null);
+
   // Credit data state
   const [creditData, setCreditData] = useState<CreditData>({
     credits: 0,
@@ -86,6 +89,61 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
 
   // Get session for authentication
   const { data: session } = useSession();
+
+  // Replace the existing validateMinimumBookingTime function
+  const validateMinimumBookingTime = () => {
+    if (pickupDate && returnDate) {
+      // Check if booking is for the same day
+      const isSameDay = pickupDate.isSame(returnDate, "day");
+
+      if (isSameDay) {
+        // Convert pickup and return times to comparable format
+        const pickupDateTime = createDateTimeObject(pickupDate, pickupTime);
+        const returnDateTime = createDateTimeObject(returnDate, returnTime);
+
+        if (pickupDateTime && returnDateTime) {
+          // Calculate difference in minutes
+          const diffMinutes = returnDateTime.diff(pickupDateTime, "minute");
+
+          // Check if booking is at least 2 hours (120 minutes)
+          if (diffMinutes < 120) {
+            setMinimumTimeError(
+              `Same-day bookings require at least 2 hours rental period. Current duration: ${Math.floor(
+                diffMinutes / 60
+              )} hour${Math.floor(diffMinutes / 60) !== 1 ? "s" : ""} and ${
+                diffMinutes % 60
+              } minute${diffMinutes % 60 !== 1 ? "s" : ""}.`
+            );
+            return false;
+          }
+        }
+      }
+
+      setMinimumTimeError(null);
+      return true;
+    }
+
+    return false;
+  };
+
+  // Helper function to convert time string (e.g., "10:00 AM") to minutes since midnight
+  const convertTimeToMinutes = (timeStr: string): number => {
+    // Parse time string
+    const isPM = timeStr.toLowerCase().includes("pm");
+    const timePattern = /(\d{1,2}):(\d{2})/;
+    const match = timeStr.match(timePattern);
+
+    if (!match) return 0;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+
+    // Handle 12-hour format
+    if (isPM && hours < 12) hours += 12;
+    else if (!isPM && hours === 12) hours = 0;
+
+    return hours * 60 + minutes;
+  };
 
   // Calculate rental period and costs
   const rentalDays = getRentalPeriod(pickupDate, returnDate);
@@ -114,6 +172,11 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   const selectedServiceItems = services.filter((service) =>
     selectedServices.includes(service._id)
   );
+
+  // Validate booking time whenever dates or times change
+  useEffect(() => {
+    validateMinimumBookingTime();
+  }, [pickupDate, returnDate, pickupTime, returnTime]);
 
   // Function to fetch credit data
   const fetchCreditData = async () => {
@@ -180,6 +243,16 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
     setSuccessMessage(null);
     setIsProcessing(true);
     setReservationId(null);
+
+    // Validate minimum booking time first
+    if (!validateMinimumBookingTime()) {
+      setError(
+        minimumTimeError ||
+          "Booking must be at least 2 hours for same-day rentals."
+      );
+      setIsProcessing(false);
+      return;
+    }
 
     // Check if user has sufficient credits
     if (creditData.credits < depositAmount) {
@@ -275,6 +348,30 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
       }
     }
   };
+  // เพิ่มฟังก์ชันนี้ถ้ายังไม่มี
+  const createDateTimeObject = (
+    date: dayjs.Dayjs | null,
+    timeStr: string
+  ): dayjs.Dayjs | null => {
+    if (!date || !timeStr) return null;
+
+    const isPM = timeStr.toLowerCase().includes("pm");
+    const timePattern = /(\d{1,2}):(\d{2})/;
+    const match = timeStr.match(timePattern);
+
+    if (!match) return null;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+
+    if (isPM && hours < 12) {
+      hours += 12;
+    } else if (!isPM && hours === 12) {
+      hours = 0;
+    }
+
+    return date.hour(hours).minute(minutes).second(0);
+  };
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8 border border-gray-200">
@@ -303,6 +400,14 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             message={error}
             variant="error"
             onClose={() => setError(null)}
+          />
+        )}
+
+        {minimumTimeError && !error && (
+          <ErrorMessage
+            message={minimumTimeError}
+            variant="warning"
+            onClose={() => setMinimumTimeError(null)}
           />
         )}
 
@@ -398,6 +503,34 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             )}
           </div>
         </div>
+
+        {/* Same day rental information */}
+        {pickupDate && returnDate && pickupDate.isSame(returnDate, "day") && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800 flex items-start">
+            <Clock
+              size={18}
+              className="mr-2 text-blue-600 flex-shrink-0 mt-0.5"
+            />
+            <div>
+              <span className="font-medium">Same day rental:</span> This is a
+              same-day rental with a
+              {minimumTimeError ? (
+                <span className="text-red-600 font-medium">
+                  {" "}
+                  minimum requirement of 2 hours rental period.
+                </span>
+              ) : (
+                <span>
+                  {" "}
+                  rental period of{" "}
+                  {convertTimeToMinutes(returnTime) -
+                    convertTimeToMinutes(pickupTime)}{" "}
+                  minutes.
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Details */}
         <div className="mb-6 space-y-2">
@@ -726,6 +859,27 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
           </div>
         </div>
       </div>
+      {minimumTimeError && (
+        <div className="p-3 rounded-md mt-2 bg-red-50 border border-red-200">
+          <div className="flex items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p className="text-sm text-red-700">{minimumTimeError}</p>
+          </div>
+        </div>
+      )}
       {/* Bottom CTA Section */}
       <div className="px-6 py-5 bg-gray-50 border-t border-gray-200">
         <button
@@ -734,13 +888,15 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             !formValid ||
             isProcessing ||
             creditData.isLoading ||
-            creditData.credits < depositAmount
+            creditData.credits < depositAmount ||
+            minimumTimeError !== null // ไม่อนุญาตให้จองถ้ามีข้อผิดพลาดเรื่องเวลาขั้นต่ำ
           }
           className={`w-full py-3.5 text-white rounded-md font-medium transition-all duration-300 flex justify-center items-center ${
             formValid &&
             !isProcessing &&
             !creditData.isLoading &&
-            creditData.credits >= depositAmount
+            creditData.credits >= depositAmount &&
+            minimumTimeError === null
               ? "bg-gradient-to-r from-[#8A7D55] to-[#9D8E62] hover:from-[#7D7049] hover:to-[#8A7D55]"
               : "bg-gray-400 cursor-not-allowed"
           }`}
@@ -755,6 +911,8 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
               <RefreshCw size={20} className="animate-spin mr-2" />
               Loading credit data...
             </>
+          ) : minimumTimeError !== null ? (
+            "Minimum 2-hour booking required"
           ) : (
             `Confirm & Pay ${formatCurrency(depositAmount)} Deposit`
           )}
@@ -765,6 +923,9 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
             * All prices include standard insurance. A 10% deposit will be
             charged immediately from your credits.
           </p>
+          {minimumTimeError !== null && (
+            <p className="mt-1 text-red-600 font-medium">{minimumTimeError}</p>
+          )}
           {creditData.credits < depositAmount && !creditData.isLoading && (
             <p className="mt-1 text-red-600 font-medium">
               You need additional{" "}
