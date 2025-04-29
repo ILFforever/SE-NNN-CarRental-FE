@@ -230,6 +230,7 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
   }, [session]);
 
   // Handle reservation submission with deposit
+  // Handle reservation submission with deposit
   const handleSubmitWithDeposit = async (
     e?: React.MouseEvent<HTMLButtonElement>
   ) => {
@@ -282,6 +283,10 @@ const ReservationSummary: React.FC<ReservationSummaryProps> = ({
         finalPrice: roundedFinalPrice,
         user: userId,
         payDeposit: true,
+        // เพิ่มข้อมูล additionalCharges เพื่อให้ API บันทึกได้ถูกต้อง
+        additionalCharges: {
+          deposit: depositAmount,
+        },
       };
 
       // Send API request

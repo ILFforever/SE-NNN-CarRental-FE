@@ -22,6 +22,28 @@ interface DetailsCardProps {
   setIsEditing?: (editing: boolean) => void;
 }
 
+interface Service {
+  _id: string;
+  name: string;
+  rate: number;
+  daily: boolean;
+  available: boolean;
+}
+
+interface Car {
+  _id: string;
+  dailyRate: number;
+  rents: any[];
+  provider_id: string;
+}
+
+interface DepositInfo {
+  oldDeposit: number;
+  newDeposit: number;
+  difference: number;
+  action: "refund" | "charge" | null;
+}
+
 export default function ReservationDetailsCard({
   rental,
   userType,
@@ -56,12 +78,7 @@ export default function ReservationDetailsCard({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [depositInfo, setDepositInfo] = useState<{
-    oldDeposit: number;
-    newDeposit: number;
-    difference: number;
-    action: "refund" | "charge" | null;
-  }>({
+  const [depositInfo, setDepositInfo] = useState<DepositInfo>({
     oldDeposit: 0,
     newDeposit: 0,
     difference: 0,
@@ -90,6 +107,9 @@ export default function ReservationDetailsCard({
   // State to track car data for availability check
   const [carData, setCarData] = useState<Car | null>(null);
 
+  // State for response data from API
+  const [apiResponse, setApiResponse] = useState<any>(null);
+
   // Handle edit availability - Fixed permission logic
   const canEdit =
     (userType === "user" && rental.status === "pending") ||
@@ -100,13 +120,40 @@ export default function ReservationDetailsCard({
       // Calculate the new base price
       const newBasePrice = calculateBasePrice();
 
-      // Calculate new service cost (if you have the necessary service data)
+      // Calculate new service cost
       const newServiceCost = calculateServiceCostFromIds();
 
+      // Calculate dynamic discount based on new price components
+      const dynamicDiscountAmount = calculateDynamicDiscount();
+
+      // Calculate total price with discount applied and proper rounding
+      const totalPrice =
+        Math.round(
+          (newBasePrice + newServiceCost - dynamicDiscountAmount) * 100
+        ) / 100;
+
       // Update the price state
-      setPrice(newBasePrice + newServiceCost);
+      setPrice(totalPrice);
+
+      // Optional: Add logging for debugging
+      console.log("Price Calculation Breakdown:", {
+        basePrice: newBasePrice,
+        servicePrice: newServiceCost,
+        discountPercentage: tierDiscounts[userTier] || 0,
+        dynamicDiscountAmount,
+        totalPrice,
+      });
     }
-  }, [isEditing, startDate, returnDate, selectedServices]);
+  }, [
+    isEditing,
+    startDate,
+    returnDate,
+    pickupTime,
+    returnTime,
+    selectedServices,
+    rental,
+    userTier,
+  ]);
 
   // Initialize form data when rental changes
   useEffect(() => {
@@ -143,6 +190,9 @@ export default function ReservationDetailsCard({
         fetchCarData(carId);
         fetchCarServices(carId);
       }
+
+      // Reset API response when rental changes
+      setApiResponse(null);
     }
   }, [rental, token]);
 
@@ -150,28 +200,44 @@ export default function ReservationDetailsCard({
   useEffect(() => {
     if (isEditing && rental) {
       // Only calculate deposit if the rental has a depositAmount
-      if (rental.depositAmount && rental.depositAmount > 0) {
-        // Calculate old deposit from rental
-        const oldDeposit = rental.depositAmount;
+      const currentDeposit =
+        rental.additionalCharges?.deposit || rental.depositAmount || 0;
 
-        // Calculate new price based on changes
+      if (currentDeposit > 0) {
+        // Calculate old deposit from rental
+        const oldDeposit = currentDeposit;
+
+        // Calculate new price components with precise rounding
         const newBasePrice = calculateBasePrice();
         const newServicePrice = calculateServiceCostFromIds();
         const newDiscountAmount = calculateDynamicDiscount();
 
-        // Calculate new total price
+        // Calculate new total price with correct discount applied
         const newTotalPrice =
-          newBasePrice + newServicePrice - newDiscountAmount;
+          Math.round(
+            (newBasePrice + newServicePrice - newDiscountAmount) * 100
+          ) / 100;
 
         // Calculate new deposit (10% of new total price)
         const newDeposit = Math.round(newTotalPrice * 0.1 * 100) / 100;
 
-        // Calculate difference
+        // Calculate difference with precise rounding
         const difference = Math.round((newDeposit - oldDeposit) * 100) / 100;
 
         // Determine action based on difference
         const action =
-          difference > 0 ? "charge" : difference < 0 ? "refund" : null;
+          difference > 0.01 ? "charge" : difference < -0.01 ? "refund" : null;
+
+        // Check if user has enough credits for additional deposit
+        if (
+          action === "charge" &&
+          userCredits < Math.abs(difference) &&
+          userType === "user"
+        ) {
+          setInsufficientCredits(true);
+        } else {
+          setInsufficientCredits(false);
+        }
 
         // Update state
         setDepositInfo({
@@ -181,8 +247,8 @@ export default function ReservationDetailsCard({
           action,
         });
 
-        // Show deposit preview if there's a difference
-        setShowDepositPreview(difference !== 0);
+        // Show deposit preview if there's a meaningful difference
+        setShowDepositPreview(Math.abs(difference) > 0.01);
       } else {
         // Reset deposit info if no deposit on this rental
         setDepositInfo({
@@ -192,30 +258,19 @@ export default function ReservationDetailsCard({
           action: null,
         });
         setShowDepositPreview(false);
+        setInsufficientCredits(false);
       }
-    }
-  }, [isEditing, startDate, returnDate, selectedServices, rental]);
-
-  // Also update the discount calculation useEffect
-  useEffect(() => {
-    if (isEditing && rental) {
-      const dynamicDiscountAmount = calculateDynamicDiscount();
-
-      // Update price state if needed
-      setPrice(
-        calculateBasePrice() +
-          calculateServiceCostFromIds() -
-          dynamicDiscountAmount
-      );
     }
   }, [
     isEditing,
     startDate,
     returnDate,
-    pickupTime,
-    returnTime,
     selectedServices,
     rental,
+    userCredits,
+    userType,
+    pickupTime,
+    returnTime,
     userTier,
   ]);
 
@@ -363,75 +418,6 @@ export default function ReservationDetailsCard({
     fetchUserCredits();
   }, [token, userType]);
 
-  useEffect(() => {
-    if (isEditing && rental) {
-      // Only calculate deposit if the rental has a depositAmount
-      if (rental.depositAmount && rental.depositAmount > 0) {
-        // Calculate old deposit from rental
-        const oldDeposit = rental.depositAmount;
-
-        // Calculate new price based on changes
-        const newBasePrice = calculateBasePrice();
-        const newServicePrice = calculateServiceCostFromIds();
-        const newDiscountAmount = calculateDynamicDiscount();
-
-        // Calculate new total price
-        const newTotalPrice =
-          newBasePrice + newServicePrice - newDiscountAmount;
-
-        // Calculate new deposit (10% of new total price)
-        const newDeposit = Math.round(newTotalPrice * 0.1 * 100) / 100;
-
-        // Calculate difference
-        const difference = Math.round((newDeposit - oldDeposit) * 100) / 100;
-
-        // Determine action based on difference
-        const action =
-          difference > 0 ? "charge" : difference < 0 ? "refund" : null;
-
-        // Check if user has enough credits for additional deposit
-        if (
-          action === "charge" &&
-          userCredits < difference &&
-          userType === "user"
-        ) {
-          setInsufficientCredits(true);
-        } else {
-          setInsufficientCredits(false);
-        }
-
-        // Update state
-        setDepositInfo({
-          oldDeposit,
-          newDeposit,
-          difference: Math.abs(difference),
-          action,
-        });
-
-        // Show deposit preview if there's a difference
-        setShowDepositPreview(difference !== 0);
-      } else {
-        // Reset deposit info if no deposit on this rental
-        setDepositInfo({
-          oldDeposit: 0,
-          newDeposit: 0,
-          difference: 0,
-          action: null,
-        });
-        setShowDepositPreview(false);
-        setInsufficientCredits(false);
-      }
-    }
-  }, [
-    isEditing,
-    startDate,
-    returnDate,
-    selectedServices,
-    rental,
-    userCredits,
-    userType,
-  ]);
-
   // Check car availability for the selected dates
   const checkCarAvailability = (): boolean => {
     // Don't check if we're not changing dates or if this is the original rental's dates
@@ -560,43 +546,71 @@ export default function ReservationDetailsCard({
     setSuccess(null);
 
     try {
-      // Calculate new price based on changes
+      // Create date objects with local time (+7)
+      // Parse the time strings to get hours and minutes
+      const [pickupHours, pickupMinutes] = formattedPickupTime
+        .split(":")
+        .map(Number);
+      const [returnHours, returnMinutes] = formattedReturnTime
+        .split(":")
+        .map(Number);
+
+      // For API: Convert from +7 to UTC (+0) by subtracting 7 hours
+      // We need to send the actual UTC time values to the API
+      let pickupHoursUTC = pickupHours - 7;
+      if (pickupHoursUTC < 0) pickupHoursUTC += 24; // Handle day wrap
+
+      let returnHoursUTC = returnHours - 7;
+      if (returnHoursUTC < 0) returnHoursUTC += 24; // Handle day wrap
+
+      // Format the UTC times as strings with leading zeros if needed
+      const pickupTimeUTC = `${String(pickupHoursUTC).padStart(
+        2,
+        "0"
+      )}:${String(pickupMinutes).padStart(2, "0")}`;
+      const returnTimeUTC = `${String(returnHoursUTC).padStart(
+        2,
+        "0"
+      )}:${String(returnMinutes).padStart(2, "0")}`;
+
+      // Create iso format date strings for the API
+      // Keep the dates as is, only the time is converted
+      const pickupDateUTC = `${startDate}T00:00:00.000Z`;
+      const returnDateUTC = `${returnDate}T00:00:00.000Z`;
+
+      // Keep original time for display purposes
+      const pickupTimeFormatted = formattedPickupTime;
+      const returnTimeFormatted = formattedReturnTime;
+
+      console.log(
+        "Local time (display):",
+        formattedPickupTime,
+        formattedReturnTime
+      );
+      console.log("UTC time for API:", pickupTimeUTC, returnTimeUTC);
+
       const newBasePrice = calculateBasePrice();
       const newServicePrice = calculateServiceCostFromIds();
-      const subtotal = newBasePrice + newServicePrice;
+      const newDiscountAmount = calculateDynamicDiscount();
 
-      // Dynamic discount calculation
-      const tierDiscounts = [0, 5, 10, 15, 20];
-      const discountPercentage = tierDiscounts[userTier] || 0;
-      const dynamicDiscountAmount = calculateDynamicDiscount();
-
-      const newFinalPrice =
-        subtotal - dynamicDiscountAmount + (rental.additionalCharges || 0);
-
-      // Convert time from UTC+7 to UTC+0
-      const pickupDateTimeLocal = dayjs(`${startDate}T${formattedPickupTime}`);
-      const returnDateTimeLocal = dayjs(`${returnDate}T${formattedReturnTime}`);
-
-      // Subtract 7 hours to convert to UTC+0
-      const pickupDateTimeUTC = pickupDateTimeLocal.subtract(7, "hour");
-      const returnDateTimeUTC = returnDateTimeLocal.subtract(7, "hour");
-
-      // Extract just the time in HH:mm format
-      const pickupTimeUTC = pickupDateTimeUTC.format("HH:mm");
-      const returnTimeUTC = returnDateTimeUTC.format("HH:mm");
-
-      // Create update payload with time values
+      // Create update payload
       const updateData = {
-        startDate: newStartDate.toISOString(),
-        returnDate: newReturnDate.toISOString(),
+        startDate: pickupDateUTC,
+        returnDate: returnDateUTC,
         pickupTime: pickupTimeUTC,
         returnTime: returnTimeUTC,
         service: selectedServices,
         price: newBasePrice,
         servicePrice: newServicePrice,
-        discountAmount: dynamicDiscountAmount,
-        finalPrice: newFinalPrice,
-        payDeposit: rental.depositAmount > 0,
+        discountAmount: newDiscountAmount,
+        finalPrice:
+          Math.round(
+            (newBasePrice + newServicePrice - newDiscountAmount) * 100
+          ) / 100,
+        payDeposit:
+          rental.depositAmount > 0 ||
+          (rental.additionalCharges && rental.additionalCharges.deposit > 0),
+        notes: "Updated reservation dates",
       };
 
       console.log("Sending update data:", JSON.stringify(updateData));
@@ -618,10 +632,13 @@ export default function ReservationDetailsCard({
         throw new Error(`Failed to update reservation: ${responseText}`);
       }
 
+      // Rest of the function remains unchanged...
       // Try to parse as JSON
       let data;
       try {
         data = JSON.parse(responseText);
+        // Save API response to state for UI display
+        setApiResponse(data);
       } catch (parseError) {
         console.error("Error parsing response as JSON:", parseError);
         throw new Error(`Invalid JSON response from server: ${responseText}`);
@@ -633,23 +650,25 @@ export default function ReservationDetailsCard({
         let depositMessage = "";
         if (data.depositUpdate) {
           const { depositDifference, newDepositAmount } = data.depositUpdate;
+          const absoluteDifference = Math.abs(depositDifference);
+
           if (depositDifference > 0) {
             depositMessage = ` Your account has been charged ${formatCurrency(
-              depositDifference
+              absoluteDifference
             )} for the additional deposit.`;
 
             // Update credits if charged more
             if (userType === "user" || userType === "admin") {
-              setUserCredits((prev) => Math.max(0, prev - depositDifference));
+              setUserCredits((prev) => Math.max(0, prev - absoluteDifference));
             }
           } else if (depositDifference < 0) {
             depositMessage = ` Your account has been credited ${formatCurrency(
-              Math.abs(depositDifference)
+              absoluteDifference
             )} for the deposit difference.`;
 
             // Update credits if refunded
             if (userType === "user" || userType === "admin") {
-              setUserCredits((prev) => prev + Math.abs(depositDifference));
+              setUserCredits((prev) => prev + absoluteDifference);
             }
           }
         }
@@ -706,6 +725,9 @@ export default function ReservationDetailsCard({
     setInsufficientCredits(false);
     setShowDepositPreview(false);
 
+    // Reset API response
+    setApiResponse(null);
+
     setIsEditing(false);
     setShowServiceSelector(false);
     setError(null);
@@ -729,18 +751,19 @@ export default function ReservationDetailsCard({
   };
 
   const calculateDynamicDiscount = () => {
-    // Calculate base price for the current dates
+    // Ensure calculation uses current editing data
     const basePrice = calculateBasePrice();
-
-    // Calculate service cost based on current selections
     const servicePrice = calculateServiceCostFromIds();
 
-    // Calculate total subtotal
-    const subtotal = basePrice + servicePrice;
+    // Calculate total subtotal before discount with precise rounding
+    const subtotal = Math.round((basePrice + servicePrice) * 100) / 100;
 
     // Use provided userTier or fallback to 0
     const discountPercentage = tierDiscounts[userTier] || 0;
-    const dynamicDiscountAmount = subtotal * (discountPercentage / 100);
+
+    // Calculate discount with precise rounding
+    const dynamicDiscountAmount =
+      Math.round(subtotal * (discountPercentage / 100) * 100) / 100;
 
     return dynamicDiscountAmount;
   };
@@ -846,6 +869,77 @@ export default function ReservationDetailsCard({
     }
   };
 
+  // Function to render the deposit update preview based on API response
+  const renderAPIDepositUpdatePreview = () => {
+    if (!apiResponse || !apiResponse.depositUpdate) return null;
+
+    const { newDepositAmount, depositDifference, transaction } =
+      apiResponse.depositUpdate;
+
+    // Check depositDifference value from API (negative = refund, positive = charge)
+    const isRefund = depositDifference < 0;
+    const absoluteDifference = Math.abs(depositDifference);
+
+    return (
+      <div
+        className={`mb-4 p-3 rounded-md border-l-4 ${
+          isRefund
+            ? "bg-green-50 border-green-400 text-green-800"
+            : "bg-amber-50 border-amber-400 text-amber-800"
+        }`}
+      >
+        <div className="flex items-center mb-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={
+                isRefund
+                  ? "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  : "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              }
+            />
+          </svg>
+          <h4 className="font-semibold">
+            {isRefund
+              ? "Deposit Refund Processed"
+              : "Additional Deposit Charged"}
+          </h4>
+        </div>
+
+        <div className="ml-7 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span>New Deposit Amount:</span>
+            <span className="font-medium">
+              {formatCurrency(newDepositAmount)}
+            </span>
+          </div>
+
+          <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
+            <span className="font-medium">
+              {isRefund ? "Amount Refunded:" : "Additional Amount Charged:"}
+            </span>
+            <span className="font-bold">
+              {formatCurrency(absoluteDifference)}
+            </span>
+          </div>
+        </div>
+
+        <p className="mt-2 ml-7 text-xs">
+          {isRefund
+            ? "Your account has been credited with the refund amount."
+            : "Your account has been charged for the additional deposit amount."}
+        </p>
+      </div>
+    );
+  };
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="flex justify-between items-center mb-4">
@@ -916,6 +1010,11 @@ export default function ReservationDetailsCard({
           {success}
         </div>
       )}
+
+      {/* API response deposit update notification */}
+      {apiResponse &&
+        apiResponse.depositUpdate &&
+        renderAPIDepositUpdatePreview()}
 
       <div className="space-y-5">
         {/* Basic Information */}
@@ -1118,23 +1217,64 @@ export default function ReservationDetailsCard({
           {/* Service selector in edit mode */}
           {isEditing && showServiceSelector && (
             <div className="border border-gray-200 rounded-md p-3 mb-4 bg-gray-50">
-              {/* ส่วนนี้ไม่มีการเปลี่ยนแปลง คงเดิม */}
-              {/* ... เนื้อหาในส่วนของ Service selector ... */}
+              {isLoadingServices ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 size={20} className="mr-2 animate-spin" />
+                  <span>Loading available services...</span>
+                </div>
+              ) : availableServices.length === 0 ? (
+                <p className="text-sm text-gray-500 italic text-center py-2">
+                  No services available for this car
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {availableServices.map((service) => (
+                    <div
+                      key={service._id}
+                      className="flex items-center justify-between p-2 border-b border-gray-100 last:border-0"
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`service-${service._id}`}
+                          checked={selectedServices.includes(service._id)}
+                          onChange={() => toggleService(service._id)}
+                          className="mr-2 h-4 w-4 text-[#8A7D55] focus:ring-[#8A7D55] border-gray-300 rounded"
+                        />
+                        <label
+                          htmlFor={`service-${service._id}`}
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          {service.name}
+                        </label>
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {service.rate > 0 &&
+                          (service.daily
+                            ? `${service.rate}/day`
+                            : `${service.rate} (once)`)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Deposit Change Preview - แก้ไขส่วนนี้ */}
-        {isEditing && (
+        {/* Deposit Change Preview - During editing */}
+        {isEditing && showDepositPreview && (
           <div
             className={`mb-4 p-3 rounded-md border-l-4 
-              ${
-                insufficientCredits
-                  ? "bg-red-50 border-red-400 text-red-800"
-                  : depositInfo.action === "charge"
-                  ? "bg-amber-50 border-amber-400 text-amber-800"
-                  : "bg-green-50 border-green-400 text-green-800"
-              }`}
+      ${
+        insufficientCredits
+          ? "bg-red-50 border-red-400 text-red-800"
+          : depositInfo.action === "charge"
+          ? "bg-amber-50 border-amber-400 text-amber-800"
+          : depositInfo.action === "refund"
+          ? "bg-green-50 border-green-400 text-green-800"
+          : "bg-blue-50 border-blue-400 text-blue-800"
+      }`}
           >
             <div className="flex items-center mb-2">
               <svg
@@ -1160,14 +1300,16 @@ export default function ReservationDetailsCard({
               <h4 className="font-semibold">
                 {insufficientCredits
                   ? "Insufficient Credits"
-                  : `Deposit ${
-                      depositInfo.action === "charge" ? "Change" : "Refund"
-                    } Preview`}
+                  : depositInfo.action === "charge"
+                  ? "Additional Deposit Required"
+                  : depositInfo.action === "refund"
+                  ? "Deposit Refund Preview"
+                  : "Deposit Information"}
               </h4>
             </div>
 
             <div className="ml-7 space-y-1 text-sm">
-              {insufficientCredits && (
+              {insufficientCredits ? (
                 <>
                   <div className="flex justify-between">
                     <span>Your Current Credits:</span>
@@ -1188,10 +1330,10 @@ export default function ReservationDetailsCard({
                     </span>
                   </div>
                 </>
-              )} : {(
+              ) : (
                 <>
                   <div className="flex justify-between">
-                    <span>Original Deposit:</span>
+                    <span>Current Deposit:</span>
                     <span className="font-medium">
                       {formatCurrency(depositInfo.oldDeposit)}
                     </span>
@@ -1204,30 +1346,32 @@ export default function ReservationDetailsCard({
                     </span>
                   </div>
 
-                  {
-                    depositInfo.action === "charge" && (
-                      <div className="flex justify-between">
-                        <span>Your Available Credits:</span>
-                        <span className="font-medium">
-                          {formatCurrency(userCredits)}
-                        </span>
-                      </div>
-                    )}
+                  {depositInfo.action === "charge" && (
+                    <div className="flex justify-between">
+                      <span>Available Credits:</span>
+                      <span className="font-medium">
+                        {formatCurrency(userCredits)}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
                     <span className="font-medium">
                       {depositInfo.action === "charge"
-                        ? "Additional payment:"
-                        : "Credit refund:"}
+                        ? "Additional Payment:"
+                        : depositInfo.action === "refund"
+                        ? "Refund Amount:"
+                        : "Difference:"}
                     </span>
                     <span
                       className={`font-bold ${
                         depositInfo.action === "charge"
                           ? "text-amber-700"
-                          : "text-green-700"
+                          : depositInfo.action === "refund"
+                          ? "text-green-700"
+                          : "text-blue-700"
                       }`}
                     >
-                      {depositInfo.action === "charge" ? "+" : "-"}
                       {formatCurrency(depositInfo.difference)}
                     </span>
                   </div>
@@ -1243,8 +1387,10 @@ export default function ReservationDetailsCard({
                 </span>
               ) : depositInfo.action === "charge" ? (
                 "Your account will be charged for the additional deposit amount upon saving these changes."
-              ) : (
+              ) : depositInfo.action === "refund" ? (
                 "Your account will be credited with the refund amount upon saving these changes."
+              ) : (
+                "No deposit changes needed for this update."
               )}
             </p>
           </div>
@@ -1257,6 +1403,8 @@ export default function ReservationDetailsCard({
             <span className="text-sm font-medium">
               {isEditing
                 ? formatCurrency(calculateBasePrice())
+                : apiResponse && apiResponse.priceUpdate
+                ? formatCurrency(apiResponse.priceUpdate.price)
                 : formatCurrency(rental.price)}
             </span>
           </div>
@@ -1264,12 +1412,15 @@ export default function ReservationDetailsCard({
           {/* Service Charges - dynamic during editing */}
           {(isEditing
             ? calculateServiceCostFromIds() > 0
-            : rental.servicePrice > 0) && (
+            : (apiResponse?.priceUpdate?.servicePrice || rental.servicePrice) >
+              0) && (
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-sm">Service Charges</span>
               <span className="text-sm font-medium text-blue-600">
                 {isEditing
                   ? formatCurrency(calculateServiceCostFromIds())
+                  : apiResponse && apiResponse.priceUpdate
+                  ? formatCurrency(apiResponse.priceUpdate.servicePrice)
                   : formatCurrency(rental.servicePrice || 0)}
               </span>
             </div>
@@ -1281,19 +1432,30 @@ export default function ReservationDetailsCard({
                 Loyalty Discount ({tierDiscounts[userTier]}%):
               </span>
               <span className="text-sm font-medium text-green-600">
-                -{formatCurrency(calculateDynamicDiscount())}
+                -
+                {isEditing
+                  ? formatCurrency(calculateDynamicDiscount())
+                  : apiResponse && apiResponse.priceUpdate
+                  ? formatCurrency(apiResponse.priceUpdate.discountAmount)
+                  : formatCurrency(
+                      calculateDynamicDiscount() // Always use dynamic calculation
+                    )}
               </span>
             </div>
           )}
 
-          {rental.additionalCharges != null && rental.additionalCharges > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 text-sm">Additional Charges</span>
-              <span className="text-sm font-medium text-amber-600">
-                {formatCurrency(rental.additionalCharges)}
-              </span>
-            </div>
-          )}
+          {rental.additionalCharges != null &&
+            typeof rental.additionalCharges === "number" &&
+            rental.additionalCharges > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 text-sm">
+                  Additional Charges
+                </span>
+                <span className="text-sm font-medium text-amber-600">
+                  {formatCurrency(rental.additionalCharges)}
+                </span>
+              </div>
+            )}
 
           {daysLate > 0 && (
             <div className="flex justify-between items-center">
@@ -1304,7 +1466,13 @@ export default function ReservationDetailsCard({
             </div>
           )}
 
-          {rental.depositAmount > 0 && (
+          {/* Deposit display - show from additionalCharges.deposit, depositAmount, or API response */}
+          {(rental.depositAmount > 0 ||
+            (rental.additionalCharges &&
+              rental.additionalCharges.deposit > 0) ||
+            (apiResponse &&
+              apiResponse.depositUpdate &&
+              apiResponse.depositUpdate.newDepositAmount > 0)) && (
             <div className="flex justify-between items-center">
               <span className="text-gray-600 text-sm font-medium">
                 Deposit (10%)
@@ -1312,7 +1480,13 @@ export default function ReservationDetailsCard({
               <span className="text-sm font-medium">
                 {isEditing
                   ? formatCurrency(depositInfo.newDeposit)
-                  : formatCurrency(rental.depositAmount)}
+                  : apiResponse && apiResponse.depositUpdate
+                  ? formatCurrency(apiResponse.depositUpdate.newDepositAmount)
+                  : formatCurrency(
+                      rental.additionalCharges?.deposit ||
+                        rental.depositAmount ||
+                        0
+                    )}
               </span>
             </div>
           )}
@@ -1328,6 +1502,8 @@ export default function ReservationDetailsCard({
                       calculateServiceCostFromIds() -
                       calculateDynamicDiscount()
                   )
+                : apiResponse && apiResponse.priceUpdate
+                ? formatCurrency(apiResponse.priceUpdate.finalPrice)
                 : formatCurrency(rental.finalPrice || calculateTotalPrice())}
             </span>
           </div>
