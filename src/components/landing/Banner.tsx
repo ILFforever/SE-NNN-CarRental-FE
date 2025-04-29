@@ -61,10 +61,10 @@ export default function Banner() {
 
   const textY = useTransform(scrollYProgress, [0, 1], [0, -200]);
   const imageY = useTransform(
-    scrollYProgress, 
-    [0, 1], 
-    [0, 80], 
-    { ease: easeOut }  // Use the imported easing function
+    scrollYProgress,
+    [0, 1],
+    [0, 80],
+    { ease: easeOut } // Use the imported easing function
   );
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
@@ -233,11 +233,11 @@ export default function Banner() {
             <div className="flex justify-center">
               <button
                 onClick={() => router.push("/catalog")}
-                className="px-6 py-3 bg-white text-gray-900 rounded-full hover:bg-gray-100 transition-colors shadow-lg flex items-center"
+                className="px-4 py-2 sm:px-6 sm:py-3 bg-white text-gray-900 rounded-full hover:bg-gray-100 transition-colors shadow-lg flex items-center text-sm sm:text-base"
               >
                 View Our Collection
                 <svg
-                  className="ml-2 w-5 h-5"
+                  className="ml-2 w-4 h-4 sm:w-5 sm:h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
