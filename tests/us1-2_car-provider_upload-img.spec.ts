@@ -54,7 +54,7 @@ test("Car Provider should adding new car normally", async ({ page }) => {
   await page.getByRole("button", { name: "Add Car" }).click();
   await expect(page.locator("tbody")).toContainText(LicensePlate);
   await page.getByRole("button", { name: "Playwright Test" }).click();
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole('button', { name: 'Yes, Sign Out' }).click();
   await page.getByRole("link", { name: "Catalog" }).click();
   await page.waitForLoadState("domcontentloaded");
