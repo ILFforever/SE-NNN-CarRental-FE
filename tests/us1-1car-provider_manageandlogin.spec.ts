@@ -54,7 +54,7 @@ test("Create New Provider", async ({ page }) => {
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
-    .fill("playwright.temp@gmail.com");
+    .fill("playwright.temp2@gmail.com");
   await page.getByRole("textbox", { name: "Company Address" }).click();
   await page.getByRole("textbox", { name: "Company Address" }).fill("BKK");
   await page.getByRole("textbox", { name: "Telephone (XXX-XXXXXXX)" }).click();
@@ -78,7 +78,7 @@ test("Create New Provider", async ({ page }) => {
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
-    .fill("playwright.temp@gmail.com");
+    .fill("playwright.temp2@gmail.com");
   await page.getByRole("textbox", { name: "Password" }).click();
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Car Provider", exact: true }).click();
@@ -90,11 +90,11 @@ test("Create New Provider", async ({ page }) => {
   //await page.locator(".MuiBackdrop-root").click();
   await expect(page.getByRole("main")).toContainText("Temp Provider");
   await expect(page.getByRole("main")).toContainText(
-    "playwright.temp@gmail.com"
+    "playwright.temp2@gmail.com"
   );
   await expect(page.getByRole("main")).toContainText("123-4567890");
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -108,19 +108,19 @@ test("Create New Provider", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).click();
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as User" }).click();
-  await expect(page.locator("#user-menu-button")).toContainText("Admin");
+  await expect(page.getByRole("navigation")).toContainText("Admin");
   await page.getByRole("button", { name: "Admin" }).click();
-  await page.getByRole("link", { name: "Admin Tools" }).click();
-  await page.locator(".MuiBackdrop-root").click();
+  await page.getByRole("button", { name: "Admin Tools" }).click();
+  //await page.locator(".MuiBackdrop-root").click();
   await page.getByRole("link", { name: "Manage Car Providers Add or" }).click();
   await page.waitForTimeout(2000);
   await expect(page.getByRole("heading")).toContainText("Manage Car Providers");
   await expect(page.locator("tbody")).toContainText("Temp Provider");
   await expect(page.locator("tbody")).toContainText(
-    "playwright.temp@gmail.com"
+    "playwright.temp2@gmail.com"
   );
   await page
-    .getByRole("row", { name: "Temp Provider playwright.temp" })
+    .getByRole("row", { name: "Temp Provider playwright.temp2" })
     .getByRole("button")
     .nth(1)
     .click();

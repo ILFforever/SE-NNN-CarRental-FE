@@ -17,11 +17,11 @@ test("User want to change valid date", async ({ page }) => {
     await page.getByLabel('Close').click();
     //edit reservation
     await page.getByRole("button", { name: "Playwright Man" }).click();
-    await page.getByRole("link", { name: "My Reservations" }).click();
-    await page.locator('.MuiBackdrop-root').click();
+    await page.getByRole("button", { name: "My Reservations" }).click();
+    //await page.locator('.MuiBackdrop-root').click();
     await page.locator('button').filter({ hasText: /^Edit Reservation/i }).first().click();
-    await page.locator('div').filter({ hasText: /^Start Date$/ }).getByRole('textbox').fill('2026-08-09');
-    await page.locator('div').filter({ hasText: /^Return Date$/ }).getByRole('textbox').fill('2026-08-10');
+    await page.locator('input[type="date"]').nth(0).fill('2026-08-09');
+    await page.locator('input[type="date"]').nth(1).fill('2026-08-10');
     await page.getByRole('button', { name: /^Save/i }).click();
     await expect(page.locator('div.mb-6').getByText('Reservation updated successfully').first()).toBeVisible({ timeout: 100000 });
 });
@@ -43,11 +43,11 @@ test("User want to change invalid date", async ({ page }) => {
     await page.getByLabel('Close').click();
     //edit reservation
     await page.getByRole("button", { name: "Playwright Man" }).click();
-    await page.getByRole("link", { name: "My Reservations" }).click();
-    await page.locator('.MuiBackdrop-root').click();
+    await page.getByRole("button", { name: "My Reservations" }).click();
+    //await page.locator('.MuiBackdrop-root').click();
     await page.locator('button').filter({ hasText: /^Edit Reservation/i }).first().click();
-    await page.locator('div').filter({ hasText: /^Start Date$/ }).getByRole('textbox').fill('2027-05-11');
-    await page.locator('div').filter({ hasText: /^Return Date$/ }).getByRole('textbox').fill('2027-04-29');
+    await page.locator('input[type="date"]').nth(0).fill('2027-05-11'); // Start Date
+    await page.locator('input[type="date"]').nth(1).fill('2027-04-29'); // Return Date (ผิด)
     await page.getByRole('button', { name: /^Save/i }).click();
     await expect(page.getByText('Return date cannot be before start date')).toBeVisible({timeout:10000});
 });
