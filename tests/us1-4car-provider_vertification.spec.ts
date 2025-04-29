@@ -141,8 +141,9 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
     response.url().startsWith("https://droplet.ngixx.in.th/api/v1/qrcode/")
   );
 
+
   //Log in as the new account and add funds
-  await page.getByRole("link", { name: "Sign-In" }).click();
+  await page.goto("https://se-cedt-rentals.vercel.app/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
@@ -151,7 +152,7 @@ test("New Provider unverified then vertify by 10 rentals", async ({ page }) => {
   await page.getByRole("textbox", { name: "Password" }).fill("12345678");
   await page.getByRole("button", { name: "Sign In as User" }).click();
   await page.waitForTimeout(1000);
-  await page.getByRole("button", { name: "0", exact: true }).click();
+  await page.getByRole('button', { name: 'View credits' }).click();
   await page.getByRole("button", { name: "Topup" }).click();
   await expect(page.locator("h1")).toContainText("Top Up Your Balance");
   //await expect(page.locator("#user-menu-button")).toContainText("us1-4 playwright test"); //OLD NOT WORK
@@ -351,7 +352,7 @@ test("Admin verified provider", async ({ page }) => {
   await expect(page.getByRole("heading")).toContainText(
     "Provider Registration Successful"
   );
-  await page.goto("http://localhost:3000/signin");
+  await page.goto("https://se-cedt-rentals.vercel.app/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
@@ -375,7 +376,7 @@ test("Admin verified provider", async ({ page }) => {
 
   //Log out
   await page.getByRole("button", { name: "Temp Provider" }).click();
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -389,7 +390,7 @@ test("Admin verified provider", async ({ page }) => {
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Admin' }).click();
   await page.getByRole('button', { name: 'Admin Tools' }).click();
-  await page.locator('.MuiBackdrop-root').click();
+  //await page.locator('.MuiBackdrop-root').click();
 
   await expect(page.locator('h1')).toContainText('Admin Dashboard');
   await page.getByRole('link', { name: 'Manage Car Providers Add or' }).click();
@@ -404,7 +405,7 @@ test("Admin verified provider", async ({ page }) => {
 
   //Sign back in as Car Provider
   await page.waitForTimeout(500);
-  await page.goto("http://localhost:3000/signin");
+  await page.goto("https://se-cedt-rentals.vercel.app/signin");
   await page.getByRole("textbox", { name: "Email Address" }).click();
   await page
     .getByRole("textbox", { name: "Email Address" })
@@ -428,7 +429,7 @@ test("Admin verified provider", async ({ page }) => {
   await page.getByRole("button", { name: "Temp Provider" }).click();
 
   //Logout
-  await page.getByRole("link", { name: "Sign Out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await page.getByRole("button", { name: "Yes, Sign Out" }).click();
   await expect(page.locator("body")).toContainText("Register");
 
@@ -441,7 +442,7 @@ test("Admin verified provider", async ({ page }) => {
   await page.getByRole('button', { name: 'Sign In as User' }).click();
   await page.getByRole('button', { name: 'Admin' }).click();
   await page.getByRole('button', { name: 'Admin Tools' }).click();
-  await page.locator('.MuiBackdrop-root').click();
+  //await page.locator('.MuiBackdrop-root').click();
   await page.getByRole('link', { name: 'Manage Car Providers Add or' }).click();
   await page.getByRole('row', { name: 'Temp Provider playwright.temp' }).getByRole('button').nth(1).click();
   await page.locator('div').filter({ hasText: /^DeactivateCancel$/ }).getByRole('button').first().click();
