@@ -11,6 +11,7 @@ import HoverableCarImage from "@/components/cars/HoverableCarImage";
 import FavoriteHeartButton, {
   FavoriteCarsProvider,
 } from "@/components/cars/FavoriteHeartButton";
+import MobileCatalogFilter from "@/components/cars/MobileCatalogFilter"; // Adjust path as needed
 
 // Type definitions
 interface Provider {
@@ -88,6 +89,7 @@ export default function CatalogPage() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
 
   // Price range state
   const [priceRange, setPriceRange] = useState<PriceRange>({
@@ -252,6 +254,21 @@ export default function CatalogPage() {
       [category]: prev[category] === value ? "" : value,
     }));
   };
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind's md breakpoint
+    };
+
+    // Check initial load
+    checkMobile();
+
+    // Add resize listener
+    window.addEventListener("resize", checkMobile);
+
+    // Cleanup listener
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -633,16 +650,16 @@ export default function CatalogPage() {
   const isCarAvailableForDates = (car: Car): boolean => {
     // If no dates are selected, consider the car as available based on its available property
     if (!dateRange.startDate || !dateRange.endDate) return car.available;
-  
+
     // If car is marked as unavailable, return false
     if (!car.available) return false;
-  
+
     // If car doesn't have rents data, use the available flag
     if (!car.rents || car.rents.length === 0) return car.available;
-  
+
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
-  
+
     // Check for overlaps in the booking dates
     const conflicts = car.rents.filter((rent) => {
       // Only check active and pending bookings (explicitly include acceptable statuses)
@@ -650,13 +667,13 @@ export default function CatalogPage() {
       if (rent.status === "active" || rent.status === "pending") {
         const rentStartDate = new Date(rent.startDate);
         const rentEndDate = new Date(rent.returnDate);
-  
+
         // If the rental period overlaps with the requested booking, return true
         return start < rentEndDate && end > rentStartDate;
       }
       return false;
     });
-  
+
     return conflicts.length === 0;
   };
 
@@ -684,7 +701,35 @@ export default function CatalogPage() {
       }
     }
   };
+  const handleApplyFilters = () => {
+    // This can trigger your existing filter logic
+    // For example, you might want to update the URL or refresh the car list
+    const newParams = new URLSearchParams(searchParams.toString());
 
+    // Update params based on current filter state
+    if (searchQuery) {
+      newParams.set("query", searchQuery);
+    } else {
+      newParams.delete("query");
+    }
+
+    if (activeFilters.vehicleType) {
+      newParams.set("type", activeFilters.vehicleType);
+    } else {
+      newParams.delete("type");
+    }
+
+    if (activeFilters.brand) {
+      newParams.set("brand", activeFilters.brand);
+    } else {
+      newParams.delete("brand");
+    }
+
+    // Similar logic for other filters...
+
+    // Update URL
+    router.push(`/catalog?${newParams.toString()}`);
+  };
   return (
     <FavoriteCarsProvider>
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -733,247 +778,289 @@ export default function CatalogPage() {
               )}
             </div>
           </div>
+          {/* Mobile Filter Component */}
+          {isMobile && (
+            <MobileCatalogFilter
+              filterOptions={{
+                vehicleType: extractFilterOptions().vehicleType,
+                brand: extractFilterOptions().brand,
+                year: extractFilterOptions().year,
+                seats: extractFilterOptions().seats.map(String),
+              }}
+              activeFilters={activeFilters}
+              setActiveFilters={setActiveFilters}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              cars={cars}
+              onApplyFilters={handleApplyFilters}
+            />
+          )}
 
           {/* Filters and search */}
-          <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Date range selector - now more compact */}
-              <div className="col-span-2">
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Rental Period:
-                  </div>
-                  <div className="flex space-x-2 flex-1">
-                    <div className="flex-1 relative">
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mr-2 text-xs">From</span>
-                        <div className="flex-1 relative flex space-x-1">
-                          {/* Date input */}
-                          <div className="flex-1 relative">
-                            <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                              <Calendar className="h-3 w-3 text-gray-400" />
+          {!isMobile && (
+            <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {/* Date range selector - now more compact */}
+                <div className="col-span-2">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      Rental Period:
+                    </div>
+                    <div className="flex space-x-2 flex-1">
+                      <div className="flex-1 relative">
+                        <div className="flex items-center">
+                          <span className="text-gray-500 mr-2 text-xs">
+                            From
+                          </span>
+                          <div className="flex-1 relative flex space-x-1">
+                            {/* Date input */}
+                            <div className="flex-1 relative">
+                              <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
+                                <Calendar className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="date"
+                                value={dateRange.startDate}
+                                onChange={(e) => {
+                                  setDateRange({
+                                    ...dateRange,
+                                    startDate: e.target.value,
+                                  });
+                                  updateSearch({ startDate: e.target.value });
+                                }}
+                                className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
+                              />
                             </div>
-                            <input
-                              type="date"
-                              value={dateRange.startDate}
-                              onChange={(e) => {
-                                setDateRange({
-                                  ...dateRange,
-                                  startDate: e.target.value,
-                                });
-                                updateSearch({ startDate: e.target.value });
-                              }}
-                              className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                            />
-                          </div>
 
-                          {/* Time select */}
-                          <select
-                            value={timePickup}
-                            onChange={(e) => {
-                              setTimePickup(e.target.value);
-                              updateSearch({ pickupTime: e.target.value });
-                            }}
-                            className="border border-gray-300 rounded-md text-xs py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55]"
-                          >
-                            {timeOptions.map((time) => (
-                              <option key={time} value={time}>
-                                {time}
-                              </option>
-                            ))}
-                          </select>
+                            {/* Time select */}
+                            <select
+                              value={timePickup}
+                              onChange={(e) => {
+                                setTimePickup(e.target.value);
+                                updateSearch({ pickupTime: e.target.value });
+                              }}
+                              className="border border-gray-300 rounded-md text-xs py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55]"
+                            >
+                              {timeOptions.map((time) => (
+                                <option key={time} value={time}>
+                                  {time}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex-1 relative">
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mr-2 text-xs">
-                          Until
-                        </span>
-                        <div className="flex-1 flex items-center space-x-2">
-                          <div className="flex-1 relative">
-                            <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
-                              <Calendar className="h-3 w-3 text-gray-400" />
+                      <div className="flex-1 relative">
+                        <div className="flex items-center">
+                          <span className="text-gray-500 mr-2 text-xs">
+                            Until
+                          </span>
+                          <div className="flex-1 flex items-center space-x-2">
+                            <div className="flex-1 relative">
+                              <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none">
+                                <Calendar className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="date"
+                                value={dateRange.endDate}
+                                min={dateRange.startDate || undefined}
+                                onChange={(e) => {
+                                  const newEndDate = e.target.value;
+                                  setDateRange({
+                                    ...dateRange,
+                                    endDate: newEndDate,
+                                  });
+                                  updateSearch({ endDate: newEndDate });
+                                }}
+                                className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
+                              />
                             </div>
-                            <input
-                              type="date"
-                              value={dateRange.endDate}
-                              min={dateRange.startDate || undefined}
+                            <select
+                              value={timeReturn}
                               onChange={(e) => {
-                                const newEndDate = e.target.value;
-                                setDateRange({
-                                  ...dateRange,
-                                  endDate: newEndDate,
-                                });
-                                updateSearch({ endDate: newEndDate });
+                                const newReturnTime = e.target.value;
+                                setTimeReturn(newReturnTime);
+                                updateSearch({ returnTime: newReturnTime });
                               }}
-                              className="block w-full pl-5 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-xs"
-                            />
+                              className="border border-gray-300 rounded-md text-xs py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55]"
+                            >
+                              {timeOptions.map((time) => (
+                                <option key={time} value={time}>
+                                  {time}
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                          <select
-                            value={timeReturn}
-                            onChange={(e) => {
-                              const newReturnTime = e.target.value;
-                              setTimeReturn(newReturnTime);
-                              updateSearch({ returnTime: newReturnTime });
-                            }}
-                            className="border border-gray-300 rounded-md text-xs py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55]"
-                          >
-                            {timeOptions.map((time) => (
-                              <option key={time} value={time}>
-                                {time}
-                              </option>
-                            ))}
-                          </select>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Location selector - more compact */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-[1000]">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by model, brand..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setActiveDropdown("search");
+                    }}
+                    onClick={() => {
+                      if (searchQuery.trim() !== "") {
+                        setActiveDropdown("search");
+                      }
+                    }}
+                    onFocus={() => {
+                      if (searchQuery.trim() !== "") {
+                        setActiveDropdown("search");
+                      }
+                    }}
+                    className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-sm placeholder-opacity-50 focus:placeholder-opacity-0"
+                  />
+
+                  {/* Search suggestions dropdown */}
+                  {activeDropdown === "search" && searchQuery.trim() !== "" && (
+                    <div
+                      ref={(el) => {
+                        if (el) {
+                          dropdownRefs.current["search"] = el;
+                        }
+                      }}
+                      className="absolute z-[99] mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto"
+                    >
+                      {/* Show brand suggestions */}
+                      {filterOptions.brand
+                        .filter((brand) =>
+                          brand
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                        )
+                        .map((brand, index) => (
+                          <div
+                            key={`brand-${index}`}
+                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                            onClick={() => {
+                              setSearchQuery(brand);
+                              setActiveFilters((prev) => ({ ...prev, brand }));
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            <span className="text-xs text-gray-500 mr-2">
+                              Brand:
+                            </span>
+                            {highlightMatch(brand, searchQuery)}
+                          </div>
+                        ))}
+
+                      {/* Show model suggestions from cars */}
+                      {cars
+                        .filter((car) =>
+                          car.model
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                        )
+                        .slice(0, 5) // Limit to 5 suggestions
+                        .map((car, index) => (
+                          <div
+                            key={`model-${index}`}
+                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                            onClick={() => {
+                              setSearchQuery(car.model);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            <span className="text-xs text-gray-500 mr-2">
+                              Model:
+                            </span>
+                            {highlightMatch(car.model, searchQuery)}
+                          </div>
+                        ))}
+
+                      {/* Show provider suggestions */}
+                      {filterOptions.provider
+                        .filter((provider) =>
+                          provider
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                        )
+                        .map((provider, index) => (
+                          <div
+                            key={`provider-${index}`}
+                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                            onClick={() => {
+                              setSearchQuery(provider);
+                              setActiveFilters((prev) => ({
+                                ...prev,
+                                provider,
+                              }));
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            <span className="text-xs text-gray-500 mr-2">
+                              Provider:
+                            </span>
+                            {highlightMatch(provider, searchQuery)}
+                          </div>
+                        ))}
+
+                      {/* Show type suggestions */}
+                      {filterOptions.vehicleType
+                        .filter((type) =>
+                          type.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((type, index) => (
+                          <div
+                            key={`type-${index}`}
+                            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                            onClick={() => {
+                              setSearchQuery(type);
+                              setActiveFilters((prev) => ({
+                                ...prev,
+                                vehicleType: type,
+                              }));
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            <span className="text-xs text-gray-500 mr-2">
+                              Type:
+                            </span>
+                            {highlightMatch(type, searchQuery)}
+                          </div>
+                        ))}
+
+                      {/* No results message */}
+                      {!filterOptions.brand.some((brand) =>
+                        brand.toLowerCase().includes(searchQuery.toLowerCase())
+                      ) &&
+                        !cars.some((car) =>
+                          car.model
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                        ) &&
+                        !filterOptions.provider.some((provider) =>
+                          provider
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                        ) &&
+                        !filterOptions.vehicleType.some((type) =>
+                          type.toLowerCase().includes(searchQuery.toLowerCase())
+                        ) && (
+                          <div className="px-4 py-2 text-gray-500 italic text-sm">
+                            No matching results found
+                          </div>
+                        )}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* Location selector - more compact */}
-              {/* Search input */}
-{/* Update the searchQuery input to show suggestions
- Find the search input in the file (second search bar)
- ...
- Replace the existing search input with this code: */}
-<div className="relative">
-  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-[1000]">
-    <Search className="h-4 w-4 text-gray-400" />
-  </div>
-  <input
-    type="text"
-    placeholder="Search by model, brand..."
-    value={searchQuery}
-    onChange={(e) => {
-      setSearchQuery(e.target.value);
-      setActiveDropdown("search");
-      
-    }}
-    onClick={() => {
-      if (searchQuery.trim() !== "") {
-        setActiveDropdown("search");
-      }
-    }}
-    
-    onFocus={() => {
-      if (searchQuery.trim() !== "") {
-        setActiveDropdown("search");
-      }
-    }}
-    className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8A7D55] focus:border-[#8A7D55] text-sm placeholder-opacity-50 focus:placeholder-opacity-0"
-  />
-  
-  {/* Search suggestions dropdown */}
-  {activeDropdown === "search" && searchQuery.trim() !== "" && (
-    <div 
-      ref={(el) => {
-        if (el) {
-          dropdownRefs.current["search"] = el;
-        }
-      }}
-      className="absolute z-[99] mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-56 overflow-auto"
-    >
-      {/* Show brand suggestions */}
-      {filterOptions.brand
-        .filter(brand => 
-          brand.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .map((brand, index) => (
-          <div
-            key={`brand-${index}`}
-            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-            onClick={() => {
-              setSearchQuery(brand);
-              setActiveFilters(prev => ({...prev, brand}));
-              setActiveDropdown(null);
-            }}
-          >
-            <span className="text-xs text-gray-500 mr-2">Brand:</span>
-            {highlightMatch(brand, searchQuery)}
-          </div>
-        ))
-      }
-      
-      {/* Show model suggestions from cars */}
-      {cars
-        .filter(car => 
-          car.model.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 5) // Limit to 5 suggestions
-        .map((car, index) => (
-          <div
-            key={`model-${index}`}
-            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-            onClick={() => {
-              setSearchQuery(car.model);
-              setActiveDropdown(null);
-            }}
-          >
-            <span className="text-xs text-gray-500 mr-2">Model:</span>
-            {highlightMatch(car.model, searchQuery)}
-          </div>
-        ))
-      }
-      
-      {/* Show provider suggestions */}
-      {filterOptions.provider
-        .filter(provider => 
-          provider.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .map((provider, index) => (
-          <div
-            key={`provider-${index}`}
-            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-            onClick={() => {
-              setSearchQuery(provider);
-              setActiveFilters(prev => ({...prev, provider}));
-              setActiveDropdown(null);
-            }}
-          >
-            <span className="text-xs text-gray-500 mr-2">Provider:</span>
-            {highlightMatch(provider, searchQuery)}
-          </div>
-        ))
-      }
-      
-      {/* Show type suggestions */}
-      {filterOptions.vehicleType
-        .filter(type => 
-          type.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .map((type, index) => (
-          <div
-            key={`type-${index}`}
-            className="cursor-pointer px-4 py-2 hover:bg-gray-100"
-            onClick={() => {
-              setSearchQuery(type);
-              setActiveFilters(prev => ({...prev, vehicleType: type}));
-              setActiveDropdown(null);
-            }}
-          >
-            <span className="text-xs text-gray-500 mr-2">Type:</span>
-            {highlightMatch(type, searchQuery)}
-          </div>
-        ))
-      }
-      
-      {/* No results message */}
-      {!filterOptions.brand.some(brand => brand.toLowerCase().includes(searchQuery.toLowerCase())) &&
-       !cars.some(car => car.model.toLowerCase().includes(searchQuery.toLowerCase())) &&
-       !filterOptions.provider.some(provider => provider.toLowerCase().includes(searchQuery.toLowerCase())) &&
-       !filterOptions.vehicleType.some(type => type.toLowerCase().includes(searchQuery.toLowerCase())) && (
-        <div className="px-4 py-2 text-gray-500 italic text-sm">
-          No matching results found
-        </div>
-      )}
-    </div>
-  )}
-</div>
-</div>
-
 
               {/* Second row */}
               <div className="md:col-span-2">
@@ -1049,274 +1136,262 @@ export default function CatalogPage() {
               </div>
 
               <div>
-                {/* Search input */}
+                {/* Filter buttons - styled better */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {/* Vehicle Type Dropdown */}
+                    <div
+                      ref={(el) => {
+                        if (el) {
+                          dropdownRefs.current["vehicleType"] = el;
+                        }
+                      }}
+                      className="relative group"
+                    >
+                      <div
+                        className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
+                          activeFilters.vehicleType
+                            ? "bg-[#8A7D55] text-white border-[#766b48]"
+                            : "bg-white hover:bg-gray-50 border-gray-300"
+                        }`}
+                        onClick={() =>
+                          setActiveDropdown((prev) =>
+                            prev === "vehicleType" ? null : "vehicleType"
+                          )
+                        }
+                      >
+                        <span className="text-sm">
+                          Vehicle type{" "}
+                          {activeFilters.vehicleType &&
+                            `· ${activeFilters.vehicleType}`}
+                        </span>
+                        <ChevronDown size={14} className="ml-1" />
+                      </div>
 
-
-            {/* Filter buttons - styled better */}
-            <div className="flex flex-wrap gap-2">
-              <div className="flex flex-wrap gap-2">
-                {/* Vehicle Type Dropdown */}
-                <div
-                  ref={(el) => {
-                    if (el) {
-                      dropdownRefs.current["vehicleType"] = el;
-                    }
-                  }}
-                  className="relative group"
-                >
-                  <div
-                    className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
-                      activeFilters.vehicleType
-                        ? "bg-[#8A7D55] text-white border-[#766b48]"
-                        : "bg-white hover:bg-gray-50 border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setActiveDropdown((prev) =>
-                        prev === "vehicleType" ? null : "vehicleType"
-                      )
-                    }
-                  >
-                    <span className="text-sm">
-                      Vehicle type{" "}
-                      {activeFilters.vehicleType &&
-                        `· ${activeFilters.vehicleType}`}
-                    </span>
-                    <ChevronDown size={14} className="ml-1" />
-                  </div>
-
-                  {activeDropdown === "vehicleType" && (
-                    <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
-                      {filterOptions.vehicleType.map((type) => (
-                        <div
-                          key={type}
-                          className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
-                            activeFilters.vehicleType === type
-                              ? "bg-gray-100 font-medium"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            toggleFilter("vehicleType", type);
-                            setActiveDropdown(null);
-                          }}
-                        >
-                          {type}
+                      {activeDropdown === "vehicleType" && (
+                        <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
+                          {filterOptions.vehicleType.map((type) => (
+                            <div
+                              key={type}
+                              className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
+                                activeFilters.vehicleType === type
+                                  ? "bg-gray-100 font-medium"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                toggleFilter("vehicleType", type);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              {type}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Brand Dropdown */}
-                <div
-                  ref={(el) => {
-                    if (el) {
-                      dropdownRefs.current["brand"] = el;
-                    }
-                  }}
-                  className="relative group"
-                >
-                  <div
-                    className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
-                      activeFilters.brand
-                        ? "bg-[#8A7D55] text-white border-[#766b48]"
-                        : "bg-white hover:bg-gray-50 border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setActiveDropdown((prev) =>
-                        prev === "brand" ? null : "brand"
-                      )
-                    }
-                  >
-                    <span className="text-sm">
-                      Make {activeFilters.brand && `· ${activeFilters.brand}`}
-                    </span>
-                    <ChevronDown size={14} className="ml-1" />
-                  </div>
+                    {/* Brand Dropdown */}
+                    <div
+                      ref={(el) => {
+                        if (el) {
+                          dropdownRefs.current["brand"] = el;
+                        }
+                      }}
+                      className="relative group"
+                    >
+                      <div
+                        className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
+                          activeFilters.brand
+                            ? "bg-[#8A7D55] text-white border-[#766b48]"
+                            : "bg-white hover:bg-gray-50 border-gray-300"
+                        }`}
+                        onClick={() =>
+                          setActiveDropdown((prev) =>
+                            prev === "brand" ? null : "brand"
+                          )
+                        }
+                      >
+                        <span className="text-sm">
+                          Make{" "}
+                          {activeFilters.brand && `· ${activeFilters.brand}`}
+                        </span>
+                        <ChevronDown size={14} className="ml-1" />
+                      </div>
 
-                  {activeDropdown === "brand" && (
-                    <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
-                      {filterOptions.brand.map((brand) => (
-                        <div
-                          key={brand}
-                          className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
-                            activeFilters.brand === brand
-                              ? "bg-gray-100 font-medium"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            toggleFilter("brand", brand);
-                            setActiveDropdown(null);
-                          }}
-                        >
-                          {brand}
+                      {activeDropdown === "brand" && (
+                        <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
+                          {filterOptions.brand.map((brand) => (
+                            <div
+                              key={brand}
+                              className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
+                                activeFilters.brand === brand
+                                  ? "bg-gray-100 font-medium"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                toggleFilter("brand", brand);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              {brand}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Year Dropdown */}
-                <div
-                  ref={(el) => {
-                    if (el) {
-                      dropdownRefs.current["year"] = el;
-                    }
-                  }}
-                  className="relative group"
-                >
-                  <div
-                    className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
-                      activeFilters.year
-                        ? "bg-[#8A7D55] text-white border-[#766b48]"
-                        : "bg-white hover:bg-gray-50 border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setActiveDropdown((prev) =>
-                        prev === "year" ? null : "year"
-                      )
-                    }
-                  >
-                    <span className="text-sm">
-                      Year {activeFilters.year && `· ${activeFilters.year}`}
-                    </span>
-                    <ChevronDown size={14} className="ml-1" />
-                  </div>
+                    {/* Year Dropdown */}
+                    <div
+                      ref={(el) => {
+                        if (el) {
+                          dropdownRefs.current["year"] = el;
+                        }
+                      }}
+                      className="relative group"
+                    >
+                      <div
+                        className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
+                          activeFilters.year
+                            ? "bg-[#8A7D55] text-white border-[#766b48]"
+                            : "bg-white hover:bg-gray-50 border-gray-300"
+                        }`}
+                        onClick={() =>
+                          setActiveDropdown((prev) =>
+                            prev === "year" ? null : "year"
+                          )
+                        }
+                      >
+                        <span className="text-sm">
+                          Year {activeFilters.year && `· ${activeFilters.year}`}
+                        </span>
+                        <ChevronDown size={14} className="ml-1" />
+                      </div>
 
-                  {activeDropdown === "year" && (
-                    <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
-                      {filterOptions.year.map((year) => (
-                        <div
-                          key={year}
-                          className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
-                            activeFilters.year === year
-                              ? "bg-gray-100 font-medium"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            toggleFilter("year", year);
-                            setActiveDropdown(null);
-                          }}
-                        >
-                          {year}
+                      {activeDropdown === "year" && (
+                        <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
+                          {filterOptions.year.map((year) => (
+                            <div
+                              key={year}
+                              className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
+                                activeFilters.year === year
+                                  ? "bg-gray-100 font-medium"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                toggleFilter("year", year);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              {year}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Seats Dropdown */}
-                <div
-                  ref={(el) => {
-                    if (el) {
-                      dropdownRefs.current["seats"] = el;
-                    }
-                  }}
-                  className="relative group"
-                >
-                  <div
-                    className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
-                      activeFilters.seats
-                        ? "bg-[#8A7D55] text-white border-[#766b48]"
-                        : "bg-white hover:bg-gray-50 border-gray-300"
-                    }`}
-                    onClick={() =>
-                      setActiveDropdown((prev) =>
-                        prev === "seats" ? null : "seats"
-                      )
-                    }
-                  >
-                    <span className="text-sm">
-                      Seats {activeFilters.seats && `· ${activeFilters.seats}`}
-                    </span>
-                    <ChevronDown size={14} className="ml-1" />
+                    {/* Seats Dropdown */}
+                    <div
+                      ref={(el) => {
+                        if (el) {
+                          dropdownRefs.current["seats"] = el;
+                        }
+                      }}
+                      className="relative group"
+                    >
+                      <div
+                        className={`flex items-center px-3 py-1 border rounded-md cursor-pointer transition-colors ${
+                          activeFilters.seats
+                            ? "bg-[#8A7D55] text-white border-[#766b48]"
+                            : "bg-white hover:bg-gray-50 border-gray-300"
+                        }`}
+                        onClick={() =>
+                          setActiveDropdown((prev) =>
+                            prev === "seats" ? null : "seats"
+                          )
+                        }
+                      >
+                        <span className="text-sm">
+                          Seats{" "}
+                          {activeFilters.seats && `· ${activeFilters.seats}`}
+                        </span>
+                        <ChevronDown size={14} className="ml-1" />
+                      </div>
+
+                      {activeDropdown === "seats" && (
+                        <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
+                          {filterOptions.seats.map((seat) => (
+                            <div
+                              key={seat}
+                              className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
+                                activeFilters.seats === seat
+                                  ? "bg-gray-100 font-medium"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                toggleFilter("seats", seat);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              {seat} seats
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {activeDropdown === "seats" && (
-                    <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-md p-1 z-10 min-w-[150px]">
-                      {filterOptions.seats.map((seat) => (
-                        <div
-                          key={seat}
-                          className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100 rounded text-sm ${
-                            activeFilters.seats === seat
-                              ? "bg-gray-100 font-medium"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            toggleFilter("seats", seat);
-                            setActiveDropdown(null);
-                          }}
-                        >
-                          {seat} seats
-                        </div>
-                      ))}
+                  {/* Clear filters button */}
+                  {(Object.values(activeFilters).some(
+                    (filter) => filter !== ""
+                  ) ||
+                    priceRange.min > 0 ||
+                    priceRange.max < 500 ||
+                    dateRange.startDate ||
+                    dateRange.endDate ||
+                    selectedLocation ||
+                    searchQuery) && (
+                    <button
+                      className="flex items-center px-3 py-1 border border-red-300 text-red-600 rounded-md cursor-pointer hover:bg-red-50 ml-auto text-sm transition-colors"
+                      onClick={() => {
+                        setActiveFilters({
+                          vehicleType: "",
+                          brand: "",
+                          year: "",
+                          seats: "",
+                          provider: "",
+                        });
+                        setPriceRange({ min: 0, max: Number.MAX_SAFE_INTEGER });
+                        setDateRange({ startDate: "", endDate: "" });
+                        setSelectedLocation("");
+                        setSearchQuery("");
+                        // Clear URL params
+                        router.push("/catalog");
+                      }}
+                    >
+                      <span>Clear all filters</span>
+                    </button>
+                  )}
+                  {/* Admin toggle as a filter button */}
+                  {session?.user?.role === "admin" && (
+                    <div className="ml-auto">
+                      <button
+                        onClick={() => setShowUnavailable(!showUnavailable)}
+                        className={`px-2 py-1 rounded-md transition-colors ${
+                          showUnavailable
+                            ? "bg-[#8A7D55] text-white"
+                            : "bg-white border border-gray-300 text-gray-700"
+                        }`}
+                      >
+                        Admin {showUnavailable ? "Hiding" : "Show"} Unavailable
+                        Cars
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* Clear filters button */}
-              {(Object.values(activeFilters).some((filter) => filter !== "") ||
-                priceRange.min > 0 ||
-                priceRange.max < 500 ||
-                dateRange.startDate ||
-                dateRange.endDate ||
-                selectedLocation ||
-                searchQuery) && (
-                <button
-                  className="flex items-center px-3 py-1 border border-red-300 text-red-600 rounded-md cursor-pointer hover:bg-red-50 ml-auto text-sm transition-colors"
-                  onClick={() => {
-                    setActiveFilters({
-                      vehicleType: "",
-                      brand: "",
-                      year: "",
-                      seats: "",
-                      provider: "",
-                    });
-                    setPriceRange({ min: 0, max: Number.MAX_SAFE_INTEGER });
-                    setDateRange({ startDate: "", endDate: "" });
-                    setSelectedLocation("");
-                    setSearchQuery("");
-                    // Clear URL params
-                    router.push("/catalog");
-                  }}
-                >
-                  <span>Clear all filters</span>
-                </button>
-              )}
-              {/* Admin toggle as a filter button */}
-              {session?.user?.role === "admin" && (
-                <div className="ml-auto">
-                  <button
-                    onClick={() => setShowUnavailable(!showUnavailable)}
-                    className={`px-2 py-1 rounded-md transition-colors ${
-                      showUnavailable
-                        ? "bg-[#8A7D55] text-white"
-                        : "bg-white border border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    Admin {showUnavailable ? "Hiding" : "Show"} Unavailable Cars
-                  </button>
-                </div>
-              )}
             </div>
-          </div>
-          </div>
-          
+          )}
         </header>
-
-        {/* Authentication error (check only on press view car) */}
-        {/* {!session && (
-        <div className="text-center py-10">
-          <h3 className="text-xl font-medium text-red-600">Authentication Required</h3>
-          <p className="text-gray-600 mt-2">Please sign in to view available cars.</p>
-          <Link 
-            href="/signin?callbackUrl=/catalog" 
-            className="mt-4 px-4 py-2 bg-[#8A7D55] text-white rounded-md hover:bg-[#766b48] inline-block"
-          >
-            Sign In
-          </Link>
-        </div>
-      )} */}
 
         {/* Loading state */}
         {loading && (
@@ -1343,7 +1418,10 @@ export default function CatalogPage() {
 
         {/* Cars grid - only show when we have data and no errors */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-test-id="catalog">
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            data-test-id="catalog"
+          >
             {availableCars.map((car) => (
               <div
                 key={car.id}
@@ -1369,7 +1447,10 @@ export default function CatalogPage() {
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h2 className="text-lg font-bold" data-test-id="catalog-item-title">
+                      <h2
+                        className="text-lg font-bold"
+                        data-test-id="catalog-item-title"
+                      >
                         {car.brand} {car.model}
                       </h2>
                       <div className="text-sm text-gray-600 -mt-1 flex items-center flex-wrap">
@@ -1565,4 +1646,3 @@ export default function CatalogPage() {
     </FavoriteCarsProvider>
   );
 }
-
