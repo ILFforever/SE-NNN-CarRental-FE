@@ -8,13 +8,14 @@ await page.getByRole('textbox', { name: 'Email Address' }).fill('playwright@gmai
 await page.getByRole('textbox', { name: 'Password' }).click();
 await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
 await page.getByRole('button', { name: 'Sign In as User' }).click();
+
 await page.getByRole('link', { name: 'Catalog' }).click();
 await page.locator('[data-test-id="catalog"] div').filter({ hasText: '$50.00/daysedanKIA ev52025 •' }).getByRole('button').nth(1).click();
-await page.locator('div').filter({ hasText: /^Pickup Date$/ }).getByRole('textbox').fill('2025-05-01');
-await page.locator('div').filter({ hasText: /^Return Date$/ }).getByRole('textbox').fill('2025-05-03');
-await page.getByText('Click to add services').click();
+await page.locator('div').filter({ hasText: /^Pickup Date$/ }).getByRole('textbox').fill('2025-05-03');
+await page.locator('div').filter({ hasText: /^Return Date$/ }).getByRole('textbox').fill('2025-05-05');
+await page.locator('div').filter({ hasText: /^Click to add services$/ }).nth(2).click();
 await page.locator('.mt-1 > div > div > div > .relative').click();
-await page.getByRole('button', { name: 'Confirm & Pay $25.93 Deposit' }).click();await page.locator('[data-test-id="catalog"] div').filter({ hasText: '$50.00/daysedanKIA ev52025 •' }).getByRole('button').nth(1).click();
+await page.getByRole('button', { name: 'Confirm & Pay $25.93 Deposit' }).click();
 await page.getByText('Close').click();
 await page.getByRole('button', { name: 'Playwright Man' }).click();
 await page.getByRole('button', { name: 'Sign Out' }).click();
