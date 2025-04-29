@@ -283,7 +283,7 @@ export default function MyReservationsPage() {
     const basePrice = reservation.price || 0;
     const servicePrice = reservation.servicePrice || 0;
     const discountAmount = reservation.discountAmount || 0;
-    const additionalCharges = reservation.additionalCharges.lateFee || 0;
+    const additionalCharges = reservation.additionalCharges?.lateFee || 0;
 
     return basePrice + servicePrice - discountAmount + additionalCharges;
   };
