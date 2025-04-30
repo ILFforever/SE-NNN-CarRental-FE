@@ -559,7 +559,7 @@ export default function MyReservationsPage() {
                             discount
                           </div>
                         ) : null}
-                        {reservation.additionalCharges ? (
+                        {reservation.additionalCharges?.lateFee ? (
                           <div className="text-xs text-amber-600">
                             Includes{" "}
                             {formatCurrency(
