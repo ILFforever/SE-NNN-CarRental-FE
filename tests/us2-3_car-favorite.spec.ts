@@ -8,11 +8,11 @@ test('add favorite car', async ({ page }) => {
   await page.locator('div').filter({ hasText: /^Password$/ }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
   await page.getByRole('button', { name: 'Sign In as User' }).click();
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(3000);
 
   // Navigate to catalog
   await page.getByRole('link', { name: /Catalog/i }).click();
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(3000);
 
   // Add 3 cars to favorites
   const favoriteButtons = page.locator('[aria-label="Add to favorites"]');
@@ -28,7 +28,7 @@ test('add favorite car', async ({ page }) => {
   await page.getByRole('link', { name: 'Favorite Cars See your saved' }).click();
   
   // Wait for favorites page to load
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(2000);
   
   // Count the number of favorite cars
   const favoriteCars = await page.locator('[data-test-id="favorite-car-item"]');
@@ -43,21 +43,21 @@ test('have car in favorite page and can go to reservation page', async ({ page }
   await page.getByRole('textbox', { name: 'Password' }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
   await page.getByRole('button', { name: 'Sign In as User' }).click();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(1000);
 
   await page.getByRole('button', { name: 'Playwright Man' }).click();
   await page.getByRole('button', { name: 'My Profile' }).click();
   // await page.locator('.MuiBackdrop-root').click();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(1000);
 
   await page.getByRole('link', { name: 'Favorite Cars See your saved' }).click();
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(5000);
   
   const carTitles = await page.locator('h2').allInnerTexts(); 
   const selectedCar = carTitles[0];  
   console.log(selectedCar);
   await page.getByRole('button', { name: 'Reserve Now' }).first().click();
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(4000);
   
   const carTitleElement = page.locator('h3').first();
   await expect(carTitleElement).toHaveText(selectedCar);
@@ -71,11 +71,18 @@ test('delete car from favorite', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill('12345678');
   await page.getByRole('button', { name: 'Sign In as User' }).click();
+  await page.waitForTimeout(3000);
   await page.waitForLoadState('networkidle');
   
   // Navigate to favorites page
+  await page.waitForTimeout(3000);
+
   await page.getByRole('button', { name: 'Playwright Man' }).click();
+  await page.waitForTimeout(3000);
+
   await page.getByRole('button', { name: 'My Profile' }).click();
+    await page.waitForTimeout(3000);
+
   // await page.locator('.MuiBackdrop-root').click();
   await page.getByRole('link', { name: 'Favorite Cars See your saved' }).click();
   await page.waitForLoadState('networkidle');
@@ -96,7 +103,7 @@ test('delete car from favorite', async ({ page }) => {
     await removeButtons[0].click({ force: true });
     
     // Wait for the UI to update
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
     
     // Check if refresh button appears and click it
     const refreshButton = page.getByTestId('refresh-favorites');
@@ -109,7 +116,7 @@ test('delete car from favorite', async ({ page }) => {
    
     
     // Wait for potential UI updates
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
   }
    await page.goto('https://se-cedt-rentals.vercel.app/account/favorite');
   // Verify that no favorites are left
