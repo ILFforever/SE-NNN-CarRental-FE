@@ -2,7 +2,7 @@
 
 This is the frontend component for the **NNN Premium Car Rental** website, developed as part of the **2110423 Software Engineering curriculum**.  
 
-###### The backend repository can be found [here](https://github.com/ILFforever/SE-NNN-CarRental-BE).  
+###### Our backend repository can be found [here](https://github.com/ILFforever/SE-NNN-CarRental-BE).  
 
 ## Overview  
 - The frontend can be accessed at [se-cedt-rentals.vercel](https://se-cedt-rentals.vercel.app/), where it is hosted on **Vercel.app**.  
